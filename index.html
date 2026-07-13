@@ -122,9 +122,27 @@
       display: flex; align-items: center; gap: 14px;
       background: var(--blue-light); border: 2px solid var(--line);
       border-radius: 20px; padding: 16px 18px;
-      cursor: pointer; user-select: none;
+      cursor: pointer; user-select: none; position: relative;
+      border-inline-start-width: 6px;
       transition: border-color .18s, background .18s, transform .1s;
     }
+    .habit-check.legendary {
+      background: var(--yellow-light);
+      border-color: #CFA94A;
+    }
+    .habit-check.legendary.done { background: var(--green-light); }
+    .legendary-badge {
+      position: absolute; top: -10px; inset-inline-end: 14px;
+      background: #CFA94A; color: #fff; border-radius: 999px;
+      padding: 1px 10px; font-size: .6rem; font-weight: 800;
+      box-shadow: 0 3px 8px rgba(74,57,45,.18);
+    }
+    .worlds-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 14px; }
+    .world-item {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: .7rem; font-weight: 700; color: var(--deep);
+    }
+    .world-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
     .habit-check:hover { transform: translateY(-1px); }
     .habit-check.done {
       background: var(--green-light);
@@ -166,7 +184,11 @@
       box-shadow: 0 10px 24px rgba(74,57,45,.06);
       border-top: 4px solid var(--blue-main);
     }
-    .why-card h3 { color: var(--deep); font-size: 1.05rem; margin-bottom: 10px; }
+    .why-card h3 { color: var(--deep); font-size: 1.05rem; margin-bottom: 6px; }
+    .why-world {
+      display: inline-block; border-radius: 999px; padding: 1px 10px;
+      font-size: .6rem; font-weight: 800; color: #fff; margin-bottom: 10px;
+    }
     .why-quote {
       background: var(--yellow-light);
       border-right: 5px solid var(--blue-main);
@@ -316,7 +338,7 @@
   <header class="page-header">
     <div class="eyebrow-tag">تحدي المجتمع · Play Over Mood</div>
     <h1>نلعب على مزاجنا</h1>
-    <p>أربع عادات يومية صغيرة، سجّليها كل يوم، وشاهدي نموّك ونموّ المجتمع كله أسبوعًا بعد أسبوع.</p>
+    <p>مهمات يومية صغيرة من أربعة عوالم — أنجزيها، اجمعي النقاط، وشاهدي نموّك ونموّ المجتمع كله أسبوعًا بعد أسبوع.</p>
   </header>
 
   <!-- Nickname gate -->
@@ -337,9 +359,10 @@
         <div class="hello-name">مرحبًا، <span id="hello-nick"></span> 🌼 <span id="today-date"></span></div>
         <button class="change-nick" id="change-nick">تغيير الاسم</button>
       </div>
-      <span class="card-label">① سِجلّ اليوم · Today's Log</span>
-      <div class="card-title">ماذا أنجزتِ اليوم؟</div>
-      <div class="card-desc">اضغطي على كل عادة أتممتِها اليوم — كل عادة = نقطة في لوحة الأسبوع</div>
+      <span class="card-label">① مهمات اليوم · Today's Quests</span>
+      <div class="card-title">أي مهمات أنجزتِ اليوم؟</div>
+      <div class="card-desc">اضغطي على كل مهمة أتممتِها — كل مهمة = نقطة، والمهمة الأسطورية ⭐ = نقطتان</div>
+      <div class="worlds-legend" id="worlds-legend"></div>
       <div class="habits-grid" id="habits-grid"></div>
       <div class="today-progress">
         <div class="today-bar"><div class="today-bar-fill" id="today-bar-fill"></div></div>
@@ -349,9 +372,9 @@
 
     <!-- Why these habits -->
     <section class="card">
-      <span class="card-label label-yellow">② لماذا هذه العادات؟ · The Why</span>
+      <span class="card-label label-yellow">② لماذا هذه المهمات؟ · The Why</span>
       <div class="card-title">النية والعلم معًا</div>
-      <div class="card-desc">لكل عادة أصل من الوحي وسند من الدراسات الحديثة</div>
+      <div class="card-desc">لكل مهمة أصل من الوحي وسند من الدراسات الحديثة</div>
       <div class="why-grid" id="why-grid"></div>
     </section>
 
@@ -372,17 +395,17 @@
       <div class="charts-grid">
         <div class="chart-card">
           <div class="chart-title">نموّ المجتمع 🌍</div>
-          <div class="chart-sub">مجموع العادات المنجزة يوميًا من الجميع · Community daily total</div>
+          <div class="chart-sub">مجموع المهمات المنجزة يوميًا من الجميع · Community daily total</div>
           <div class="bars-row" id="community-chart"></div>
         </div>
         <div class="chart-card">
           <div class="chart-title">نموّكِ أنتِ 💕</div>
-          <div class="chart-sub">عاداتك المنجزة يوميًا · Your daily total</div>
+          <div class="chart-sub">مهماتك المنجزة يوميًا · Your daily total</div>
           <div class="bars-row" id="personal-chart"></div>
         </div>
         <div class="chart-card" style="grid-column: 1 / -1;">
-          <div class="chart-title">كل عادة على حدة 📊</div>
-          <div class="chart-sub">نسبة الالتزام بكل عادة هذا الأسبوع في المجتمع · Per-habit completion this week</div>
+          <div class="chart-title">كل مهمة على حدة 📊</div>
+          <div class="chart-sub">نسبة الالتزام بكل مهمة هذا الأسبوع في المجتمع · Per-quest completion this week</div>
           <div class="hbar-list" id="habit-chart"></div>
         </div>
       </div>
@@ -420,32 +443,69 @@
    وكتابة Firestore، والبنية نفسها تبقى كما هي.
    ════════════════════════════════════════════════════════════ */
 
+/* العوالم — لكل عالم لون */
+const WORLDS = {
+  physical:  { ar: 'العالم الجسدي',  en: 'Physical',  color: '#7BBBD4' },
+  spiritual: { ar: 'العالم الروحي',  en: 'Spiritual', color: '#5EAF7A' },
+  mental:    { ar: 'العالم الذهني',  en: 'Mental',    color: '#8B7CC0' },
+  emotional: { ar: 'العالم العاطفي', en: 'Emotional', color: '#D4819C' },
+};
+/* المهمة الأسطورية: تؤثر على بقية المهمات وتساوي نقطتين */
+const LEGENDARY_COLOR = '#CFA94A';
+
 const HABITS = [
   {
-    id: 'fajr', ar: 'الاستيقاظ بعد الفجر', en: 'Awake after Fajr', emoji: '🌅', color: '#7BBBD4',
+    id: 'sleep', ar: 'النوم المبكر', en: 'Early Sleep', emoji: '🌙', world: 'physical', legendary: true,
+    quote: '«كان رسول الله ﷺ يكره النوم قبل العشاء والحديث بعدها»',
+    source: 'متفق عليه',
+    science: 'النوم هو المهمة التي تفتح بقية المهمات: يضبط هرمونات الجوع والشبع (اللبتين والجريلين) والكورتيزول والمزاج، ويحدد قدرتك على الاستيقاظ للفجر وطاقتك للحركة وتركيزك للتعلم. لذلك هي مهمة أسطورية بنقطتين.'
+  },
+  {
+    id: 'fajr', ar: 'الاستيقاظ بعد الفجر', en: 'Awake after Fajr', emoji: '🌅', world: 'spiritual',
     quote: '«اللهم بارك لأمتي في بكورها»',
     source: 'رواه أبو داود والترمذي — دعاء النبي ﷺ بالبركة في أول النهار',
     science: 'التعرض لضوء الصباح الباكر يضبط الساعة البيولوجية ويحسّن النوم والمزاج. دراسة على أكثر من ٨٠٠ ألف شخص (JAMA Psychiatry 2021) وجدت أن تقديم منتصف النوم ساعة واحدة يرتبط بانخفاض خطر الاكتئاب بنحو ٢٣٪.'
   },
   {
-    id: 'athkar', ar: 'أذكار الصباح والمساء', en: 'Morning & Evening Adhkar', emoji: '📿', color: '#5EAF7A',
+    id: 'athkar', ar: 'أذكار الصباح والمساء', en: 'Morning & Evening Adhkar', emoji: '📿', world: 'spiritual',
     quote: '﴿أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾',
     source: 'سورة الرعد — ٢٨',
     science: 'ممارسات الذكر والامتنان اليومية المنتظمة ترتبط في الدراسات بانخفاض التوتر وتحسّن الرضا عن الحياة، ومنها تجارب Emmons & McCullough (2003) على أثر الامتنان اليومي في المزاج وجودة النوم.'
   },
   {
-    id: 'quran', ar: 'قراءة وِرد من القرآن', en: 'Daily Quran Portion', emoji: '📖', color: '#8B7CC0',
+    id: 'quran', ar: 'قراءة وِرد من القرآن', en: 'Daily Quran Portion', emoji: '📖', world: 'spiritual',
     quote: '«اقرؤوا القرآن فإنه يأتي يوم القيامة شفيعًا لأصحابه»',
     source: 'رواه مسلم',
     science: 'دراسات على تلاوة القرآن والاستماع إليه سجّلت انخفاضًا في مؤشرات القلق وضغط الدم ومعدل ضربات القلب. كما أن القراءة اليومية المنتظمة عمومًا ترتبط ببناء احتياطي معرفي يحمي الذاكرة مع التقدم في العمر.'
   },
   {
-    id: 'walk', ar: 'المشي / حركة يومية', en: 'Daily Walk / Movement', emoji: '🚶🏻‍♀️', color: '#E8967A',
+    id: 'walk', ar: 'المشي / حركة يومية', en: 'Daily Walk / Movement', emoji: '🚶🏻‍♀️', world: 'physical',
     quote: '«المؤمن القوي خير وأحب إلى الله من المؤمن الضعيف»',
     source: 'رواه مسلم',
     science: 'تحليل شامل في The Lancet Public Health (2022) على أكثر من ٤٧ ألف شخص وجد أن ٧ آلاف خطوة يوميًا تقريبًا ترتبط بانخفاض خطر الوفاة المبكرة بنسبة تصل إلى ٥٠٪ مقارنة بقلة الحركة.'
   },
+  {
+    id: 'water', ar: 'شرب الماء الكافي', en: 'Enough Water', emoji: '💧', world: 'physical',
+    quote: '﴿وَجَعَلْنَا مِنَ الْمَاءِ كُلَّ شَيْءٍ حَيٍّ﴾',
+    source: 'سورة الأنبياء — ٣٠',
+    science: 'حتى الجفاف الخفيف (١–٢٪ من وزن الجسم) يؤثر في الدراسات المضبوطة على التركيز والمزاج ويزيد الصداع والتعب، وشرب الماء الكافي يحسّن اليقظة والأداء الذهني خلال اليوم.'
+  },
+  {
+    id: 'learn', ar: 'تعلّم شيء جديد', en: 'Learn Something New', emoji: '🎧', world: 'mental',
+    quote: '«من سلك طريقًا يلتمس فيه علمًا سهّل الله له به طريقًا إلى الجنة»',
+    source: 'رواه مسلم',
+    science: 'تعلّم مهارات ومعارف جديدة يبني «الاحتياطي المعرفي» — مرونة عصبية تحمي الذاكرة والدماغ مع التقدم في العمر، وترتبط في الدراسات بتأخر ظهور أعراض التدهور المعرفي.'
+  },
+  {
+    id: 'recharge', ar: 'جلسة في الطبيعة أو مع صديقة', en: 'Nature or a Friend', emoji: '🌳', world: 'emotional',
+    quote: '﴿وَيَتَفَكَّرُونَ فِي خَلْقِ السَّمَاوَاتِ وَالْأَرْضِ﴾',
+    source: 'سورة آل عمران — ١٩١',
+    science: 'مشي ٩٠ دقيقة في الطبيعة قلّل الاجترار الذهني ونشاط مناطق القلق في الدماغ (دراسة ستانفورد Bratman 2015)، ودراسة هارفارد الممتدة ٨٥ عامًا وجدت أن دفء العلاقات هو أقوى مؤشر للسعادة والصحة على المدى الطويل.'
+  },
 ];
+
+function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.world].color; }
+function habitPoints(h) { return h.legendary ? 2 : 1; }
 
 /* أسماء تجريبية لإحياء اللوحة قبل الربط الحقيقي */
 const DEMO_MEMBERS = ['نور', 'سارة', 'ريم', 'لينا', 'هدى', 'مريم', 'شهد'];
@@ -502,14 +562,14 @@ if (!posts) {
   posts = [
     {
       id: 'seed-1', author: 'عَئْوش؛', admin: true, pinned: true,
-      text: 'أهلًا بكنّ في الجولة الأولى من "نلعب على مزاجنا" ☀️ ابدئي بعادة واحدة إن شعرتِ أن الأربع كثيرة — الاستمرار أهم من الكمال.',
+      text: 'أهلًا بكنّ في الجولة الأولى من "نلعب على مزاجنا" ☀️ ابدئي بمهمة واحدة إن شعرتِ أن القائمة كثيرة — الاستمرار أهم من الكمال.',
       time: Date.now() - 86400000 * 2, reply: null,
     },
     {
       id: 'seed-2', author: 'نور', admin: false, pinned: false,
       text: 'إذا فاتني يوم كامل، هل أخسر كل نقاطي؟',
       time: Date.now() - 86400000,
-      reply: { author: 'عَئْوش؛', text: 'أبدًا 🤍 النقاط تُحسب لكل عادة تنجزينها، واليوم الفائت لا يمسح شيئًا — فقط أكملي من حيث توقفتِ.' },
+      reply: { author: 'عَئْوش؛', text: 'أبدًا 🤍 النقاط تُحسب لكل مهمة تنجزينها، واليوم الفائت لا يمسح شيئًا — فقط أكملي من حيث توقفتِ.' },
     },
   ];
   save(LS.posts, posts);
@@ -558,8 +618,10 @@ function renderHabits() {
 
   HABITS.forEach(h => {
     const el = document.createElement('div');
-    el.className = 'habit-check' + (t[h.id] ? ' done' : '');
+    el.className = 'habit-check' + (t[h.id] ? ' done' : '') + (h.legendary ? ' legendary' : '');
+    el.style.borderInlineStartColor = habitColor(h);
     el.innerHTML = `
+      ${h.legendary ? '<span class="legendary-badge">⭐ أسطورية ×٢</span>' : ''}
       <div class="habit-box">✓</div>
       <div class="habit-check-info">
         <div class="habit-check-ar">${h.ar}</div>
@@ -569,7 +631,9 @@ function renderHabits() {
     el.addEventListener('click', () => {
       t[h.id] = !t[h.id];
       save(LS.logs, logs);
-      if (t[h.id]) showToast(`أحسنتِ! "${h.ar}" 🤙`);
+      if (t[h.id]) showToast(h.legendary
+        ? `مهمة أسطورية! "${h.ar}" = نقطتان ⭐🤙`
+        : `أحسنتِ! "${h.ar}" 🤙`);
       renderAll();
     });
     grid.appendChild(el);
@@ -584,6 +648,22 @@ function renderHabits() {
     new Date().toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
+/* ── Worlds legend ───────────────────────────────────────── */
+function renderWorldsLegend() {
+  const el = document.getElementById('worlds-legend');
+  el.innerHTML = '';
+  Object.values(WORLDS).forEach(w => {
+    const item = document.createElement('span');
+    item.className = 'world-item';
+    item.innerHTML = `<span class="world-dot" style="background:${w.color}"></span>${w.ar}`;
+    el.appendChild(item);
+  });
+  const leg = document.createElement('span');
+  leg.className = 'world-item';
+  leg.innerHTML = `<span class="world-dot" style="background:${LEGENDARY_COLOR}"></span>مهمة أسطورية ⭐`;
+  el.appendChild(leg);
+}
+
 /* ── Why cards ───────────────────────────────────────────── */
 function renderWhy() {
   const grid = document.getElementById('why-grid');
@@ -591,9 +671,13 @@ function renderWhy() {
   HABITS.forEach(h => {
     const el = document.createElement('div');
     el.className = 'why-card';
-    el.style.borderTopColor = h.color;
+    el.style.borderTopColor = habitColor(h);
+    const worldTag = h.legendary
+      ? `<span class="why-world" style="background:${LEGENDARY_COLOR}">مهمة أسطورية ⭐ ×٢</span>`
+      : `<span class="why-world" style="background:${WORLDS[h.world].color}">${WORLDS[h.world].ar}</span>`;
     el.innerHTML = `
       <h3>${h.emoji} ${h.ar}</h3>
+      ${worldTag}
       <div class="why-quote">${h.quote}</div>
       <div class="why-source">${h.source}</div>
       <div class="why-science"><strong>🔬 ماذا يقول العلم؟</strong>${h.science}</div>`;
@@ -607,7 +691,7 @@ function myPointsThisWeek() {
   let pts = 0;
   Object.entries(logs).forEach(([k, day]) => {
     const d = new Date(k + 'T12:00:00');
-    if (d >= start) pts += Object.values(day).filter(Boolean).length;
+    if (d >= start) HABITS.forEach(h => { if (day[h.id]) pts += habitPoints(h); });
   });
   return pts;
 }
@@ -617,7 +701,7 @@ function demoPointsThisWeek(memberIdx) {
   const today = new Date();
   let pts = 0;
   for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
-    HABITS.forEach((h, hi) => { if (demoLogFor(memberIdx, d, hi)) pts++; });
+    HABITS.forEach((h, hi) => { if (demoLogFor(memberIdx, d, hi)) pts += habitPoints(h); });
   }
   return pts;
 }
@@ -713,7 +797,7 @@ function renderCharts() {
         <span class="hbar-name">${h.emoji} ${h.ar}</span>
         <span class="hbar-pct">${pct}%</span>
       </div>
-      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%; background:${h.color}"></div></div>`;
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%; background:${habitColor(h)}"></div></div>`;
     list.appendChild(el);
   });
 }
@@ -791,6 +875,7 @@ function renderAll() {
   renderPosts();
 }
 
+renderWorldsLegend();
 renderWhy();
 initGate();
 </script>
