@@ -6,10 +6,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getAuth, signInAnonymously, onAuthStateChanged,
-  GoogleAuthProvider, signInWithPopup, signOut,
+  GoogleAuthProvider, signInWithPopup, signOut, linkWithPopup,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  getFirestore, doc, setDoc, collection, query, where,
+  getFirestore, doc, setDoc, getDoc, collection, query, where,
   onSnapshot, addDoc, updateDoc, deleteDoc, orderBy, limit,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -124,22 +124,107 @@ let postsCache = [];
 let listenersStarted = false;
 
 /* ── Auth ────────────────────────────────────────────────── */
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   if (!user) {
     signInAnonymously(auth).catch(() =>
       showToast('تعذر الاتصال — تأكدي من تفعيل Anonymous في Firebase'));
     return;
   }
+  const switched = me && me.uid !== user.uid;
   me = user;
   isAdmin = !!user.email && user.email.toLowerCase() === ADMIN_EMAIL;
+
   if (isAdmin && !nickname) {
     nickname = ADMIN_NAME;
     localStorage.setItem('pom_nick', nickname);
   }
+  /* حساب Google مربوط سابقًا؟ استرجعي الاسم المحفوظ */
+  if (!nickname && !user.isAnonymous) {
+    const snap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
+    if (snap && snap.exists() && snap.data().nick) {
+      nickname = snap.data().nick;
+      localStorage.setItem('pom_nick', nickname);
+      showToast(`أهلًا بعودتك ${nickname} 💕`);
+    }
+  }
+  /* عند تبديل الحساب: أعيدي حساب مهمات اليوم من بيانات الحساب الجديد */
+  if (switched) {
+    const mine = rangeDocs.find(r => r.uid === me.uid && r.date === dateKey(new Date()));
+    myToday = mine ? { ...mine.habits } : {};
+  }
+
   updateAdminUi();
+  updateSyncUi();
   startListeners();
   initGate();
 });
+
+/* ── ربط التقدم بحساب Google (اختياري للمشاركات) ─────────── */
+async function linkGoogle() {
+  if (!me) return;
+  try {
+    await linkWithPopup(auth.currentUser, new GoogleAuthProvider());
+    me = auth.currentUser;
+    isAdmin = !!me.email && me.email.toLowerCase() === ADMIN_EMAIL;
+    if (nickname) setDoc(doc(db, 'users', me.uid), { nick: nickname, updated: Date.now() }, { merge: true }).catch(() => {});
+    showToast('تم ربط حسابك ☀️ تقدمك الآن يتبعك على أي جهاز');
+    updateAdminUi();
+    updateSyncUi();
+  } catch (e) {
+    if (e && e.code === 'auth/credential-already-in-use') {
+      /* الحساب مربوط بهوية سابقة — ادخلي بها بدل إنشاء جديدة */
+      localStorage.removeItem('pom_nick');
+      nickname = null;
+      try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+      catch { showToast('لم يكتمل تسجيل الدخول'); }
+    } else {
+      showToast('لم يكتمل الربط — حاولي مرة أخرى');
+    }
+  }
+}
+
+function updateSyncUi() {
+  /* زر "احفظي تقدمك" في سطر الترحيب */
+  const row = document.querySelector('.hello-row');
+  if (row) {
+    let btn = document.getElementById('sync-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'sync-btn';
+      btn.className = 'change-nick';
+      btn.addEventListener('click', linkGoogle);
+      row.insertBefore(btn, document.getElementById('change-nick'));
+    }
+    if (!me || isAdmin) {
+      btn.hidden = true;
+    } else if (me.isAnonymous) {
+      btn.hidden = false;
+      btn.disabled = false;
+      btn.textContent = '☁️ احفظي تقدمك (ربط بحساب Google)';
+    } else {
+      btn.hidden = false;
+      btn.disabled = true;
+      btn.style.textDecoration = 'none';
+      btn.style.cursor = 'default';
+      btn.textContent = '✓ تقدمك محفوظ ويتبعك على أجهزتك 🤍';
+    }
+  }
+  /* زر الدخول على شاشة الاسم لمن ربطت حسابها سابقًا */
+  const gate = document.getElementById('nick-gate');
+  if (gate && !document.getElementById('gate-google')) {
+    const g = document.createElement('button');
+    g.id = 'gate-google';
+    g.type = 'button';
+    g.className = 'change-nick';
+    g.style.marginTop = '14px';
+    g.textContent = 'سبق وربطتِ تقدمك بحساب Google؟ ادخلي من هنا';
+    g.addEventListener('click', async () => {
+      try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+      catch { showToast('لم يكتمل تسجيل الدخول'); }
+    });
+    gate.appendChild(g);
+  }
+}
 
 /* ── Live listeners ──────────────────────────────────────── */
 function startListeners() {
