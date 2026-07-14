@@ -22,7 +22,7 @@ const firebaseConfig = {
   appId: "1:992991212281:web:e977b1e7bf362b9f9ce828"
 };
 
-const ADMIN_EMAIL = 'aysecabr@gmail.com';
+const ADMIN_EMAIL = 'aisha.jabr.3aosh@gmail.com';
 const ADMIN_NAME  = 'عَئْوش؛';
 
 const fb   = initializeApp(firebaseConfig);
