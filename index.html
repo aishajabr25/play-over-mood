@@ -318,6 +318,9 @@
     .tab-btn:hover { color: var(--deep); }
     .tab-btn.active { background: var(--blue-main); color: var(--text); }
     .tab-pane[hidden] { display: none; }
+    @media (max-width: 480px) {
+      .tab-btn { padding: 8px 12px; font-size: .78rem; }
+    }
 
     /* ── Toast ───────────────────────────────────────────── */
     #toast {
@@ -373,11 +376,13 @@
 
     <!-- Tabs -->
     <nav class="tabs-bar" aria-label="أقسام الصفحة">
-      <button class="tab-btn active" id="tab-btn-challenge" type="button">🎮 التحدي</button>
-      <button class="tab-btn" id="tab-btn-wall" type="button">💬 حائط الأسئلة</button>
+      <button class="tab-btn active" data-tab="quests" type="button">🎮 المهمات</button>
+      <button class="tab-btn" data-tab="growth" type="button">📊 التحليل</button>
+      <button class="tab-btn" data-tab="why" type="button">📖 لماذا؟</button>
+      <button class="tab-btn" data-tab="wall" type="button">💬 الحائط</button>
     </nav>
 
-    <div id="tab-challenge" class="tab-pane">
+    <div id="tab-quests" class="tab-pane">
 
     <!-- Today's log -->
     <section class="card">
@@ -396,6 +401,10 @@
       </div>
     </section>
 
+    </div><!-- /tab-quests -->
+
+    <div id="tab-why" class="tab-pane" hidden>
+
     <!-- Why these habits -->
     <section class="card">
       <span class="card-label label-yellow">② لماذا هذه المهمات؟ · The Why</span>
@@ -403,6 +412,10 @@
       <div class="card-desc">لكل مهمة أصل من الوحي وسند من الدراسات الحديثة</div>
       <div class="why-grid" id="why-grid"></div>
     </section>
+
+    </div><!-- /tab-why -->
+
+    <div id="tab-growth" class="tab-pane" hidden>
 
     <!-- Leaderboard -->
     <section class="card">
@@ -437,7 +450,7 @@
       </div>
     </section>
 
-    </div><!-- /tab-challenge -->
+    </div><!-- /tab-growth -->
 
     <div id="tab-wall" class="tab-pane" hidden>
 
@@ -468,6 +481,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=2"></script>
+<script type="module" src="app.js?v=3"></script>
 </body>
 </html>

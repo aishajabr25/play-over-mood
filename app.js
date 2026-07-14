@@ -592,16 +592,18 @@ function updateAdminUi() {
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
+const TAB_IDS = ['quests', 'growth', 'why', 'wall'];
 function showTab(name) {
-  const isWall = name === 'wall';
-  document.getElementById('tab-challenge').hidden = isWall;
-  document.getElementById('tab-wall').hidden = !isWall;
-  document.getElementById('tab-btn-challenge').classList.toggle('active', !isWall);
-  document.getElementById('tab-btn-wall').classList.toggle('active', isWall);
+  TAB_IDS.forEach(t => {
+    const pane = document.getElementById(`tab-${t}`);
+    if (pane) pane.hidden = t !== name;
+  });
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name));
   window.scrollTo({ top: 0 });
 }
-document.getElementById('tab-btn-challenge').addEventListener('click', () => showTab('challenge'));
-document.getElementById('tab-btn-wall').addEventListener('click', () => showTab('wall'));
+document.querySelectorAll('.tab-btn').forEach(b =>
+  b.addEventListener('click', () => showTab(b.dataset.tab)));
 
 /* ── Init ────────────────────────────────────────────────── */
 renderWorldsLegend();
