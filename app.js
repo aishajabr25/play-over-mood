@@ -591,6 +591,18 @@ function updateAdminUi() {
   if (isAdmin) renderPosts();
 }
 
+/* ── Tabs ────────────────────────────────────────────────── */
+function showTab(name) {
+  const isWall = name === 'wall';
+  document.getElementById('tab-challenge').hidden = isWall;
+  document.getElementById('tab-wall').hidden = !isWall;
+  document.getElementById('tab-btn-challenge').classList.toggle('active', !isWall);
+  document.getElementById('tab-btn-wall').classList.toggle('active', isWall);
+  window.scrollTo({ top: 0 });
+}
+document.getElementById('tab-btn-challenge').addEventListener('click', () => showTab('challenge'));
+document.getElementById('tab-btn-wall').addEventListener('click', () => showTab('wall'));
+
 /* ── Init ────────────────────────────────────────────────── */
 renderWorldsLegend();
 renderWhy();
