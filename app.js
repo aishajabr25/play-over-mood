@@ -654,7 +654,12 @@ function updateAdminUi() {
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
-const TAB_IDS = ['quests', 'growth', 'why', 'wall'];
+const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules'];
+
+/* تبويب القواعد يعرض نفس صندوق قواعد صفحة الدخول (مصدر واحد) */
+const rulesClone = document.getElementById('rules-clone');
+const gateRules  = document.querySelector('#nick-gate .game-rules');
+if (rulesClone && gateRules) rulesClone.appendChild(gateRules.cloneNode(true));
 function showTab(name) {
   TAB_IDS.forEach(t => {
     const pane = document.getElementById(`tab-${t}`);
