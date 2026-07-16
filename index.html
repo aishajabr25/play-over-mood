@@ -95,6 +95,23 @@
       color: var(--text); outline: none; width: min(280px, 100%); text-align: center;
     }
     .nick-form input:focus { border-color: var(--blue-main); box-shadow: 0 0 0 4px rgba(167,216,240,.22); }
+    .game-rules {
+      text-align: right; background: var(--blue-light);
+      border: 1px solid var(--line); border-radius: 20px;
+      padding: 18px 20px; max-width: 480px;
+      margin: 0 auto 22px;
+    }
+    .rules-title {
+      font-size: .8rem; font-weight: 800; color: var(--deep);
+      letter-spacing: .04em; margin-bottom: 10px; text-align: center;
+    }
+    .rule-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: .85rem; line-height: 1.8; color: var(--text);
+      padding: 5px 0;
+    }
+    .rule-row + .rule-row { border-top: 1px dashed rgba(74,57,45,.1); }
+    .rule-emoji { flex-shrink: 0; }
     .btn {
       border: 0; border-radius: 999px; padding: 11px 22px;
       font-weight: 800; cursor: pointer; font-size: .95rem;
@@ -366,6 +383,18 @@
   <section class="card nick-card" id="nick-gate" hidden>
     <h2>أهلًا بكِ في التحدي ☀️</h2>
     <p>اختاري اسمًا أو لقبًا يظهر في لوحة المتصدرات. لا حسابات ولا كلمات مرور — فقط اسمك وتبدئين.</p>
+
+    <div class="game-rules">
+      <div class="rules-title">قواعد اللعبة · How We Play</div>
+      <div class="rule-row"><span class="rule-emoji">🤍</span><span>ما في «لازم» هنا — أنجزي ما تقدرين عليه اليوم، حتى لو مهمة واحدة.</span></div>
+      <div class="rule-row"><span class="rule-emoji">☀️</span><span>ما نطارد الكمال ولا نطارد شيئًا — نراكم أشياء صغيرة، لأن التغيير الحقيقي يحدث بالأشياء الصغيرة.</span></div>
+      <div class="rule-row"><span class="rule-emoji">⭐</span><span>كل مهمة = نقطة، والمهمة الأسطورية الذهبية = نقطتان لأنها تفتح بقية المهمات.</span></div>
+      <div class="rule-row"><span class="rule-emoji">🔁</span><span>كل يوم أحد تبدأ جولة جديدة — واليوم الفائت لا يمسح شيئًا، أكملي من حيث أنتِ.</span></div>
+      <div class="rule-row"><span class="rule-emoji">🤙</span><span>نلعب معًا لا ضد بعض — اللوحة للتشجيع، والحائط لأسئلتك وخواطرك.</span></div>
+    </div>
+
+    <!-- TODO: رسالة "لماذا نلعب على مزاجنا؟" — بانتظار نص عائشة -->
+
     <form class="nick-form" id="nick-form">
       <input type="text" id="nick-input" placeholder="اسمك أو لقبك…" maxlength="20" autocomplete="off" />
       <button type="submit" class="btn btn-primary">ابدئي التحدي</button>
