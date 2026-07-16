@@ -311,7 +311,7 @@ document.getElementById('change-nick').addEventListener('click', () => {
 /* ── Today's quests ──────────────────────────────────────── */
 async function toggleHabit(h) {
   if (!me || !nickname) return;
-  if (preLaunch()) { showToast(`نبدأ معًا يوم ${START_LABEL_AR} 🤍`); return; }
+  if (preLaunch() && !isAdmin) { showToast(`نبدأ معًا يوم ${START_LABEL_AR} 🤍`); return; }
   myToday[h.id] = !myToday[h.id];
   renderHabits();          // تحديث فوري
   renderLeaderboard();
@@ -340,7 +340,7 @@ function renderHabits() {
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  if (preLaunch()) {
+  if (preLaunch() && !isAdmin) {
     const days = Math.ceil((START_DATE - new Date()) / 86400000);
     const daysTxt = days === 1 ? 'يوم واحد ويبدأ اللعب'
                   : days === 2 ? 'يومان ويبدأ اللعب'
@@ -430,7 +430,7 @@ function renderLeaderboard() {
   const list = document.getElementById('lb-list');
   if (!list) return;
 
-  if (preLaunch()) {
+  if (preLaunch() && !isAdmin) {
     list.innerHTML = `
       <div class="prelaunch-note">
         انضمّت حتى الآن <strong id="wl-count">${waitlistCount ?? '…'}</strong> لاعبة 🤍
