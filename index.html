@@ -119,6 +119,24 @@
       font-size: .88rem; line-height: 1.9;
     }
     .launch-box strong { color: var(--deep); }
+    .why-letter {
+      text-align: right; background: var(--green-light);
+      border: 1px solid rgba(200,216,193,.9); border-radius: 20px;
+      max-width: 480px; margin: 0 auto 22px; padding: 0;
+      overflow: hidden;
+    }
+    .why-letter summary {
+      cursor: pointer; list-style: none;
+      padding: 14px 20px; text-align: center;
+      font-size: .88rem; font-weight: 800; color: var(--deep);
+    }
+    .why-letter summary::-webkit-details-marker { display: none; }
+    .why-letter summary::after { content: ' ▾'; opacity: .5; }
+    .why-letter[open] summary::after { content: ' ▴'; }
+    .letter-body { padding: 0 20px 18px; }
+    .letter-body p { font-size: .87rem; line-height: 1.95; margin-bottom: 10px; }
+    .letter-body strong { color: var(--deep); }
+    .letter-aside { color: rgba(74,57,45,.5); font-size: .8rem; text-align: center; }
     .countdown-card {
       grid-column: 1 / -1; text-align: center;
       background: var(--yellow-light); border: 1px solid rgba(220,200,130,.55);
@@ -421,7 +439,18 @@
       <div class="rule-row"><span class="rule-emoji">🤙</span><span>نلعب معًا لا ضد بعض — اللوحة للتشجيع، والحائط لأسئلتك وخواطرك.</span></div>
     </div>
 
-    <!-- TODO: رسالة "لماذا نلعب على مزاجنا؟" — بانتظار نص عائشة -->
+    <details class="why-letter">
+      <summary>لماذا «نلعب على مزاجنا»؟ رسالة مني 🤍</summary>
+      <div class="letter-body">
+        <p>كنت شخصًا جديًا جدًا. ما كنت أعرف المرح، وكنت أتعب.</p>
+        <p>إلى أن بدأت ألعب مع أولاد إخوتي — لا أسمح لهم باللعب ولا أراقبهم وهم يلعبون… <strong>ألعب معهم فعلًا.</strong> ومن يومها صرت أرى الحياة لعبة.</p>
+        <p>تخيلي أنك لابسة نظارة VR: داخل اللعبة ننغمس ونلعب. سهلة؟ نلعب. صعبة؟ نلعب. وفي اللعبة عندنا أدوات وقدرات ومكافآت… وفيها خسارات وصعوبات أيضًا. لكننا نعرف أننا نلعب، فنكمل.</p>
+        <p class="letter-aside">(طيب، عمّقناها 🙂)</p>
+        <p>كل شيء في هذه الحياة يهيئنا للحياة القادمة. ولو أخذناها بجديّة كاملة، صار من المستحيل أن نعيشها. أن نفعل الأشياء ونمرح أكثر — هذا يجعلنا نعيشها كما صُمّمت أن تُعاش. لسنا ضد الجدية… لكن هذه طريقتي في رؤية الحياة.</p>
+        <p>وفي اللعبة لاعبات في مستويات أعلى مني، أتعلّم منهن وأطلب مساعدتهن. ولاعبات في مستويات مررت بها أنا، فأمدّ لهن يدي.</p>
+        <p><strong>لهذا اخترنا «نلعب على مزاجنا»:</strong> لنقول إننا نستطيع أن نمرح ونغيّر حياتنا في الوقت نفسه ☀️</p>
+      </div>
+    </details>
 
     <form class="nick-form" id="nick-form">
       <input type="text" id="nick-input" placeholder="اسمك أو لقبك…" maxlength="20" autocomplete="off" />
