@@ -296,7 +296,8 @@ document.getElementById('nick-form').addEventListener('submit', async e => {
   if (!val || !me) return;
   nickname = val;
   localStorage.setItem('pom_nick', nickname);
-  setDoc(doc(db, 'users', me.uid), { nick: nickname, updated: Date.now() }, { merge: true }).catch(() => {});
+  /* المشرفة لا تُحسب في قائمة الانتظار */
+  if (!isAdmin) setDoc(doc(db, 'users', me.uid), { nick: nickname, updated: Date.now() }, { merge: true }).catch(() => {});
   showToast(`أهلًا ${nickname} — بدأ تحديك ☀️`);
   initGate();
 });
@@ -442,12 +443,12 @@ function renderLeaderboard() {
 
   const wk = dateKey(weekStart(new Date()));
   const byUid = {};
-  rangeDocs.filter(r => r.week === wk).forEach(r => {
+  publicDocs().filter(r => r.week === wk).forEach(r => {
     if (!byUid[r.uid]) byUid[r.uid] = { nick: r.nick, pts: 0, latest: '' };
     byUid[r.uid].pts += r.points || 0;
     if (r.date > byUid[r.uid].latest) { byUid[r.uid].latest = r.date; byUid[r.uid].nick = r.nick; }
   });
-  if (me && nickname && !byUid[me.uid]) byUid[me.uid] = { nick: nickname, pts: 0 };
+  if (me && nickname && !isAdmin && !byUid[me.uid]) byUid[me.uid] = { nick: nickname, pts: 0 };
 
   const rows = Object.entries(byUid)
     .map(([uid, r]) => ({ uid, name: r.nick, pts: r.pts, me: me && uid === me.uid }))
@@ -479,6 +480,9 @@ const DAY_LETTERS = ['أحد', 'اثن', 'ثلا', 'أرب', 'خمي', 'جمع',
 
 function countHabits(habits) { return Object.values(habits || {}).filter(Boolean).length; }
 
+/* سجلات اللعبة العامة — المشرفة تجرّب بحرية دون أن تظهر في الأرقام */
+function publicDocs() { return rangeDocs.filter(r => r.nick !== ADMIN_NAME); }
+
 function renderBars(elId, counts, maxOverride, mine) {
   const el = document.getElementById(elId);
   el.innerHTML = '';
@@ -499,7 +503,7 @@ function renderCharts() {
 
   renderBars('community-chart', days.map(d => {
     const k = dateKey(d);
-    const v = rangeDocs.filter(r => r.date === k).reduce((s, r) => s + countHabits(r.habits), 0);
+    const v = publicDocs().filter(r => r.date === k).reduce((s, r) => s + countHabits(r.habits), 0);
     return { v, label: DAY_LETTERS[d.getDay()] };
   }), null, false);
 
@@ -512,8 +516,8 @@ function renderCharts() {
 
   /* نسبة كل مهمة هذا الأسبوع */
   const wk = dateKey(weekStart(new Date()));
-  const weekDocs = rangeDocs.filter(r => r.week === wk);
-  const participants = Math.max(1, new Set(weekDocs.map(r => r.uid).concat(me ? [me.uid] : [])).size);
+  const weekDocs = publicDocs().filter(r => r.week === wk);
+  const participants = Math.max(1, new Set(weekDocs.map(r => r.uid).concat(me && !isAdmin ? [me.uid] : [])).size);
   const dayCount = Math.floor((new Date() - weekStart(new Date())) / 86400000) + 1;
   const possible = Math.max(1, dayCount * participants);
 
