@@ -112,6 +112,28 @@
     }
     .rule-row + .rule-row { border-top: 1px dashed rgba(74,57,45,.1); }
     .rule-emoji { flex-shrink: 0; }
+    .launch-box {
+      background: var(--yellow-light); border: 1px solid rgba(220,200,130,.55);
+      border-radius: 20px; padding: 16px 20px;
+      max-width: 480px; margin: 0 auto 18px;
+      font-size: .88rem; line-height: 1.9;
+    }
+    .launch-box strong { color: var(--deep); }
+    .countdown-card {
+      grid-column: 1 / -1; text-align: center;
+      background: var(--yellow-light); border: 1px solid rgba(220,200,130,.55);
+      border-radius: 20px; padding: 28px 20px;
+    }
+    .countdown-num {
+      font-size: 3.2rem; font-weight: 800; color: var(--deep);
+      line-height: 1.1; letter-spacing: -.04em;
+    }
+    .countdown-card p { font-size: .82rem; color: rgba(74,57,45,.65); margin-top: 8px; }
+    .prelaunch-note {
+      background: var(--blue-light); border: 1px solid var(--line);
+      border-radius: 16px; padding: 14px 16px; text-align: center;
+      font-size: .88rem;
+    }
     .btn {
       border: 0; border-radius: 999px; padding: 11px 22px;
       font-weight: 800; cursor: pointer; font-size: .95rem;
@@ -384,12 +406,18 @@
     <h2>أهلًا بكِ في التحدي ☀️</h2>
     <p>اختاري اسمًا أو لقبًا يظهر في لوحة المتصدرات. لا حسابات ولا كلمات مرور — فقط اسمك وتبدئين.</p>
 
+    <div class="launch-box">
+      🗓️ <strong>نبدأ معًا يوم الثلاثاء ٢١ يوليو.</strong><br>
+      اخترنا هذا اليوم عشوائيًا — عن قصد. التاريخ نفسه ليس المهم، هذا اليوم سيصبح مهمًا لأننا اخترنا أن نبدأ فيه شيئًا جديدًا 🤍<br>
+      سجّلي اسمك الآن واحجزي مكانك، وتابعيني على إنستغرام — كل يوم حتى الثلاثاء أشرح شيئًا عن اللعبة، حتى تدخلي وأنتِ عارفة كل شيء.
+    </div>
+
     <div class="game-rules">
       <div class="rules-title">قواعد اللعبة · How We Play</div>
       <div class="rule-row"><span class="rule-emoji">🤍</span><span>ما في «لازم» هنا — أنجزي ما تقدرين عليه اليوم، حتى لو مهمة واحدة.</span></div>
       <div class="rule-row"><span class="rule-emoji">☀️</span><span>ما نطارد الكمال ولا نطارد شيئًا — نراكم أشياء صغيرة، لأن التغيير الحقيقي يحدث بالأشياء الصغيرة.</span></div>
       <div class="rule-row"><span class="rule-emoji">⭐</span><span>كل مهمة = نقطة، والمهمة الأسطورية الذهبية = نقطتان لأنها تفتح بقية المهمات.</span></div>
-      <div class="rule-row"><span class="rule-emoji">🔁</span><span>كل يوم أحد تبدأ جولة جديدة — واليوم الفائت لا يمسح شيئًا، أكملي من حيث أنتِ.</span></div>
+      <div class="rule-row"><span class="rule-emoji">🔁</span><span>كل يوم ثلاثاء تبدأ جولة جديدة — واليوم الفائت لا يمسح شيئًا، أكملي من حيث أنتِ.</span></div>
       <div class="rule-row"><span class="rule-emoji">🤙</span><span>نلعب معًا لا ضد بعض — اللوحة للتشجيع، والحائط لأسئلتك وخواطرك.</span></div>
     </div>
 
@@ -450,7 +478,7 @@
     <section class="card">
       <span class="card-label label-green">③ لوحة المتصدرات · Leaderboard</span>
       <div class="card-title">جولة هذا الأسبوع</div>
-      <div class="card-desc">تُصفَّر اللوحة كل يوم أحد — فرصة جديدة كل أسبوع لكل منضمّة جديدة</div>
+      <div class="card-desc">تُصفَّر اللوحة كل يوم ثلاثاء — فرصة جديدة كل أسبوع لكل منضمّة جديدة</div>
       <span class="round-chip" id="round-chip"></span>
       <div class="lb-list" id="lb-list"></div>
     </section>
@@ -510,6 +538,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=4"></script>
+<script type="module" src="app.js?v=5"></script>
 </body>
 </html>

@@ -11,6 +11,7 @@ import {
 import {
   getFirestore, doc, setDoc, getDoc, collection, query, where,
   onSnapshot, addDoc, updateDoc, deleteDoc, orderBy, limit,
+  getCountFromServer,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -24,6 +25,11 @@ const firebaseConfig = {
 
 const ADMIN_EMAIL = 'aisha.jabr.3aosh@gmail.com';
 const ADMIN_NAME  = 'عَئْوش؛';
+
+/* انطلاقة اللعبة — الثلاثاء ٢١ يوليو ٢٠٢٦. قبلها: تسجيل فقط (قائمة انتظار) */
+const START_DATE     = new Date('2026-07-21T00:00:00');
+const START_LABEL_AR = 'الثلاثاء ٢١ يوليو';
+function preLaunch() { return new Date() < START_DATE; }
 
 const fb   = initializeApp(firebaseConfig);
 const auth = getAuth(fb);
@@ -111,7 +117,7 @@ function dateKey(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
 function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return d; }
 function weekStart(d) {
   const x = new Date(d);
-  x.setDate(x.getDate() - x.getDay()); /* بداية الأسبوع = الأحد */
+  x.setDate(x.getDate() - ((x.getDay() - 2 + 7) % 7)); /* بداية الأسبوع = الثلاثاء (يوم الانطلاقة) */
   x.setHours(0, 0, 0, 0);
   return x;
 }
@@ -304,6 +310,7 @@ document.getElementById('change-nick').addEventListener('click', () => {
 /* ── Today's quests ──────────────────────────────────────── */
 async function toggleHabit(h) {
   if (!me || !nickname) return;
+  if (preLaunch()) { showToast(`نبدأ معًا يوم ${START_LABEL_AR} 🤍`); return; }
   myToday[h.id] = !myToday[h.id];
   renderHabits();          // تحديث فوري
   renderLeaderboard();
@@ -329,6 +336,26 @@ function renderHabits() {
   if (!grid) return;
   grid.innerHTML = '';
 
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  if (preLaunch()) {
+    const days = Math.ceil((START_DATE - new Date()) / 86400000);
+    const daysTxt = days === 1 ? 'يوم واحد ويبدأ اللعب'
+                  : days === 2 ? 'يومان ويبدأ اللعب'
+                  : `${days} أيام ويبدأ اللعب`;
+    grid.innerHTML = `
+      <div class="countdown-card">
+        <div class="countdown-num">${days}</div>
+        <div style="font-weight:800;color:var(--deep)">${daysTxt} 🤙</div>
+        <p>مكانك محجوز ☀️ ننطلق معًا يوم ${START_LABEL_AR} — وكل يوم حتى الانطلاقة أشرح شيئًا عن اللعبة على إنستغرام.
+        وإذا خطر لك سؤال قبل البداية، الحائط 💬 مفتوح من الآن.</p>
+      </div>`;
+    document.getElementById('today-bar-fill').style.width = '0%';
+    document.getElementById('today-count').textContent = 'قريبًا ☀️';
+    return;
+  }
+
   HABITS.forEach(h => {
     const el = document.createElement('div');
     el.className = 'habit-check' + (myToday[h.id] ? ' done' : '') + (h.legendary ? ' legendary' : '');
@@ -349,9 +376,6 @@ function renderHabits() {
   document.getElementById('today-bar-fill').style.width = `${(done / HABITS.length) * 100}%`;
   document.getElementById('today-count').textContent =
     done === HABITS.length ? `${done}/${HABITS.length} — يوم كامل! 💖` : `${done}/${HABITS.length}`;
-
-  document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 /* ── Worlds legend + why cards (ثابتة) ───────────────────── */
@@ -391,9 +415,30 @@ function renderWhy() {
 }
 
 /* ── Leaderboard (جولة الأسبوع) ──────────────────────────── */
+let waitlistCount = null;
+async function loadWaitlistCount() {
+  try {
+    const snap = await getCountFromServer(collection(db, 'users'));
+    waitlistCount = snap.data().count;
+    const el = document.getElementById('wl-count');
+    if (el) el.textContent = waitlistCount;
+  } catch { /* غير حرج */ }
+}
+
 function renderLeaderboard() {
   const list = document.getElementById('lb-list');
   if (!list) return;
+
+  if (preLaunch()) {
+    list.innerHTML = `
+      <div class="prelaunch-note">
+        انضمّت حتى الآن <strong id="wl-count">${waitlistCount ?? '…'}</strong> لاعبة 🤍
+        الجولة الأولى تبدأ ${START_LABEL_AR} — واللوحة فارغة لأن الجميع يبدأ من نفس الخط.
+      </div>`;
+    document.getElementById('round-chip').textContent = `⏳ الجولة الأولى تبدأ ${START_LABEL_AR}`;
+    if (waitlistCount === null) loadWaitlistCount();
+    return;
+  }
 
   const wk = dateKey(weekStart(new Date()));
   const byUid = {};
