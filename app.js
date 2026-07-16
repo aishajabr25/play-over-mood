@@ -29,12 +29,13 @@ const fb   = initializeApp(firebaseConfig);
 const auth = getAuth(fb);
 const db   = getFirestore(fb);
 
-/* ── العوالم والمهمات ────────────────────────────────────── */
+/* ── العناصر والمهمات ────────────────────────────────────── */
 const WORLDS = {
-  physical:  { ar: 'العالم الجسدي',  en: 'Physical',  color: '#7BBBD4' },
-  spiritual: { ar: 'العالم الروحي',  en: 'Spiritual', color: '#5EAF7A' },
-  mental:    { ar: 'العالم الذهني',  en: 'Mental',    color: '#8B7CC0' },
-  emotional: { ar: 'العالم العاطفي', en: 'Emotional', color: '#D4819C' },
+  physical:  { ar: 'العنصر الجسدي',  en: 'Physical',      color: '#7BBBD4' },
+  spiritual: { ar: 'العنصر الروحي',  en: 'Spiritual',     color: '#5EAF7A' },
+  mental:    { ar: 'العنصر الذهني',  en: 'Mental',        color: '#8B7CC0' },
+  emotional: { ar: 'العنصر العاطفي', en: 'Emotional',     color: '#D4819C' },
+  env:       { ar: 'العنصر البيئي',  en: 'Environmental', color: '#4EA89E' },
 };
 const LEGENDARY_COLOR = '#CFA94A';
 
@@ -86,6 +87,18 @@ const HABITS = [
     quote: '﴿وَيَتَفَكَّرُونَ فِي خَلْقِ السَّمَاوَاتِ وَالْأَرْضِ﴾',
     source: 'سورة آل عمران — ١٩١',
     science: 'مشي ٩٠ دقيقة في الطبيعة قلّل الاجترار الذهني ونشاط مناطق القلق في الدماغ (دراسة ستانفورد Bratman 2015)، ودراسة هارفارد الممتدة ٨٥ عامًا وجدت أن دفء العلاقات هو أقوى مؤشر للسعادة والصحة على المدى الطويل.'
+  },
+  {
+    id: 'tidy', ar: 'ترتيب مساحتك', en: 'Tidy Your Space', emoji: '🧺', world: 'env',
+    quote: '«الطُّهور شطر الإيمان»',
+    source: 'رواه مسلم',
+    science: 'دراسة UCLA (Saxbe & Repetti 2010) وجدت أن من يصفن بيوتهن بالفوضى ترتفع لديهن مستويات الكورتيزول (هرمون التوتر) خلال اليوم، وأبحاث برينستون (2011) أظهرت أن الفوضى البصرية تنافس انتباهك وتقلل تركيزك.'
+  },
+  {
+    id: 'goodtrace', ar: 'أثر طيب في محيطك', en: 'Leave a Good Trace', emoji: '🕊️', world: 'env',
+    quote: '«وإماطة الأذى عن الطريق صدقة»',
+    source: 'متفق عليه',
+    science: 'أفعال الخير الصغيرة تفيد فاعلها قبل محيطها: تجارب عشوائية (منها Dunn وزملاؤها 2008 في مجلة Science) وجدت أن إنفاق الوقت أو المال لأجل الآخرين يرفع سعادة الفاعل قياسًا أكثر من صرفه على النفس.'
   },
 ];
 
