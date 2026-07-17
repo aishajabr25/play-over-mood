@@ -78,7 +78,7 @@ const HABITS = [
   },
   {
     id: 'asr', ar: 'صلاة العصر على وقتها', en: 'Asr On Time', emoji: '🌇', worlds: ['spiritual'], legendary: true, pts: 3,
-    quote: '«من فاتته صلاةُ العصر فكأنما وُتِرَ أهلَه ومالَه»',
+    quote: '«الذي تفوته صلاةُ العصر كأنما وُتِرَ أهلَه ومالَه»',
     source: 'متفق عليه',
     science: 'وقت العصر يصادف «هبوط ما بعد الظهيرة» الموثق في أبحاث الساعة البيولوجية — انخفاض طبيعي في اليقظة والتركيز. وقفة العصر استراحة استعادة تأتي في اللحظة التي يحتاجها دماغك فعلًا.'
   },
@@ -168,8 +168,8 @@ const HABITS = [
   },
   {
     id: 'enjoy', ar: 'أسوي شي أنا أحبه', en: 'Do Something I Love', emoji: '🎨', worlds: ['emotional'],
-    quote: '«دَعْهُ يا عمر، فوالذي نفسي بيده، لَكلامُه أشدُّ عليهم من وقع النَّبْل»',
-    source: 'قاله ﷺ لعمر عن شعر عبد الله بن رواحة — رواه الترمذي والنسائي',
+    quote: '«خلِّ عنه يا عمر، فَلَهِيَ أسرعُ فيهم من نَضْح النَّبْل»',
+    source: 'قاله ﷺ لعمر عن شعر عبد الله بن رواحة — رواه الترمذي والنسائي وصححه الألباني',
     science: 'دراسة واسعة على أكثر من ٩٣ ألف شخص في ١٦ دولة (Fancourt وزملاؤها، Nature Medicine 2023) وجدت أن ممارسة هواية ترتبط بانخفاض أعراض الاكتئاب وارتفاع الرضا عن الحياة والشعور بالمعنى — في كل الدول والثقافات المدروسة.'
   },
   {
@@ -186,8 +186,8 @@ const HABITS = [
   },
   {
     id: 'solitude', ar: 'راحة / خلوة مع نفسي', en: 'Rest / Time with Myself', emoji: '🕯️', worlds: ['spiritual', 'emotional'],
-    quote: '«إنّ لبدنك عليك حقًا»',
-    source: 'متفق عليه',
+    quote: '«فإنّ لجسدك عليك حقًا»',
+    source: 'رواه البخاري',
     science: 'مراجعات منهجية لأبحاث «الاستشفاء النفسي» (Sonnentag وزملاؤها) تجد أن الانفصال الحقيقي عن المشاغل — ولو لفترة قصيرة يوميًا — يتنبأ قياسًا بانخفاض الإرهاق وتحسّن المزاج والنوم. الراحة ليست مكافأة بعد الإنجاز، هي جزء من الإنجاز.'
   },
 ];
@@ -219,7 +219,7 @@ const EN_WHY = {
   tahajjud:   { quote: '“And in part of the night, pray tahajjud as an extra offering; it may be that your Lord will raise you to a praised station.”', source: 'Quran 17:79 · And ﷺ said: “The best prayer after the obligatory one is the night prayer” (Muslim)', science: 'Large systematic reviews (including Koenig’s work at Duke across hundreds of studies) consistently link regular religious practice with lower depression and anxiety and higher life satisfaction. The quiet solitude of night is the deepest form of that presence — the game’s highest quest: 5 points.' },
   fajrprayer: { quote: '“Whoever prays the two cool-hour prayers (Fajr and Asr) enters Paradise.”', source: 'Agreed upon', science: 'A fixed daily wake time is the anchor of your body clock. UK Biobank analysis of 60,000+ people (Windred et al., Sleep 2024) found sleep–wake regularity predicts longevity even more strongly than sleep duration.' },
   dhuhr:      { quote: '“If there were a river at your door in which you bathed five times a day, would any dirt remain?”', source: 'Agreed upon — the five prayers wash away sins', science: 'A midday reset: a meta-analysis of 22 trials (Albulescu et al., PLOS ONE 2022) found short regular breaks measurably raise vigor and lower fatigue — Dhuhr cuts your longest stretch of effort before tiredness piles up.' },
-  asr:        { quote: '“Whoever misses the Asr prayer, it is as if he lost his family and his wealth.”', source: 'Agreed upon', science: 'Asr lands on the well-documented afternoon dip in alertness from circadian research — a restorative pause exactly when your brain needs it.' },
+  asr:        { quote: '“The one who misses the Asr prayer, it is as if he were bereft of his family and his wealth.”', source: 'Agreed upon', science: 'Asr lands on the well-documented afternoon dip in alertness from circadian research — a restorative pause exactly when your brain needs it.' },
   maghrib:    { quote: '“My nation remains upon goodness as long as they do not delay Maghrib until the stars crowd together.”', source: 'Abu Dawud', science: 'Fixed transition rituals between day and evening help the mind detach from the day’s demands — recovery research (Sonnentag et al.) finds such detachment among the strongest predictors of calmer evenings and better sleep.' },
   isha:       { quote: '“And whoever prays Isha in congregation, it is as if he stood half the night in prayer.”', source: 'Muslim', science: 'Closing the day at a fixed time paves the way for early sleep — sleep research finds a consistent evening routine among the strongest factors for falling asleep faster and deeper.' },
   duha:       { quote: '“…and two rak‘ahs of Duha suffice for all of it.”', source: 'Muslim — on the daily charity due from every joint of the body', science: 'A brief mid-morning pause combines two studied benefits: daylight exposure that stabilizes the body clock and mood, and the measurable recharge of short regular breaks (PLOS ONE 2022 meta-analysis).' },
@@ -234,10 +234,10 @@ const EN_WHY = {
   recharge:   { quote: '“…and they reflect upon the creation of the heavens and the earth.”', source: 'Quran 3:191', science: 'A meta-analysis of 143 studies (Twohig-Bennett & Jones 2018) linked greenspace exposure to lower cortisol, blood pressure and heart rate; and Harvard’s 85-year study found warm relationships the strongest predictor of long-term happiness and health.' },
   explore:    { quote: '“Say: travel through the land.”', source: 'Quran 29:20', science: 'GPS-tracking research (Heller et al., Nature Neuroscience 2020) found that variety in the places we visit daily correlates with more positive mood, tied to the brain’s novelty-and-reward circuits — new experiences feed the brain.' },
   tidy:       { quote: '“Indeed, Allah is beautiful and loves beauty.”', source: 'Muslim', science: 'A UCLA study (Saxbe & Repetti 2010) found people who describe their homes as cluttered show elevated cortisol through the day; Princeton research (2011) showed visual clutter competes for your attention and lowers focus.' },
-  enjoy:      { quote: '“Leave him, O Umar — by Him in Whose Hand is my soul, his words strike them harder than arrows.”', source: 'Said ﷺ about Ibn Rawaha’s poetry — Tirmidhi & Nasa’i', science: 'A study of 93,000+ people across 16 countries (Fancourt et al., Nature Medicine 2023) found having a hobby associated with fewer depressive symptoms and higher life satisfaction and sense of meaning — in every country studied.' },
+  enjoy:      { quote: '“Let him be, O Umar — for it moves through them faster than a shower of arrows.”', source: 'Said ﷺ about Ibn Rawaha’s poetry — Tirmidhi & Nasa’i, authenticated by al-Albani', science: 'A study of 93,000+ people across 16 countries (Fancourt et al., Nature Medicine 2023) found having a hobby associated with fewer depressive symptoms and higher life satisfaction and sense of meaning — in every country studied.' },
   goodtrace:  { quote: '“And removing something harmful from the path is charity.”', source: 'Agreed upon', science: 'A meta-analysis of 27 experiments (Curry et al. 2018) found small acts of kindness measurably raise the giver’s happiness — goodness returns to its doer first, and the surroundings win too.' },
   sharehobby: { quote: '“Allah is in the aid of His servant as long as the servant is in the aid of his brother.”', source: 'Muslim', science: 'Sharing what you love combines two studied effects: giving boosts the giver’s wellbeing (Curry’s 2018 meta-analysis), and social bonds predict health and longevity (Holt-Lunstad’s 148-study meta-analysis) — your hobby becomes a bridge.' },
-  solitude:   { quote: '“Indeed, your body has a right over you.”', source: 'Agreed upon', science: 'Systematic reviews of psychological recovery research (Sonnentag et al.) find that genuine daily detachment — even briefly — measurably predicts less exhaustion and better mood and sleep. Rest is not a reward after the work; it is part of the work.' },
+  solitude:   { quote: '“Indeed, your body has a right over you.”', source: 'Bukhari', science: 'Systematic reviews of psychological recovery research (Sonnentag et al.) find that genuine daily detachment — even briefly — measurably predicts less exhaustion and better mood and sleep. Rest is not a reward after the work; it is part of the work.' },
 };
 
 function whyOf(h) {
