@@ -779,6 +779,7 @@ async function renderAdminDash() {
   const todayTotal = Math.max(0, agg.dayCounts?.[myDayKey()] || 0);
 
   let html = `
+    <div style="margin-bottom:14px"><button class="btn btn-deep btn-small" id="export-json">⬇️ تنزيل نسخة احتياطية (JSON)</button></div>
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-num">${usersC}</div><div class="stat-lbl">إجمالي المسجلات</div></div>
       <div class="stat-box"><div class="stat-num">${playersC}</div><div class="stat-lbl">لعبن هذا الأسبوع</div></div>
@@ -802,6 +803,7 @@ async function renderAdminDash() {
     <div class="card-title" style="font-size:1rem">البريد الإلكتروني <button class="post-delete" id="copy-mails" style="margin-inline-start:8px">نسخ الكل</button></div>
     <div id="mails-list" class="card-desc">جارٍ التحميل…</div>`;
   el.innerHTML = html;
+  document.getElementById('export-json').addEventListener('click', exportBackup);
 
   try {
     const snap = await getDocs(collection(db, 'mails'));
@@ -820,6 +822,43 @@ async function renderAdminDash() {
   } catch {
     const listEl = document.getElementById('mails-list');
     if (listEl) listEl.textContent = 'تعذر تحميل البريد';
+  }
+}
+
+/* ── نسخة احتياطية كاملة (JSON) — للمشرفة فقط ────────────── */
+async function exportBackup() {
+  if (!isAdmin) return;
+  showToast('جارٍ تجهيز النسخة الاحتياطية…');
+  const grab = async path => {
+    const s = await getDocs(collection(db, path));
+    const o = {};
+    s.forEach(d => { o[d.id] = d.data(); });
+    return o;
+  };
+  try {
+    const out = { exportedAt: new Date().toISOString(), users: {}, mails: {}, posts: {}, days: {}, weeks: {}, stats: {} };
+    out.users = await grab('users');
+    out.mails = await grab('mails');
+    out.posts = await grab('posts');
+    out.days  = await grab('days');
+    /* كل الأسابيع منذ الانطلاقة + الأسبوع الحالي والسابق */
+    const wks = new Set([thisWeekKey(), prevWeekKey()]);
+    for (let d = new Date(START_DATE); d <= new Date(); d.setDate(d.getDate() + 7)) {
+      wks.add(dateKey(weekStart(d)));
+    }
+    for (const wk of wks) {
+      out.weeks[wk] = await grab(`weeks/${wk}/players`);
+      out.stats[wk] = await grab(`stats/${wk}/shards`);
+    }
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `play-over-mood-backup-${dateKey(new Date())}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('نُزّلت النسخة الاحتياطية 🤍');
+  } catch {
+    showToast('تعذر التصدير — تأكدي من تحديث قاعدة days');
   }
 }
 
