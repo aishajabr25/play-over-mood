@@ -53,69 +53,124 @@ const LEGENDARY_COLOR = '#CFA94A';
 
 const HABITS = [
   {
-    id: 'sleep', ar: 'النوم المبكر', en: 'Early Sleep', emoji: '🌙', world: 'physical', legendary: true,
+    id: 'sleep', ar: 'النوم المبكر', en: 'Early Sleep', emoji: '🌙', worlds: ['physical'], legendary: true, pts: 2,
     quote: '«كان رسول الله ﷺ يكره النوم قبل العشاء والحديث بعدها»',
     source: 'متفق عليه',
     science: 'النوم هو المهمة التي تفتح بقية المهمات: يضبط هرمونات الجوع والشبع (اللبتين والجريلين) والكورتيزول والمزاج، ويحدد قدرتك على الاستيقاظ للفجر وطاقتك للحركة وتركيزك للتعلم. لذلك هي مهمة أسطورية بنقطتين.'
   },
   {
-    id: 'fajr', ar: 'الاستيقاظ بعد الفجر', en: 'Awake after Fajr', emoji: '🌅', world: 'spiritual',
+    id: 'tahajjud', ar: 'صلاة التهجد', en: 'Tahajjud (Night Prayer)', emoji: '🌌', worlds: ['spiritual'], legendary: true, pts: 5,
+    quote: '﴿وَمِنَ اللَّيْلِ فَتَهَجَّدْ بِهِ نَافِلَةً لَكَ عَسَىٰ أَن يَبْعَثَكَ رَبُّكَ مَقَامًا مَّحْمُودًا﴾',
+    source: 'سورة الإسراء — ٧٩ · وقال ﷺ: «أفضل الصلاة بعد الفريضة صلاةُ الليل» (رواه مسلم)',
+    science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke على مئات الدراسات) تجد ارتباطًا ثابتًا بين الممارسة الدينية المنتظمة وانخفاض الاكتئاب والقلق وتحسّن الرضا عن الحياة. وخلوة الليل الهادئة بلا مشتتات هي أعمق أشكال هذا الحضور — لذلك هي أعلى مهمة في اللعبة: ٥ نقاط.'
+  },
+  {
+    id: 'fajrprayer', ar: 'صلاة الفجر على وقتها', en: 'Fajr On Time', emoji: '🕌', worlds: ['spiritual'], legendary: true, pts: 3,
+    quote: '«من صلى البَرْدَين دخل الجنة»',
+    source: 'متفق عليه — والبَرْدان: الفجر والعصر',
+    science: 'الاستيقاظ في وقت ثابت يوميًا هو «مرساة» الساعة البيولوجية. تحليل بيانات UK Biobank على أكثر من ٦٠ ألف شخص (Windred وزملاؤه، مجلة Sleep 2024) وجد أن انتظام مواعيد النوم والاستيقاظ يتنبأ بطول العمر أقوى من عدد ساعات النوم نفسها.'
+  },
+  {
+    id: 'prayers', ar: 'باقي الصلوات على وقتها', en: 'The Other Prayers On Time', emoji: '🧎🏻‍♀️', worlds: ['spiritual'], legendary: true, pts: 3,
+    quote: '﴿إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَّوْقُوتًا﴾',
+    source: 'سورة النساء — ١٠٣',
+    science: 'الصلوات الموزعة على اليوم هي «فواصل استعادة» مثالية: تحليل شامل لـ٢٢ تجربة (Albulescu وزملاؤه، PLOS ONE 2022) وجد أن الاستراحات القصيرة المنتظمة خلال اليوم ترفع النشاط وتخفض الإرهاق قياسًا — والصلاة تجمع الفاصل الحركي والذهني والروحي معًا.'
+  },
+  {
+    id: 'duha', ar: 'صلاة الضحى', en: 'Duha Prayer', emoji: '☀️', worlds: ['spiritual'], legendary: true, pts: 3,
+    quote: '«ويُجزئ من ذلك ركعتان يركعهما من الضحى»',
+    source: 'رواه مسلم — عن صدقة تلزم كل مفصل من الإنسان كل يوم',
+    science: 'وقفة قصيرة في ضحى النهار تجمع فائدتين مدروستين: التعرض لضوء النهار الذي يثبّت الساعة البيولوجية والمزاج، وأثر الفواصل القصيرة المنتظمة في استعادة التركيز والنشاط (التحليل الشامل PLOS ONE 2022).'
+  },
+  {
+    id: 'athkar', ar: 'أذكار الصباح (مش لازم كلها)', en: 'Morning Adhkar', emoji: '📿', worlds: ['spiritual'],
+    quote: '﴿أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾',
+    source: 'سورة الرعد — ٢٨',
+    science: 'تحليلات شاملة لتدخلات الامتنان والذكر التأملي (منها Cregg & Cheavens 2021 على ٢٥ تجربة) تجد أثرًا ثابتًا — وإن كان هادئًا — في خفض أعراض القلق والاكتئاب وتحسين المزاج. البركة في الاستمرار لا في الكمية، ولهذا: مش لازم كلها.'
+  },
+  {
+    id: 'fajr', ar: 'الاستيقاظ بعد الفجر (التعرض للشمس)', en: 'Awake after Fajr + Sunlight', emoji: '🌅', worlds: ['physical', 'emotional', 'mental'],
     quote: '«اللهم بارك لأمتي في بكورها»',
     source: 'رواه أبو داود والترمذي — دعاء النبي ﷺ بالبركة في أول النهار',
     science: 'التعرض لضوء الصباح الباكر يضبط الساعة البيولوجية ويحسّن النوم والمزاج. دراسة على أكثر من ٨٠٠ ألف شخص (JAMA Psychiatry 2021) وجدت أن تقديم منتصف النوم ساعة واحدة يرتبط بانخفاض خطر الاكتئاب بنحو ٢٣٪.'
   },
   {
-    id: 'athkar', ar: 'أذكار الصباح والمساء', en: 'Morning & Evening Adhkar', emoji: '📿', world: 'spiritual',
-    quote: '﴿أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾',
-    source: 'سورة الرعد — ٢٨',
-    science: 'ممارسات الذكر والامتنان اليومية المنتظمة ترتبط في الدراسات بانخفاض التوتر وتحسّن الرضا عن الحياة، ومنها تجارب Emmons & McCullough (2003) على أثر الامتنان اليومي في المزاج وجودة النوم.'
-  },
-  {
-    id: 'quran', ar: 'قراءة وِرد من القرآن', en: 'Daily Quran Portion', emoji: '📖', world: 'spiritual',
+    id: 'quran', ar: 'قراءة وِرد من القرآن', en: 'Daily Quran Portion', emoji: '📖', worlds: ['spiritual'],
     quote: '«اقرؤوا القرآن فإنه يأتي يوم القيامة شفيعًا لأصحابه»',
     source: 'رواه مسلم',
     science: 'دراسات على تلاوة القرآن والاستماع إليه سجّلت انخفاضًا في مؤشرات القلق وضغط الدم ومعدل ضربات القلب. كما أن القراءة اليومية المنتظمة عمومًا ترتبط ببناء احتياطي معرفي يحمي الذاكرة مع التقدم في العمر.'
   },
   {
-    id: 'walk', ar: 'المشي / حركة يومية', en: 'Daily Walk / Movement', emoji: '🚶🏻‍♀️', world: 'physical',
+    id: 'walk', ar: 'المشي / حركة يومية', en: 'Daily Walk / Movement', emoji: '🚶🏻‍♀️', worlds: ['physical'],
     quote: '«المؤمن القوي خير وأحب إلى الله من المؤمن الضعيف»',
     source: 'رواه مسلم',
     science: 'تحليل شامل في The Lancet Public Health (2022) على أكثر من ٤٧ ألف شخص وجد أن ٧ آلاف خطوة يوميًا تقريبًا ترتبط بانخفاض خطر الوفاة المبكرة بنسبة تصل إلى ٥٠٪ مقارنة بقلة الحركة.'
   },
   {
-    id: 'water', ar: 'شرب الماء الكافي', en: 'Enough Water', emoji: '💧', world: 'physical',
+    id: 'water', ar: 'شرب الماء الكافي', en: 'Enough Water', emoji: '💧', worlds: ['physical'],
     quote: '﴿وَجَعَلْنَا مِنَ الْمَاءِ كُلَّ شَيْءٍ حَيٍّ﴾',
     source: 'سورة الأنبياء — ٣٠',
-    science: 'حتى الجفاف الخفيف (١–٢٪ من وزن الجسم) يؤثر في الدراسات المضبوطة على التركيز والمزاج ويزيد الصداع والتعب، وشرب الماء الكافي يحسّن اليقظة والأداء الذهني خلال اليوم.'
+    science: 'حتى الجفاف الخفيف (١–٢٪ من وزن الجسم) يؤثر في التجارب المضبوطة المتكررة على التركيز والمزاج ويزيد الصداع والتعب، وشرب الماء الكافي يحسّن اليقظة والأداء الذهني خلال اليوم.'
   },
   {
-    id: 'learn', ar: 'تعلّم شيء جديد', en: 'Learn Something New', emoji: '🎧', world: 'mental',
+    id: 'learn', ar: 'أتعلم شي جديد', en: 'Learn Something New', emoji: '🎧', worlds: ['mental'],
     quote: '«من سلك طريقًا يلتمس فيه علمًا سهّل الله له به طريقًا إلى الجنة»',
     source: 'رواه مسلم',
-    science: 'تعلّم مهارات ومعارف جديدة يبني «الاحتياطي المعرفي» — مرونة عصبية تحمي الذاكرة والدماغ مع التقدم في العمر، وترتبط في الدراسات بتأخر ظهور أعراض التدهور المعرفي.'
+    science: 'تعلّم مهارات ومعارف جديدة يبني «الاحتياطي المعرفي» — مرونة عصبية تحمي الذاكرة والدماغ مع التقدم في العمر، وترتبط في مراجعات منهجية واسعة بتأخر ظهور أعراض التدهور المعرفي.'
   },
   {
-    id: 'recharge', ar: 'جلسة في الطبيعة أو مع صديقة', en: 'Nature or a Friend', emoji: '🌳', world: 'emotional',
+    id: 'meet', ar: 'تعرّف على شخص جديد', en: 'Meet Someone New', emoji: '🤝', worlds: ['env'],
+    quote: '﴿وَجَعَلْنَاكُمْ شُعُوبًا وَقَبَائِلَ لِتَعَارَفُوا﴾',
+    source: 'سورة الحجرات — ١٣',
+    science: 'أشهر تحليل شامل في الموضوع (Holt-Lunstad وزملاؤها 2010، على ١٤٨ دراسة وأكثر من ٣٠٠ ألف شخص) وجد أن العلاقات الاجتماعية القوية ترتبط بزيادة فرص البقاء على قيد الحياة بنحو ٥٠٪ — أثر يوازي ترك التدخين ويفوق أثر السمنة.'
+  },
+  {
+    id: 'recharge', ar: 'جلسة في الطبيعة / مع صديقة', en: 'Nature or a Friend', emoji: '🌳', worlds: ['emotional'],
     quote: '﴿وَيَتَفَكَّرُونَ فِي خَلْقِ السَّمَاوَاتِ وَالْأَرْضِ﴾',
     source: 'سورة آل عمران — ١٩١',
-    science: 'مشي ٩٠ دقيقة في الطبيعة قلّل الاجترار الذهني ونشاط مناطق القلق في الدماغ (دراسة ستانفورد Bratman 2015)، ودراسة هارفارد الممتدة ٨٥ عامًا وجدت أن دفء العلاقات هو أقوى مؤشر للسعادة والصحة على المدى الطويل.'
+    science: 'تحليل شامل لـ١٤٣ دراسة (Twohig-Bennett & Jones 2018) وجد أن التعرض للمساحات الخضراء يرتبط بانخفاض الكورتيزول وضغط الدم ومعدل ضربات القلب. ودراسة هارفارد الممتدة ٨٥ عامًا وجدت أن دفء العلاقات هو أقوى مؤشر للسعادة والصحة على المدى الطويل.'
   },
   {
-    id: 'tidy', ar: 'ترتيب مساحتك', en: 'Tidy Your Space', emoji: '🧺', world: 'env',
+    id: 'explore', ar: 'زيارة مكان جديد', en: 'Visit a New Place', emoji: '🧭', worlds: ['env'],
+    quote: '﴿قُلْ سِيرُوا فِي الْأَرْضِ﴾',
+    source: 'سورة العنكبوت — ٢٠',
+    science: 'دراسة تتبّع يومي بالموقع الجغرافي (Heller وزملاؤها، Nature Neuroscience 2020) وجدت أن تنوّع الأماكن التي نزورها يوميًا يرتبط بمزاج أكثر إيجابية، ويرتبط ذلك بنشاط دوائر الدماغ المسؤولة عن الجِدّة والمكافأة — التجارب الجديدة غذاء للدماغ.'
+  },
+  {
+    id: 'tidy', ar: 'ترتيب مساحتك', en: 'Tidy Your Space', emoji: '🧺', worlds: ['env'],
     quote: '«الطُّهور شطر الإيمان»',
     source: 'رواه مسلم',
     science: 'دراسة UCLA (Saxbe & Repetti 2010) وجدت أن من يصفن بيوتهن بالفوضى ترتفع لديهن مستويات الكورتيزول (هرمون التوتر) خلال اليوم، وأبحاث برينستون (2011) أظهرت أن الفوضى البصرية تنافس انتباهك وتقلل تركيزك.'
   },
   {
-    id: 'goodtrace', ar: 'أثر طيب في محيطك', en: 'Leave a Good Trace', emoji: '🕊️', world: 'env',
+    id: 'enjoy', ar: 'أسوي شي أنا أحبه', en: 'Do Something I Love', emoji: '🎨', worlds: ['emotional'],
+    quote: '﴿قُلْ بِفَضْلِ اللَّهِ وَبِرَحْمَتِهِ فَبِذَٰلِكَ فَلْيَفْرَحُوا﴾',
+    source: 'سورة يونس — ٥٨',
+    science: 'دراسة واسعة على أكثر من ٩٣ ألف شخص في ١٦ دولة (Fancourt وزملاؤها، Nature Medicine 2023) وجدت أن ممارسة هواية ترتبط بانخفاض أعراض الاكتئاب وارتفاع الرضا عن الحياة والشعور بالمعنى — في كل الدول والثقافات المدروسة.'
+  },
+  {
+    id: 'goodtrace', ar: 'أثر طيب في محيطك', en: 'Leave a Good Trace', emoji: '🕊️', worlds: ['env'],
     quote: '«وإماطة الأذى عن الطريق صدقة»',
     source: 'متفق عليه',
-    science: 'أفعال الخير الصغيرة تفيد فاعلها قبل محيطها: تجارب عشوائية (منها Dunn وزملاؤها 2008 في مجلة Science) وجدت أن إنفاق الوقت أو المال لأجل الآخرين يرفع سعادة الفاعل قياسًا أكثر من صرفه على النفس.'
+    science: 'تحليل شامل لـ٢٧ تجربة (Curry وزملاؤه 2018) وجد أن أفعال اللطف الصغيرة ترفع سعادة فاعلها قياسًا — الخير يعود على صاحبه أولًا، والمحيط يكسب معه.'
+  },
+  {
+    id: 'sharehobby', ar: 'أشارك الآخرين هواياتي', en: 'Share My Hobbies', emoji: '🪁', worlds: ['emotional'],
+    quote: '«والله في عَون العبد ما كان العبد في عَون أخيه»',
+    source: 'رواه مسلم',
+    science: 'مشاركة ما تحبين تجمع أثرين مدروسين معًا: أثر العطاء في سعادة المعطي (تحليل Curry الشامل 2018)، وأثر الروابط الاجتماعية في الصحة وطول العمر (تحليل Holt-Lunstad على ١٤٨ دراسة) — هوايتك تصبح جسرًا.'
+  },
+  {
+    id: 'solitude', ar: 'راحة / خلوة', en: 'Rest / Solitude', emoji: '🕯️', worlds: ['spiritual', 'emotional'],
+    quote: '«إنّ لبدنك عليك حقًا»',
+    source: 'متفق عليه',
+    science: 'مراجعات منهجية لأبحاث «الاستشفاء النفسي» (Sonnentag وزملاؤها) تجد أن الانفصال الحقيقي عن المشاغل — ولو لفترة قصيرة يوميًا — يتنبأ قياسًا بانخفاض الإرهاق وتحسّن المزاج والنوم. الراحة ليست مكافأة بعد الإنجاز، هي جزء من الإنجاز.'
   },
 ];
 
-function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.world].color; }
-function habitPoints(h) { return h.legendary ? 2 : 1; }
+function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.worlds[0]].color; }
+function habitPoints(h) { return h.pts || 1; }
+const AR_NUMS = { 2: '٢', 3: '٣', 5: '٥' };
 
 /* ── Helpers ─────────────────────────────────────────────── */
 const pad = n => String(n).padStart(2, '0');
@@ -469,7 +524,7 @@ function renderHabits() {
     el.className = 'habit-check' + (t[h.id] ? ' done' : '') + (h.legendary ? ' legendary' : '');
     el.style.borderInlineStartColor = habitColor(h);
     el.innerHTML = `
-      ${h.legendary ? '<span class="legendary-badge">⭐ أسطورية ×٢</span>' : ''}
+      ${h.legendary ? `<span class="legendary-badge">⭐ أسطورية ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}</span>` : ''}
       <div class="habit-box">✓</div>
       <div class="habit-check-info">
         <div class="habit-check-ar">${h.ar}</div>
@@ -509,9 +564,11 @@ function renderWhy() {
     const el = document.createElement('div');
     el.className = 'why-card';
     el.style.borderTopColor = habitColor(h);
-    const worldTag = h.legendary
-      ? `<span class="why-world" style="background:${LEGENDARY_COLOR}">مهمة أسطورية ⭐ ×٢</span>`
-      : `<span class="why-world" style="background:${WORLDS[h.world].color}">${WORLDS[h.world].ar}</span>`;
+    const legendaryTag = h.legendary
+      ? `<span class="why-world" style="background:${LEGENDARY_COLOR}">مهمة أسطورية ⭐ ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}</span> `
+      : '';
+    const worldTag = legendaryTag + h.worlds.map(w =>
+      `<span class="why-world" style="background:${WORLDS[w].color}">${WORLDS[w].ar}</span>`).join(' ');
     el.innerHTML = `
       <h3>${h.emoji} ${h.ar}</h3>
       ${worldTag}
