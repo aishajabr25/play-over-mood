@@ -907,28 +907,35 @@ function timeAgo(ts) {
   return days === 1 ? 'قبل يوم' : days === 2 ? 'قبل يومين' : `قبل ${days} أيام`;
 }
 
-/* حوار رد بهوية اللعبة بدل نافذة النظام */
-function replyModal(postText) {
+/* حوار رد بهوية اللعبة بدل نافذة النظام — يدعم كتابة الرد وتعديله */
+function replyModal(postText, initial) {
+  const editing = !!initial;
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
       <div class="modal-card">
-        <div class="modal-title">${isEN() ? '↩ Your reply' : '↩ ردك على المنشور'}</div>
+        <div class="modal-title">${editing
+          ? (isEN() ? '✏️ Edit your reply' : '✏️ تعديل ردك')
+          : (isEN() ? '↩ Your reply' : '↩ ردك على المنشور')}</div>
         <div class="modal-quote">${esc(postText)}</div>
         <textarea maxlength="500" placeholder="${isEN() ? 'Write your reply…' : 'اكتبي ردك هنا…'}"></textarea>
+        ${editing ? `<div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:6px;">${isEN() ? 'Tip: empty the text and save to remove the reply.' : 'ملاحظة: امسحي النص واحفظي لإزالة الرد نهائيًا.'}</div>` : ''}
         <div class="modal-actions">
-          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Post reply' : 'نشر الرد'}</button>
+          <button class="btn btn-deep btn-small" data-act="send">${editing
+            ? (isEN() ? 'Save changes' : 'حفظ التعديل')
+            : (isEN() ? 'Post reply' : 'نشر الرد')}</button>
           <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
         </div>
       </div>`;
     const ta = overlay.querySelector('textarea');
+    ta.value = initial || '';
     const close = val => { overlay.remove(); resolve(val); };
-    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close(ta.value.trim() || null));
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close(ta.value.trim()));
     overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
     ta.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) close(ta.value.trim() || null);
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) close(ta.value.trim());
       if (e.key === 'Escape') close(null);
     });
     document.body.appendChild(overlay);
@@ -952,7 +959,7 @@ function renderPosts() {
         ${p.admin ? `<span class="post-badge">${isEN() ? 'Host' : 'المشرفة'}</span>` : ''}
         ${p.pinned ? `<span class="post-badge" style="background:var(--accent);color:var(--text)">${isEN() ? '📌 Pinned' : '📌 مثبّت'}</span>` : ''}
         <span class="post-time">${timeAgo(p.time)}</span>
-        ${isAdmin ? `<button class="post-delete" data-act="reply" data-id="${p.id}">↩ رد</button>
+        ${isAdmin ? `<button class="post-delete" data-act="reply" data-id="${p.id}">${p.reply ? '✏️ تعديل الرد' : '↩ رد'}</button>
                      <button class="post-delete" data-act="pin" data-id="${p.id}">${p.pinned ? 'إلغاء التثبيت' : '📌 تثبيت'}</button>` : ''}
         ${canDelete ? `<button class="post-delete" data-act="del" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
       </div>
@@ -981,10 +988,15 @@ function renderPosts() {
           await updateDoc(doc(db, 'posts', id), { pinned: !p.pinned });
         } else if (act === 'reply') {
           const p = postsCache.find(x => x.id === id);
-          const text = await replyModal(p ? p.text : '');
-          if (text) {
+          const existing = p && p.reply ? p.reply.text : '';
+          const text = await replyModal(p ? p.text : '', existing);
+          if (text === null) return; /* إلغاء */
+          if (text === '' && existing) {
+            await updateDoc(doc(db, 'posts', id), { reply: null });
+            showToast('أُزيل الرد');
+          } else if (text) {
             await updateDoc(doc(db, 'posts', id), { reply: { author: ADMIN_NAME, text } });
-            showToast('نُشر ردك 🤍');
+            showToast(existing ? 'عُدّل ردك 🤍' : 'نُشر ردك 🤍');
           }
         }
       } catch {
