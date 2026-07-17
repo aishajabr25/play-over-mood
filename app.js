@@ -1,6 +1,10 @@
 /* ════════════════════════════════════════════════════════════
    نلعب على مزاجنا — Live version (Firebase Firestore)
-   البيانات مشتركة بين الجميع. المشرفة تسجّل دخولها بحساب Google.
+   نسخة "قابلة للتوسع": كل زائرة تقرأ ملخصات صغيرة بدل سجلات الجميع.
+   - days/{uid_date}: يوم اللاعبة (تقرؤه صاحبته فقط)
+   - weeks/{week}/players/{uid}: مجموع نقاط الأسبوع (للمتصدرات)
+   - stats/{week}/shards/{n}: عدّادات المجتمع (للرسوم)
+   - users/{uid}: الاسم فقط · mails/{uid}: البريد (تقرؤه المشرفة فقط)
    ════════════════════════════════════════════════════════════ */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -9,9 +13,9 @@ import {
   GoogleAuthProvider, signInWithPopup, signOut, linkWithPopup,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  getFirestore, doc, setDoc, getDoc, collection, query, where,
+  getFirestore, doc, setDoc, getDoc, getDocs, collection, query,
   onSnapshot, addDoc, updateDoc, deleteDoc, orderBy, limit,
-  getCountFromServer,
+  getCountFromServer, increment,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -30,6 +34,8 @@ const ADMIN_NAME  = 'عَئْوش؛';
 const START_DATE     = new Date('2026-07-21T00:00:00');
 const START_LABEL_AR = 'الثلاثاء ٢١ يوليو';
 function preLaunch() { return new Date() < START_DATE; }
+
+const STATS_SHARDS = 10;   /* توزيع كتابة العدّادات لتجنب التزاحم */
 
 const fb   = initializeApp(firebaseConfig);
 const auth = getAuth(fb);
@@ -121,6 +127,8 @@ function weekStart(d) {
   x.setHours(0, 0, 0, 0);
   return x;
 }
+function thisWeekKey() { return dateKey(weekStart(new Date())); }
+function prevWeekKey() { const d = weekStart(new Date()); d.setDate(d.getDate() - 7); return dateKey(d); }
 const esc = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
@@ -134,13 +142,54 @@ function showToast(msg) {
 }
 
 /* ── State ───────────────────────────────────────────────── */
-let me        = null;   // Firebase user (anonymous أو Google للمشرفة)
+let me        = null;   // Firebase user (anonymous أو Google)
 let isAdmin   = false;
 let nickname  = localStorage.getItem('pom_nick') || null;
-let myToday   = {};     // مهمات اليوم (نسخة محلية فورية)
-let rangeDocs = [];     // سجلات آخر ١٤ يومًا للجميع
+let myDays    = {};     // مرآة محلية لأيامي: date -> {habits, points}
+let lbRows    = [];     // أفضل ٣٠ لاعبة هذا الأسبوع
+let statsWeeks = {};    // week -> {dayCounts, habitCounts}
+let statsFetchedAt = 0;
+let participantsCount = null;
+let participantsFetchedAt = 0;
 let postsCache = [];
 let listenersStarted = false;
+
+function myDayKey() { return dateKey(new Date()); }
+function myToday() { return (myDays[myDayKey()] || {}).habits || {}; }
+function dayPoints(habits) {
+  return HABITS.reduce((s, h) => s + (habits[h.id] ? habitPoints(h) : 0), 0);
+}
+function myWeekPoints() {
+  const wk = thisWeekKey();
+  return Object.entries(myDays)
+    .filter(([date]) => dateKey(weekStart(new Date(date + 'T12:00:00'))) === wk)
+    .reduce((s, [, d]) => s + (d.points || 0), 0);
+}
+
+/* المرآة المحلية — تقلل القراءات: نقرأ أيامنا من الجهاز لا من الخادم */
+function daysLsKey() { return `pom_days_${me?.uid || 'anon'}`; }
+function loadMyDaysLocal() {
+  try { myDays = JSON.parse(localStorage.getItem(daysLsKey())) || {}; }
+  catch { myDays = {}; }
+}
+function saveMyDaysLocal() {
+  /* لا نحتفظ بأكثر من ٣٠ يومًا محليًا */
+  const cutoff = dateKey(daysAgo(30));
+  Object.keys(myDays).forEach(k => { if (k < cutoff) delete myDays[k]; });
+  localStorage.setItem(daysLsKey(), JSON.stringify(myDays));
+}
+async function fetchMyDaysFromServer() {
+  /* عند جهاز جديد/تخزين ممسوح: ١٤ قراءة مباشرة لمرة واحدة */
+  const gets = [];
+  for (let i = 0; i < 14; i++) {
+    const k = dateKey(daysAgo(i));
+    gets.push(getDoc(doc(db, 'days', `${me.uid}_${k}`)).then(s => {
+      if (s.exists()) myDays[k] = { habits: s.data().habits || {}, points: s.data().points || 0 };
+    }).catch(() => {}));
+  }
+  await Promise.all(gets);
+  saveMyDaysLocal();
+}
 
 /* ── Auth ────────────────────────────────────────────────── */
 onAuthStateChanged(auth, async user => {
@@ -149,7 +198,6 @@ onAuthStateChanged(auth, async user => {
       showToast('تعذر الاتصال — تأكدي من تفعيل Anonymous في Firebase'));
     return;
   }
-  const switched = me && me.uid !== user.uid;
   me = user;
   isAdmin = !!user.email && user.email.toLowerCase() === ADMIN_EMAIL;
 
@@ -166,10 +214,10 @@ onAuthStateChanged(auth, async user => {
       showToast(`أهلًا بعودتك ${nickname} 💕`);
     }
   }
-  /* عند تبديل الحساب: أعيدي حساب مهمات اليوم من بيانات الحساب الجديد */
-  if (switched) {
-    const mine = rangeDocs.find(r => r.uid === me.uid && r.date === dateKey(new Date()));
-    myToday = mine ? { ...mine.habits } : {};
+
+  loadMyDaysLocal();
+  if (nickname && Object.keys(myDays).length === 0) {
+    await fetchMyDaysFromServer();
   }
 
   updateAdminUi();
@@ -203,7 +251,6 @@ async function linkGoogle() {
 }
 
 function updateSyncUi() {
-  /* زر "احفظي تقدمك" في سطر الترحيب */
   const row = document.querySelector('.hello-row');
   if (row) {
     let btn = document.getElementById('sync-btn');
@@ -228,7 +275,6 @@ function updateSyncUi() {
       btn.textContent = '✓ تقدمك محفوظ ويتبعك على أجهزتك 🤍';
     }
   }
-  /* زر الدخول على شاشة الاسم لمن ربطت حسابها سابقًا */
   const gate = document.getElementById('nick-gate');
   if (gate && !document.getElementById('gate-google')) {
     const g = document.createElement('button');
@@ -245,33 +291,60 @@ function updateSyncUi() {
   }
 }
 
-/* ── Live listeners ──────────────────────────────────────── */
+/* ── Live listeners (خفيفة: أفضل ٣٠ + آخر ٣٠ منشورًا فقط) ─── */
 function startListeners() {
   if (listenersStarted) return;
   listenersStarted = true;
 
-  const from = dateKey(daysAgo(13));
   onSnapshot(
-    query(collection(db, 'logs'), where('date', '>=', from)),
+    query(collection(db, `weeks/${thisWeekKey()}/players`), orderBy('points', 'desc'), limit(30)),
     snap => {
-      rangeDocs = snap.docs.map(d => d.data());
-      const mine = rangeDocs.find(r => r.uid === me.uid && r.date === dateKey(new Date()));
-      if (mine) myToday = { ...mine.habits };
-      renderHabits();
+      lbRows = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
       renderLeaderboard();
-      renderCharts();
     },
-    () => showToast('تعذر تحميل البيانات — تأكدي من إنشاء Firestore وقواعد الحماية')
+    () => showToast('تعذر تحميل اللوحة — تأكدي من قواعد الحماية المحدثة')
   );
 
   onSnapshot(
-    query(collection(db, 'posts'), orderBy('time', 'desc'), limit(100)),
+    query(collection(db, 'posts'), orderBy('time', 'desc'), limit(30)),
     snap => {
       postsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderPosts();
     },
     () => {}
   );
+
+  fetchStats();
+}
+
+/* ── عدّادات المجتمع (ملخصات صغيرة بدل سجلات الجميع) ─────── */
+async function fetchStats(force) {
+  if (!force && Date.now() - statsFetchedAt < 60000) return;
+  statsFetchedAt = Date.now();
+  const weeks = [thisWeekKey(), prevWeekKey()];
+  await Promise.all(weeks.map(async wk => {
+    try {
+      const snap = await getDocs(collection(db, `stats/${wk}/shards`));
+      const agg = { dayCounts: {}, habitCounts: {} };
+      snap.forEach(s => {
+        const d = s.data();
+        Object.entries(d.dayCounts || {}).forEach(([k, v]) => { agg.dayCounts[k] = (agg.dayCounts[k] || 0) + v; });
+        Object.entries(d.habitCounts || {}).forEach(([k, v]) => { agg.habitCounts[k] = (agg.habitCounts[k] || 0) + v; });
+      });
+      statsWeeks[wk] = agg;
+    } catch { /* قد لا توجد بعد */ }
+  }));
+  renderCharts();
+}
+
+async function fetchParticipants() {
+  if (Date.now() - participantsFetchedAt < 60000) return participantsCount;
+  participantsFetchedAt = Date.now();
+  try {
+    const snap = await getCountFromServer(collection(db, `weeks/${thisWeekKey()}/players`));
+    participantsCount = snap.data().count;
+  } catch { /* غير حرج */ }
+  return participantsCount;
 }
 
 /* ── Nickname gate ───────────────────────────────────────── */
@@ -297,8 +370,17 @@ document.getElementById('nick-form').addEventListener('submit', async e => {
   nickname = val;
   localStorage.setItem('pom_nick', nickname);
   /* المشرفة لا تُحسب في قائمة الانتظار */
-  if (!isAdmin) setDoc(doc(db, 'users', me.uid), { nick: nickname, updated: Date.now() }, { merge: true }).catch(() => {});
+  if (!isAdmin) {
+    setDoc(doc(db, 'users', me.uid), { nick: nickname, updated: Date.now() }, { merge: true }).catch(() => {});
+    /* البريد اختياري — يُحفظ في مجموعة تقرؤها المشرفة فقط */
+    const emailInput = document.getElementById('email-input');
+    const email = emailInput ? emailInput.value.trim() : '';
+    if (email) {
+      setDoc(doc(db, 'mails', me.uid), { email, nick: nickname, newsletter: true, updated: Date.now() }, { merge: true }).catch(() => {});
+    }
+  }
   showToast(`أهلًا ${nickname} — بدأ تحديك ☀️`);
+  loadMyDaysLocal();
   initGate();
 });
 
@@ -312,21 +394,45 @@ document.getElementById('change-nick').addEventListener('click', () => {
 async function toggleHabit(h) {
   if (!me || !nickname) return;
   if (preLaunch() && !isAdmin) { showToast(`نبدأ معًا يوم ${START_LABEL_AR} 🤍`); return; }
-  myToday[h.id] = !myToday[h.id];
-  renderHabits();          // تحديث فوري
+
+  const date = myDayKey();
+  const week = thisWeekKey();
+  const day = (myDays[date] = myDays[date] || { habits: {}, points: 0 });
+  day.habits[h.id] = !day.habits[h.id];
+  const delta = day.habits[h.id] ? 1 : -1;
+  day.points = dayPoints(day.habits);
+  saveMyDaysLocal();
+
+  renderHabits();
   renderLeaderboard();
-  if (myToday[h.id]) {
+  renderCharts();
+  if (day.habits[h.id]) {
     showToast(h.legendary
       ? `مهمة أسطورية! "${h.ar}" = نقطتان ⭐🤙`
       : `أحسنتِ! "${h.ar}" 🤙`);
   }
-  const date   = dateKey(new Date());
-  const week   = dateKey(weekStart(new Date()));
-  const points = HABITS.reduce((s, x) => s + (myToday[x.id] ? habitPoints(x) : 0), 0);
+
   try {
-    await setDoc(doc(db, 'logs', `${me.uid}_${date}`),
-      { uid: me.uid, nick: nickname, date, week, habits: myToday, points },
+    /* ١) يومي (خاص بي) */
+    await setDoc(doc(db, 'days', `${me.uid}_${date}`),
+      { uid: me.uid, nick: nickname, date, week, habits: day.habits, points: day.points },
       { merge: true });
+
+    if (!isAdmin) {
+      /* ٢) ملخص أسبوعي للوحة المتصدرات */
+      setDoc(doc(db, `weeks/${week}/players`, me.uid),
+        { nick: nickname, points: myWeekPoints(), updated: Date.now() },
+        { merge: true }).catch(() => {});
+      /* ٣) عدّادات المجتمع (موزعة على شظايا لتجنب التزاحم) */
+      const shard = Math.floor(Math.random() * STATS_SHARDS);
+      setDoc(doc(db, `stats/${week}/shards`, String(shard)),
+        { dayCounts: { [date]: increment(delta) }, habitCounts: { [h.id]: increment(delta) } },
+        { merge: true }).catch(() => {});
+      /* حدّثي النسخة المحلية للعدادات فورًا */
+      const agg = (statsWeeks[week] = statsWeeks[week] || { dayCounts: {}, habitCounts: {} });
+      agg.dayCounts[date]   = (agg.dayCounts[date]   || 0) + delta;
+      agg.habitCounts[h.id] = (agg.habitCounts[h.id] || 0) + delta;
+    }
   } catch {
     showToast('تعذر الحفظ — تحققي من الاتصال بالإنترنت');
   }
@@ -357,9 +463,10 @@ function renderHabits() {
     return;
   }
 
+  const t = myToday();
   HABITS.forEach(h => {
     const el = document.createElement('div');
-    el.className = 'habit-check' + (myToday[h.id] ? ' done' : '') + (h.legendary ? ' legendary' : '');
+    el.className = 'habit-check' + (t[h.id] ? ' done' : '') + (h.legendary ? ' legendary' : '');
     el.style.borderInlineStartColor = habitColor(h);
     el.innerHTML = `
       ${h.legendary ? '<span class="legendary-badge">⭐ أسطورية ×٢</span>' : ''}
@@ -373,7 +480,7 @@ function renderHabits() {
     grid.appendChild(el);
   });
 
-  const done = HABITS.filter(h => myToday[h.id]).length;
+  const done = HABITS.filter(h => t[h.id]).length;
   document.getElementById('today-bar-fill').style.width = `${(done / HABITS.length) * 100}%`;
   document.getElementById('today-count').textContent =
     done === HABITS.length ? `${done}/${HABITS.length} — يوم كامل! 💖` : `${done}/${HABITS.length}`;
@@ -441,19 +548,14 @@ function renderLeaderboard() {
     return;
   }
 
-  const wk = dateKey(weekStart(new Date()));
-  const byUid = {};
-  publicDocs().filter(r => r.week === wk).forEach(r => {
-    if (!byUid[r.uid]) byUid[r.uid] = { nick: r.nick, pts: 0, latest: '' };
-    byUid[r.uid].pts += r.points || 0;
-    if (r.date > byUid[r.uid].latest) { byUid[r.uid].latest = r.date; byUid[r.uid].nick = r.nick; }
-  });
-  if (me && nickname && !isAdmin && !byUid[me.uid]) byUid[me.uid] = { nick: nickname, pts: 0 };
-
-  const rows = Object.entries(byUid)
-    .map(([uid, r]) => ({ uid, name: r.nick, pts: r.pts, me: me && uid === me.uid }))
-    .sort((a, b) => b.pts - a.pts)
-    .slice(0, 30);
+  const rows = lbRows
+    .filter(r => r.nick !== ADMIN_NAME)
+    .map(r => ({ uid: r.uid, name: r.nick, pts: r.points || 0, me: me && r.uid === me.uid }));
+  /* أضيفي نفسي إن لم أكن ضمن أفضل ٣٠ (تقدير محلي) */
+  if (me && nickname && !isAdmin && !rows.find(r => r.uid === me.uid)) {
+    rows.push({ uid: me.uid, name: nickname, pts: myWeekPoints(), me: true });
+  }
+  rows.sort((a, b) => b.pts - a.pts);
 
   const max = Math.max(1, rows[0]?.pts || 0);
   list.innerHTML = '';
@@ -467,6 +569,9 @@ function renderLeaderboard() {
       <div class="lb-pts">${r.pts} نقطة</div>`;
     list.appendChild(el);
   });
+  if (rows.length === 0) {
+    list.innerHTML = '<div class="prelaunch-note">اللوحة فارغة بعد — كوني أول من يسجل نقطة اليوم ☀️</div>';
+  }
 
   const end = weekStart(new Date());
   end.setDate(end.getDate() + 7);
@@ -478,10 +583,11 @@ function renderLeaderboard() {
 /* ── Charts ──────────────────────────────────────────────── */
 const DAY_LETTERS = ['أحد', 'اثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
 
-function countHabits(habits) { return Object.values(habits || {}).filter(Boolean).length; }
-
-/* سجلات اللعبة العامة — المشرفة تجرّب بحرية دون أن تظهر في الأرقام */
-function publicDocs() { return rangeDocs.filter(r => r.nick !== ADMIN_NAME); }
+function communityCountOn(dateK) {
+  let total = 0;
+  Object.values(statsWeeks).forEach(agg => { total += agg.dayCounts?.[dateK] || 0; });
+  return Math.max(0, total);
+}
 
 function renderBars(elId, counts, maxOverride, mine) {
   const el = document.getElementById(elId);
@@ -497,34 +603,32 @@ function renderBars(elId, counts, maxOverride, mine) {
   });
 }
 
-function renderCharts() {
+async function renderCharts() {
   const days = [];
   for (let i = 13; i >= 0; i--) days.push(daysAgo(i));
 
-  renderBars('community-chart', days.map(d => {
-    const k = dateKey(d);
-    const v = publicDocs().filter(r => r.date === k).reduce((s, r) => s + countHabits(r.habits), 0);
-    return { v, label: DAY_LETTERS[d.getDay()] };
-  }), null, false);
+  renderBars('community-chart', days.map(d => ({
+    v: communityCountOn(dateKey(d)),
+    label: DAY_LETTERS[d.getDay()],
+  })), null, false);
 
   renderBars('personal-chart', days.map(d => {
-    const k = dateKey(d);
-    const r = rangeDocs.find(x => x.uid === me?.uid && x.date === k);
-    const today = k === dateKey(new Date());
-    return { v: today ? countHabits(myToday) : countHabits(r?.habits), label: DAY_LETTERS[d.getDay()] };
+    const day = myDays[dateKey(d)];
+    const v = day ? Object.values(day.habits || {}).filter(Boolean).length : 0;
+    return { v, label: DAY_LETTERS[d.getDay()] };
   }), HABITS.length, true);
 
   /* نسبة كل مهمة هذا الأسبوع */
-  const wk = dateKey(weekStart(new Date()));
-  const weekDocs = publicDocs().filter(r => r.week === wk);
-  const participants = Math.max(1, new Set(weekDocs.map(r => r.uid).concat(me && !isAdmin ? [me.uid] : [])).size);
+  const wk = thisWeekKey();
+  const agg = statsWeeks[wk] || { habitCounts: {} };
+  const participants = Math.max(1, (await fetchParticipants()) || 1);
   const dayCount = Math.floor((new Date() - weekStart(new Date())) / 86400000) + 1;
   const possible = Math.max(1, dayCount * participants);
 
   const list = document.getElementById('habit-chart');
   list.innerHTML = '';
   HABITS.forEach(h => {
-    const done = weekDocs.filter(r => r.habits?.[h.id]).length;
+    const done = Math.max(0, agg.habitCounts?.[h.id] || 0);
     const pct = Math.min(100, Math.round((done / possible) * 100));
     const el = document.createElement('div');
     el.className = 'hbar-item';
@@ -660,6 +764,7 @@ const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules'];
 const rulesClone = document.getElementById('rules-clone');
 const gateRules  = document.querySelector('#nick-gate .game-rules');
 if (rulesClone && gateRules) rulesClone.appendChild(gateRules.cloneNode(true));
+
 function showTab(name) {
   TAB_IDS.forEach(t => {
     const pane = document.getElementById(`tab-${t}`);
@@ -668,6 +773,7 @@ function showTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name));
   window.scrollTo({ top: 0 });
+  if (name === 'growth') fetchStats();   /* حدّثي الرسوم عند فتح التحليل */
 }
 document.querySelectorAll('.tab-btn').forEach(b =>
   b.addEventListener('click', () => showTab(b.dataset.tab)));

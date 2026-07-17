@@ -455,8 +455,10 @@
       </div>
     </details>
 
-    <form class="nick-form" id="nick-form">
+    <form class="nick-form" id="nick-form" style="flex-direction:column; align-items:center;">
       <input type="text" id="nick-input" placeholder="اسمك أو لقبك…" maxlength="20" autocomplete="off" />
+      <input type="email" id="email-input" placeholder="بريدك الإلكتروني (اختياري)" maxlength="80" autocomplete="email" />
+      <div style="font-size:.7rem; color:rgba(74,57,45,.5); max-width:300px;">البريد اختياري تمامًا — فقط إذا حبيتِ يوصلك جديد اللعبة والجولات القادمة 🤍 لن يظهر لأحد.</div>
       <button type="submit" class="btn btn-primary">ابدئي التحدي</button>
     </form>
   </section>
@@ -580,6 +582,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=8"></script>
+<script type="module" src="app.js?v=9"></script>
 </body>
 </html>
