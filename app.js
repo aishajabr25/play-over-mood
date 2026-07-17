@@ -754,11 +754,77 @@ function updateAdminUi() {
     });
   }
   btn.textContent = isAdmin ? `خروج المشرفة (${ADMIN_NAME})` : '⚙';
+  const dashBtn = document.getElementById('tab-btn-admin');
+  if (dashBtn) dashBtn.hidden = !isAdmin;
   if (isAdmin) renderPosts();
 }
 
+/* ── لوحة المشرفة (تظهر لها فقط) ─────────────────────────── */
+async function renderAdminDash() {
+  if (!isAdmin) return;
+  const el = document.getElementById('admin-stats');
+  if (!el) return;
+  el.innerHTML = '<div class="card-desc">جارٍ تحميل الأرقام…</div>';
+
+  const wk = thisWeekKey();
+  const countOf = path => getCountFromServer(collection(db, path))
+    .then(s => s.data().count).catch(() => '؟');
+
+  const [usersC, mailsC, postsC, playersC] = await Promise.all([
+    countOf('users'), countOf('mails'), countOf('posts'), countOf(`weeks/${wk}/players`),
+  ]);
+  await fetchStats(true);
+  const agg = statsWeeks[wk] || { habitCounts: {}, dayCounts: {} };
+  const weekTotal = Object.values(agg.dayCounts || {}).reduce((s, v) => s + Math.max(0, v), 0);
+  const todayTotal = Math.max(0, agg.dayCounts?.[myDayKey()] || 0);
+
+  let html = `
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num">${usersC}</div><div class="stat-lbl">إجمالي المسجلات</div></div>
+      <div class="stat-box"><div class="stat-num">${playersC}</div><div class="stat-lbl">لعبن هذا الأسبوع</div></div>
+      <div class="stat-box"><div class="stat-num">${todayTotal}</div><div class="stat-lbl">مهمات أُنجزت اليوم</div></div>
+      <div class="stat-box"><div class="stat-num">${weekTotal}</div><div class="stat-lbl">مهمات هذا الأسبوع</div></div>
+      <div class="stat-box"><div class="stat-num">${postsC}</div><div class="stat-lbl">منشورات الحائط</div></div>
+      <div class="stat-box"><div class="stat-num">${mailsC}</div><div class="stat-lbl">تركن بريدهن</div></div>
+    </div>
+    <div class="card-title" style="font-size:1rem">كل مهمة هذا الأسبوع</div>
+    <div class="hbar-list" style="margin-bottom:18px">`;
+  const maxHabit = Math.max(1, ...HABITS.map(h => Math.max(0, agg.habitCounts?.[h.id] || 0)));
+  HABITS.forEach(h => {
+    const n = Math.max(0, agg.habitCounts?.[h.id] || 0);
+    html += `
+      <div class="hbar-item">
+        <div class="hbar-top"><span class="hbar-name">${h.emoji} ${h.ar}</span><span class="hbar-pct">${n}</span></div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:${(n / maxHabit) * 100}%; background:${habitColor(h)}"></div></div>
+      </div>`;
+  });
+  html += `</div>
+    <div class="card-title" style="font-size:1rem">البريد الإلكتروني <button class="post-delete" id="copy-mails" style="margin-inline-start:8px">نسخ الكل</button></div>
+    <div id="mails-list" class="card-desc">جارٍ التحميل…</div>`;
+  el.innerHTML = html;
+
+  try {
+    const snap = await getDocs(collection(db, 'mails'));
+    const rows = snap.docs.map(d => d.data());
+    const listEl = document.getElementById('mails-list');
+    if (rows.length === 0) {
+      listEl.textContent = 'لا يوجد بريد بعد — الحقل اختياري عند التسجيل';
+    } else {
+      listEl.innerHTML = rows.map(r =>
+        `<div class="mail-row"><span>${esc(r.email)}</span><span style="color:rgba(74,57,45,.5)">${esc(r.nick || '')}</span></div>`).join('');
+      document.getElementById('copy-mails').addEventListener('click', async () => {
+        await navigator.clipboard.writeText(rows.map(r => r.email).join('\n')).catch(() => {});
+        showToast(`نُسخ ${rows.length} بريدًا 🤍`);
+      });
+    }
+  } catch {
+    const listEl = document.getElementById('mails-list');
+    if (listEl) listEl.textContent = 'تعذر تحميل البريد';
+  }
+}
+
 /* ── Tabs ────────────────────────────────────────────────── */
-const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules'];
+const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'admin'];
 
 /* تبويب القواعد يعرض نفس صندوق قواعد صفحة الدخول (مصدر واحد) */
 const rulesClone = document.getElementById('rules-clone');
@@ -774,6 +840,7 @@ function showTab(name) {
     b.classList.toggle('active', b.dataset.tab === name));
   window.scrollTo({ top: 0 });
   if (name === 'growth') fetchStats();   /* حدّثي الرسوم عند فتح التحليل */
+  if (name === 'admin') renderAdminDash();
 }
 document.querySelectorAll('.tab-btn').forEach(b =>
   b.addEventListener('click', () => showTab(b.dataset.tab)));

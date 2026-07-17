@@ -377,6 +377,22 @@
     .tab-pane[hidden] { display: none; }
     @media (max-width: 480px) {
       .tab-btn { padding: 8px 12px; font-size: .78rem; }
+      .tabs-bar { flex-wrap: wrap; border-radius: 24px; }
+    }
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px; margin-bottom: 18px;
+    }
+    .stat-box {
+      background: var(--blue-light); border: 1px solid var(--line);
+      border-radius: 16px; padding: 14px; text-align: center;
+    }
+    .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--deep); line-height: 1.2; }
+    .stat-lbl { font-size: .7rem; color: rgba(74,57,45,.6); }
+    .mail-row {
+      font-size: .78rem; padding: 6px 0;
+      border-bottom: 1px dashed rgba(74,57,45,.12);
+      display: flex; justify-content: space-between; gap: 10px; direction: ltr;
     }
 
     /* ── Toast ───────────────────────────────────────────── */
@@ -439,6 +455,7 @@
       <div class="rule-row"><span class="rule-emoji">🤙</span><span>نلعب معًا لا ضد بعض — اللوحة للتشجيع، والحائط لأسئلتك وخواطرك.</span></div>
       <div class="rule-row"><span class="rule-emoji">🌼</span><span>أكتب بصيغة المؤنث لأنها لغة هذه المساحة — والمنضمّون الرجال مرحّب بهم تمامًا، فالقواعد واللعب نفسها للجميع.</span></div>
       <div class="rule-row"><span class="rule-emoji">🫂</span><span>نحن مجتمع مسلم، والمحتوى مبنيّ على ذلك — وإن كنتِ على غير ديننا فأهلًا وسهلًا بك: هذه مساحة آمنة وداعمة للجميع.</span></div>
+      <div class="rule-row"><span class="rule-emoji">#️⃣</span><span>إذا شاركتِ لعبك على إنستغرام أو غيره، استخدمي وسمَينا حتى نجد بعضنا: <bdi dir="ltr">#playovermood</bdi> و <bdi dir="rtl">#نلعب_على_مزاجنا</bdi></span></div>
     </div>
 
     <details class="why-letter">
@@ -472,6 +489,7 @@
       <button class="tab-btn" data-tab="why" type="button">📖 لماذا؟</button>
       <button class="tab-btn" data-tab="wall" type="button">💬 الحائط</button>
       <button class="tab-btn" data-tab="rules" type="button">📜 القواعد</button>
+      <button class="tab-btn" data-tab="admin" id="tab-btn-admin" type="button" hidden>📈 لوحتي</button>
     </nav>
 
     <div id="tab-quests" class="tab-pane">
@@ -571,6 +589,15 @@
       </section>
     </div><!-- /tab-rules -->
 
+    <div id="tab-admin" class="tab-pane" hidden>
+      <section class="card">
+        <span class="card-label">📈 لوحة المشرفة · Admin Only</span>
+        <div class="card-title">أرقام اللعبة</div>
+        <div class="card-desc">تظهر لكِ فقط — لا يراها أي لاعبة</div>
+        <div id="admin-stats"></div>
+      </section>
+    </div><!-- /tab-admin -->
+
   </div>
 </main>
 
@@ -582,6 +609,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=9"></script>
+<script type="module" src="app.js?v=10"></script>
 </body>
 </html>
