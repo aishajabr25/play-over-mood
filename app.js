@@ -292,7 +292,7 @@ function applyEnglish() {
   if (nickInput) nickInput.placeholder = 'Your name or nickname…';
   const emailInput = document.getElementById('email-input');
   if (emailInput) emailInput.placeholder = 'Your email (optional)';
-  set('#nick-form div', 'Totally optional — only if you’d like news of future rounds 🤍 Never shown to anyone.');
+  set('#nick-form div', 'Totally optional — only for news of future rounds 🤍 Never shown to anyone, and it does not save your progress: progress is saved automatically on this device, and to carry it across devices link your Google account inside the game.');
   set('#nick-form button[type=submit]', 'Start Playing');
 
   setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '📈 My Board']);
