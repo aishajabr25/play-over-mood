@@ -907,6 +907,35 @@ function timeAgo(ts) {
   return days === 1 ? 'قبل يوم' : days === 2 ? 'قبل يومين' : `قبل ${days} أيام`;
 }
 
+/* حوار رد بهوية اللعبة بدل نافذة النظام */
+function replyModal(postText) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">${isEN() ? '↩ Your reply' : '↩ ردك على المنشور'}</div>
+        <div class="modal-quote">${esc(postText)}</div>
+        <textarea maxlength="500" placeholder="${isEN() ? 'Write your reply…' : 'اكتبي ردك هنا…'}"></textarea>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Post reply' : 'نشر الرد'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const ta = overlay.querySelector('textarea');
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close(ta.value.trim() || null));
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) close(ta.value.trim() || null);
+      if (e.key === 'Escape') close(null);
+    });
+    document.body.appendChild(overlay);
+    ta.focus();
+  });
+}
+
 function renderPosts() {
   const list = document.getElementById('posts-list');
   if (!list) return;
@@ -951,9 +980,10 @@ function renderPosts() {
           const p = postsCache.find(x => x.id === id);
           await updateDoc(doc(db, 'posts', id), { pinned: !p.pinned });
         } else if (act === 'reply') {
-          const text = prompt('ردك على المنشور:');
-          if (text && text.trim()) {
-            await updateDoc(doc(db, 'posts', id), { reply: { author: ADMIN_NAME, text: text.trim() } });
+          const p = postsCache.find(x => x.id === id);
+          const text = await replyModal(p ? p.text : '');
+          if (text) {
+            await updateDoc(doc(db, 'posts', id), { reply: { author: ADMIN_NAME, text } });
             showToast('نُشر ردك 🤍');
           }
         }
