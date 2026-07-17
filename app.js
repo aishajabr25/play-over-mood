@@ -1044,8 +1044,8 @@ function updateAdminUi() {
   if (isAdmin) renderPosts();
 }
 
-/* تبويب "لماذا؟" مخفي عن الجميع حتى تنتهي مراجعة الأحاديث — المشرفة تراه */
-const SHOW_WHY_PUBLIC = false;
+/* تبويب "لماذا؟" ظاهر للجميع بعد مراجعة الأحاديث */
+const SHOW_WHY_PUBLIC = true;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
