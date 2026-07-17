@@ -1010,7 +1010,15 @@ function updateAdminUi() {
   btn.textContent = isAdmin ? `خروج المشرفة (${ADMIN_NAME})` : '⚙';
   const dashBtn = document.getElementById('tab-btn-admin');
   if (dashBtn) dashBtn.hidden = !isAdmin;
+  updateWhyTab();
   if (isAdmin) renderPosts();
+}
+
+/* تبويب "لماذا؟" مخفي عن الجميع حتى تنتهي مراجعة الأحاديث — المشرفة تراه */
+const SHOW_WHY_PUBLIC = false;
+function updateWhyTab() {
+  const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
+  if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
 }
 
 /* ── لوحة المشرفة (تظهر لها فقط) ─────────────────────────── */
@@ -1121,6 +1129,7 @@ const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'admin'];
 
 /* طبّقي اللغة أولًا حتى ينسخ تبويب القواعد النسخة الصحيحة */
 applyEnglish();
+updateWhyTab();
 
 /* تبويب القواعد يعرض نفس صندوق قواعد صفحة الدخول (مصدر واحد) */
 const rulesClone = document.getElementById('rules-clone');
