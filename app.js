@@ -71,10 +71,28 @@ const HABITS = [
     science: 'الاستيقاظ في وقت ثابت يوميًا هو «مرساة» الساعة البيولوجية. تحليل بيانات UK Biobank على أكثر من ٦٠ ألف شخص (Windred وزملاؤه، مجلة Sleep 2024) وجد أن انتظام مواعيد النوم والاستيقاظ يتنبأ بطول العمر أقوى من عدد ساعات النوم نفسها.'
   },
   {
-    id: 'prayers', ar: 'باقي الصلوات على وقتها', en: 'The Other Prayers On Time', emoji: '🧎🏻‍♀️', worlds: ['spiritual'], legendary: true, pts: 3,
-    quote: '﴿إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَّوْقُوتًا﴾',
-    source: 'سورة النساء — ١٠٣',
-    science: 'الصلوات الموزعة على اليوم هي «فواصل استعادة» مثالية: تحليل شامل لـ٢٢ تجربة (Albulescu وزملاؤه، PLOS ONE 2022) وجد أن الاستراحات القصيرة المنتظمة خلال اليوم ترفع النشاط وتخفض الإرهاق قياسًا — والصلاة تجمع الفاصل الحركي والذهني والروحي معًا.'
+    id: 'dhuhr', ar: 'صلاة الظهر على وقتها', en: 'Dhuhr On Time', emoji: '🕰️', worlds: ['spiritual'], legendary: true, pts: 3,
+    quote: '«أرأيتم لو أن نهرًا بباب أحدكم يغتسل فيه كل يوم خمس مرات، هل يبقى من دَرَنه شيء؟»',
+    source: 'متفق عليه — الصلوات الخمس تمحو الخطايا كما يمحو الماء الدَّرَن',
+    science: 'فاصل منتصف اليوم: تحليل شامل لـ٢٢ تجربة (Albulescu وزملاؤه، PLOS ONE 2022) وجد أن الاستراحات القصيرة المنتظمة ترفع النشاط وتخفض الإرهاق قياسًا — ووقفة الظهر تقطع أطول فترة تركيز في يومك قبل أن يتراكم التعب.'
+  },
+  {
+    id: 'asr', ar: 'صلاة العصر على وقتها', en: 'Asr On Time', emoji: '🌇', worlds: ['spiritual'], legendary: true, pts: 3,
+    quote: '«من فاتته صلاةُ العصر فكأنما وُتِرَ أهلَه ومالَه»',
+    source: 'متفق عليه',
+    science: 'وقت العصر يصادف «هبوط ما بعد الظهيرة» الموثق في أبحاث الساعة البيولوجية — انخفاض طبيعي في اليقظة والتركيز. وقفة العصر استراحة استعادة تأتي في اللحظة التي يحتاجها دماغك فعلًا.'
+  },
+  {
+    id: 'maghrib', ar: 'صلاة المغرب على وقتها', en: 'Maghrib On Time', emoji: '🌆', worlds: ['spiritual'], legendary: true, pts: 3,
+    quote: '«لا تزال أمتي بخير — أو قال: على الفطرة — ما لم يؤخِّروا المغربَ حتى تشتبك النجوم»',
+    source: 'رواه أبو داود',
+    science: 'طقوس الانتقال الثابتة بين النهار والمساء تساعد الذهن على «الانفصال» عن مشاغل اليوم — ومراجعات أبحاث الاستشفاء النفسي (Sonnentag وزملاؤها) تجد هذا الانفصال من أقوى المنبئات بمساء أهدأ ونوم أفضل.'
+  },
+  {
+    id: 'isha', ar: 'صلاة العشاء على وقتها', en: 'Isha On Time', emoji: '🌃', worlds: ['spiritual'], legendary: true, pts: 3,
+    quote: '«ومن صلى العشاء في جماعة فكأنما قام نصفَ الليل»',
+    source: 'رواه مسلم',
+    science: 'إغلاق اليوم بموعد ثابت يمهد للنوم المبكر — أبحاث النوم تجد أن الروتين المسائي المنتظم من أقوى العوامل المرتبطة بنوم أسرع وأعمق.'
   },
   {
     id: 'duha', ar: 'صلاة الضحى', en: 'Duha Prayer', emoji: '☀️', worlds: ['spiritual'], legendary: true, pts: 3,
@@ -185,12 +203,11 @@ const GROUPS = [
   { id: 'mood',    ar: 'على مزاجك',      emoji: '🤙🏻' },
   { id: 'night',   ar: 'روتين الليل',    emoji: '🌙' },
 ];
-const GROUP_OF = {
-  fajrprayer: 'morning', fajr: 'morning', athkar: 'morning', duha: 'morning',
-  prayers: 'day', quran: 'day', walk: 'day', water: 'day', learn: 'day',
-  meet: 'mood', recharge: 'mood', explore: 'mood', tidy: 'mood',
-  enjoy: 'mood', goodtrace: 'mood', sharehobby: 'mood', solitude: 'mood',
-  athkareve: 'night', sleep: 'night', tahajjud: 'night',
+const GROUP_ITEMS = {
+  morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
+  day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn'],
+  mood:    ['meet', 'recharge', 'explore', 'tidy', 'enjoy', 'goodtrace', 'sharehobby', 'solitude'],
+  night:   ['maghrib', 'isha', 'athkareve', 'sleep', 'tahajjud'],
 };
 
 /* ── Helpers ─────────────────────────────────────────────── */
@@ -541,7 +558,7 @@ function renderHabits() {
 
   const t = myToday();
   GROUPS.forEach(g => {
-    const groupHabits = HABITS.filter(h => GROUP_OF[h.id] === g.id);
+    const groupHabits = (GROUP_ITEMS[g.id] || []).map(id => HABITS.find(h => h.id === id)).filter(Boolean);
     if (groupHabits.length === 0) return;
     const header = document.createElement('div');
     header.className = 'quest-group';
