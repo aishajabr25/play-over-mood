@@ -195,6 +195,12 @@
       box-shadow: 0 3px 8px rgba(74,57,45,.18);
     }
     .worlds-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 14px; }
+    .quest-group {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; gap: 10px; margin-top: 8px;
+    }
+    .quest-group-title { font-size: .8rem; font-weight: 800; color: var(--deep); white-space: nowrap; }
+    .quest-group-line { flex: 1; height: 1px; background: var(--line); }
     .world-item {
       display: inline-flex; align-items: center; gap: 5px;
       font-size: .7rem; font-weight: 700; color: var(--deep);
@@ -609,6 +615,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=12"></script>
+<script type="module" src="app.js?v=13"></script>
 </body>
 </html>

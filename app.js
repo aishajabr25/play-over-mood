@@ -89,6 +89,12 @@ const HABITS = [
     science: 'تحليلات شاملة لتدخلات الامتنان والذكر التأملي (منها Cregg & Cheavens 2021 على ٢٥ تجربة) تجد أثرًا ثابتًا — وإن كان هادئًا — في خفض أعراض القلق والاكتئاب وتحسين المزاج. البركة في الاستمرار لا في الكمية، ولهذا: مش لازم كلها.'
   },
   {
+    id: 'athkareve', ar: 'أذكار المساء (مش لازم كلها)', en: 'Evening Adhkar', emoji: '🌆', worlds: ['spiritual'],
+    quote: '﴿وَسَبِّحْ بِحَمْدِ رَبِّكَ قَبْلَ طُلُوعِ الشَّمْسِ وَقَبْلَ الْغُرُوبِ﴾',
+    source: 'سورة ق — ٣٩',
+    science: 'إنهاء اليوم بطقس هادئ ثابت هو أحد أكثر ما توصي به أبحاث النوم: الروتين المسائي المنتظم يرتبط قياسًا بنوم أسرع وأعمق، والذكر التأملي قبل النوم يخفض التوتر (التحليلات الشاملة نفسها لتدخلات الامتنان والذكر). ومش لازم كلها — المهم اللحظة الهادئة.'
+  },
+  {
     id: 'fajr', ar: 'الاستيقاظ بعد الفجر (التعرض للشمس)', en: 'Awake after Fajr + Sunlight', emoji: '🌅', worlds: ['physical', 'emotional', 'mental'],
     quote: '«اللهم بارك لأمتي في بكورها»',
     source: 'رواه أبو داود والترمذي — دعاء النبي ﷺ بالبركة في أول النهار',
@@ -171,6 +177,21 @@ const HABITS = [
 function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.worlds[0]].color; }
 function habitPoints(h) { return h.pts || 1; }
 const AR_NUMS = { 2: '٢', 3: '٣', 5: '٥' };
+
+/* تجميع المهمات في «روتينات» حتى لا تبدو القائمة طويلة */
+const GROUPS = [
+  { id: 'morning', ar: 'روتين الصباح',   emoji: '🌅' },
+  { id: 'day',     ar: 'خلال اليوم',     emoji: '☀️' },
+  { id: 'mood',    ar: 'على مزاجك',      emoji: '🤙🏻' },
+  { id: 'night',   ar: 'روتين الليل',    emoji: '🌙' },
+];
+const GROUP_OF = {
+  fajrprayer: 'morning', fajr: 'morning', athkar: 'morning', duha: 'morning',
+  prayers: 'day', quran: 'day', walk: 'day', water: 'day', learn: 'day',
+  meet: 'mood', recharge: 'mood', explore: 'mood', tidy: 'mood',
+  enjoy: 'mood', goodtrace: 'mood', sharehobby: 'mood', solitude: 'mood',
+  athkareve: 'night', sleep: 'night', tahajjud: 'night',
+};
 
 /* ── Helpers ─────────────────────────────────────────────── */
 const pad = n => String(n).padStart(2, '0');
@@ -519,7 +540,23 @@ function renderHabits() {
   }
 
   const t = myToday();
-  HABITS.forEach(h => {
+  GROUPS.forEach(g => {
+    const groupHabits = HABITS.filter(h => GROUP_OF[h.id] === g.id);
+    if (groupHabits.length === 0) return;
+    const header = document.createElement('div');
+    header.className = 'quest-group';
+    header.innerHTML = `<span class="quest-group-title">${g.emoji} ${g.ar}</span><span class="quest-group-line"></span>`;
+    grid.appendChild(header);
+    groupHabits.forEach(h => grid.appendChild(buildHabitCard(h, t)));
+  });
+
+  const done = HABITS.filter(h => t[h.id]).length;
+  document.getElementById('today-bar-fill').style.width = `${(done / HABITS.length) * 100}%`;
+  document.getElementById('today-count').textContent =
+    done === HABITS.length ? `${done}/${HABITS.length} — يوم كامل! 💖` : `${done}/${HABITS.length}`;
+}
+
+function buildHabitCard(h, t) {
     const el = document.createElement('div');
     el.className = 'habit-check' + (t[h.id] ? ' done' : '') + (h.legendary ? ' legendary' : '');
     el.style.borderInlineStartColor = habitColor(h);
@@ -532,13 +569,7 @@ function renderHabits() {
       </div>
       <div class="habit-emoji">${h.emoji}</div>`;
     el.addEventListener('click', () => toggleHabit(h));
-    grid.appendChild(el);
-  });
-
-  const done = HABITS.filter(h => t[h.id]).length;
-  document.getElementById('today-bar-fill').style.width = `${(done / HABITS.length) * 100}%`;
-  document.getElementById('today-count').textContent =
-    done === HABITS.length ? `${done}/${HABITS.length} — يوم كامل! 💖` : `${done}/${HABITS.length}`;
+    return el;
 }
 
 /* ── Worlds legend + why cards (ثابتة) ───────────────────── */
