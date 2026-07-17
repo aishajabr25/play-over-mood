@@ -198,10 +198,10 @@ const AR_NUMS = { 2: '٢', 3: '٣', 5: '٥' };
 
 /* تجميع المهمات في «روتينات» حتى لا تبدو القائمة طويلة */
 const GROUPS = [
-  { id: 'morning', ar: 'روتين الصباح',   emoji: '🌅' },
-  { id: 'day',     ar: 'خلال اليوم',     emoji: '☀️' },
-  { id: 'mood',    ar: 'على مزاجك',      emoji: '🤙🏻' },
-  { id: 'night',   ar: 'روتين الليل',    emoji: '🌙' },
+  { id: 'morning', ar: 'روتين الصباح',   en: 'Morning Routine',      emoji: '🌅' },
+  { id: 'day',     ar: 'خلال اليوم',     en: 'Through the Day',      emoji: '☀️' },
+  { id: 'mood',    ar: 'على مزاجك',      en: 'Your Mood, Your Call', emoji: '🤙🏻' },
+  { id: 'night',   ar: 'روتين الليل',    en: 'Night Routine',        emoji: '🌙' },
 ];
 const GROUP_ITEMS = {
   morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
@@ -209,6 +209,123 @@ const GROUP_ITEMS = {
   mood:    ['meet', 'recharge', 'explore', 'tidy', 'enjoy', 'goodtrace', 'sharehobby', 'solitude'],
   night:   ['maghrib', 'isha', 'athkareve', 'sleep', 'tahajjud'],
 };
+
+/* ── اللغة الإنجليزية (وضع كامل لغير الناطقات بالعربية) ──── */
+let lang = localStorage.getItem('pom_lang') || 'ar';
+const isEN = () => lang === 'en';
+
+const EN_WHY = {
+  sleep:      { quote: '“The Messenger of Allah ﷺ disliked sleeping before Isha and talking after it.”', source: 'Agreed upon (Bukhari & Muslim)', science: 'Sleep is the quest that unlocks the rest: it regulates hunger hormones (leptin & ghrelin), cortisol and mood, and decides your energy for Fajr, movement and focus. That is why it is legendary — 2 points.' },
+  tahajjud:   { quote: '“And in part of the night, pray tahajjud as an extra offering; it may be that your Lord will raise you to a praised station.”', source: 'Quran 17:79 · And ﷺ said: “The best prayer after the obligatory one is the night prayer” (Muslim)', science: 'Large systematic reviews (including Koenig’s work at Duke across hundreds of studies) consistently link regular religious practice with lower depression and anxiety and higher life satisfaction. The quiet solitude of night is the deepest form of that presence — the game’s highest quest: 5 points.' },
+  fajrprayer: { quote: '“Whoever prays the two cool-hour prayers (Fajr and Asr) enters Paradise.”', source: 'Agreed upon', science: 'A fixed daily wake time is the anchor of your body clock. UK Biobank analysis of 60,000+ people (Windred et al., Sleep 2024) found sleep–wake regularity predicts longevity even more strongly than sleep duration.' },
+  dhuhr:      { quote: '“If there were a river at your door in which you bathed five times a day, would any dirt remain?”', source: 'Agreed upon — the five prayers wash away sins', science: 'A midday reset: a meta-analysis of 22 trials (Albulescu et al., PLOS ONE 2022) found short regular breaks measurably raise vigor and lower fatigue — Dhuhr cuts your longest stretch of effort before tiredness piles up.' },
+  asr:        { quote: '“Whoever misses the Asr prayer, it is as if he lost his family and his wealth.”', source: 'Agreed upon', science: 'Asr lands on the well-documented afternoon dip in alertness from circadian research — a restorative pause exactly when your brain needs it.' },
+  maghrib:    { quote: '“My nation remains upon goodness as long as they do not delay Maghrib until the stars crowd together.”', source: 'Abu Dawud', science: 'Fixed transition rituals between day and evening help the mind detach from the day’s demands — recovery research (Sonnentag et al.) finds such detachment among the strongest predictors of calmer evenings and better sleep.' },
+  isha:       { quote: '“And whoever prays Isha in congregation, it is as if he stood half the night in prayer.”', source: 'Muslim', science: 'Closing the day at a fixed time paves the way for early sleep — sleep research finds a consistent evening routine among the strongest factors for falling asleep faster and deeper.' },
+  duha:       { quote: '“…and two rak‘ahs of Duha suffice for all of it.”', source: 'Muslim — on the daily charity due from every joint of the body', science: 'A brief mid-morning pause combines two studied benefits: daylight exposure that stabilizes the body clock and mood, and the measurable recharge of short regular breaks (PLOS ONE 2022 meta-analysis).' },
+  athkar:     { quote: '“Verily, in the remembrance of Allah do hearts find rest.”', source: 'Quran 13:28', science: 'Meta-analyses of gratitude and contemplative practice (incl. Cregg & Cheavens 2021, 25 trials) find a consistent — if quiet — effect on anxiety, low mood and wellbeing. Consistency beats quantity, hence: you don’t need all of them.' },
+  athkareve:  { quote: '“And glorify the praise of your Lord before sunrise and before sunset.”', source: 'Quran 50:39', science: 'Ending the day with a calm fixed ritual is a top recommendation of sleep research: regular evening wind-downs are linked with faster, deeper sleep, and contemplative practice lowers stress. You don’t need all of them — the calm moment is the point.' },
+  fajr:       { quote: '“O Allah, bless my nation in its early mornings.”', source: 'Abu Dawud & Tirmidhi — the Prophet’s ﷺ prayer for the early hours', science: 'Early morning light anchors the circadian clock and lifts mood. A study of 800,000+ people (JAMA Psychiatry 2021) found shifting sleep midpoint one hour earlier is associated with ~23% lower depression risk.' },
+  quran:      { quote: '“Read the Quran, for it will come on the Day of Resurrection as an intercessor for its companions.”', source: 'Muslim', science: 'Studies of Quran recitation and listening recorded lower anxiety markers, blood pressure and heart rate; regular daily reading in general builds cognitive reserve that protects memory with age.' },
+  walk:       { quote: '“The strong believer is better and more beloved to Allah than the weak believer.”', source: 'Muslim', science: 'A meta-analysis in The Lancet Public Health (2022, 47,000+ people) found ~7,000 daily steps associated with up to 50% lower risk of early death compared to being sedentary.' },
+  water:      { quote: '“And We made from water every living thing.”', source: 'Quran 21:30', science: 'Even mild dehydration (1–2% of body weight) measurably impairs concentration and mood and increases headaches and fatigue in repeated controlled trials; adequate water improves alertness through the day.' },
+  learn:      { quote: '“Whoever travels a path seeking knowledge, Allah eases for him a path to Paradise.”', source: 'Muslim', science: 'Learning new skills builds “cognitive reserve” — neural flexibility that protects memory and brain health with age, linked in broad systematic reviews to delayed cognitive decline.' },
+  meet:       { quote: '“And We made you peoples and tribes that you may know one another.”', source: 'Quran 49:13', science: 'The landmark meta-analysis (Holt-Lunstad et al. 2010; 148 studies, 300,000+ people) found strong social ties associated with ~50% higher survival odds — an effect comparable to quitting smoking.' },
+  recharge:   { quote: '“…and they reflect upon the creation of the heavens and the earth.”', source: 'Quran 3:191', science: 'A meta-analysis of 143 studies (Twohig-Bennett & Jones 2018) linked greenspace exposure to lower cortisol, blood pressure and heart rate; and Harvard’s 85-year study found warm relationships the strongest predictor of long-term happiness and health.' },
+  explore:    { quote: '“Say: travel through the land.”', source: 'Quran 29:20', science: 'GPS-tracking research (Heller et al., Nature Neuroscience 2020) found that variety in the places we visit daily correlates with more positive mood, tied to the brain’s novelty-and-reward circuits — new experiences feed the brain.' },
+  tidy:       { quote: '“Indeed, Allah is beautiful and loves beauty.”', source: 'Muslim', science: 'A UCLA study (Saxbe & Repetti 2010) found people who describe their homes as cluttered show elevated cortisol through the day; Princeton research (2011) showed visual clutter competes for your attention and lowers focus.' },
+  enjoy:      { quote: '“Leave him, O Umar — by Him in Whose Hand is my soul, his words strike them harder than arrows.”', source: 'Said ﷺ about Ibn Rawaha’s poetry — Tirmidhi & Nasa’i', science: 'A study of 93,000+ people across 16 countries (Fancourt et al., Nature Medicine 2023) found having a hobby associated with fewer depressive symptoms and higher life satisfaction and sense of meaning — in every country studied.' },
+  goodtrace:  { quote: '“And removing something harmful from the path is charity.”', source: 'Agreed upon', science: 'A meta-analysis of 27 experiments (Curry et al. 2018) found small acts of kindness measurably raise the giver’s happiness — goodness returns to its doer first, and the surroundings win too.' },
+  sharehobby: { quote: '“Allah is in the aid of His servant as long as the servant is in the aid of his brother.”', source: 'Muslim', science: 'Sharing what you love combines two studied effects: giving boosts the giver’s wellbeing (Curry’s 2018 meta-analysis), and social bonds predict health and longevity (Holt-Lunstad’s 148-study meta-analysis) — your hobby becomes a bridge.' },
+  solitude:   { quote: '“Indeed, your body has a right over you.”', source: 'Agreed upon', science: 'Systematic reviews of psychological recovery research (Sonnentag et al.) find that genuine daily detachment — even briefly — measurably predicts less exhaustion and better mood and sleep. Rest is not a reward after the work; it is part of the work.' },
+};
+
+function whyOf(h) {
+  if (isEN() && EN_WHY[h.id]) return EN_WHY[h.id];
+  return { quote: h.quote, source: h.source, science: h.science };
+}
+
+function applyEnglish() {
+  const btn = document.getElementById('lang-toggle');
+  if (btn) {
+    btn.textContent = isEN() ? '🌐 عربي' : '🌐 English';
+    btn.addEventListener('click', () => {
+      localStorage.setItem('pom_lang', isEN() ? 'ar' : 'en');
+      location.reload();
+    });
+  }
+  if (!isEN()) return;
+
+  document.documentElement.lang = 'en';
+  document.documentElement.dir = 'ltr';
+  const set = (sel, html) => { const el = document.querySelector(sel); if (el) el.innerHTML = html; };
+  const setAll = (sel, arr) => document.querySelectorAll(sel).forEach((el, i) => { if (arr[i]) el.innerHTML = arr[i]; });
+
+  set('.page-header .eyebrow-tag', 'A challenge we play together · نلعب على مزاجنا');
+  set('.page-header h1', 'Play Over Mood');
+  set('.page-header p', 'Small daily quests from five elements — complete them, collect points, and watch your growth and the whole community’s, week after week.');
+
+  set('#nick-gate h2', 'Welcome to the challenge ☀️');
+  set('#nick-gate > p', 'Pick a name or nickname for the leaderboard. No accounts, no passwords — just your name and you’re in.');
+  set('.launch-box', '🗓️ <strong>We start together on Tuesday, July 21.</strong><br>We picked this day randomly — on purpose. The date itself doesn’t matter; this day will matter because we chose to start something new in it 🤍<br>Register your name now to save your spot, and follow me on Instagram — every day until Tuesday I explain a part of the game.');
+  set('.game-rules', `
+      <div class="rules-title">How We Play · قواعد اللعبة</div>
+      <div class="rule-row"><span class="rule-emoji">🤍</span><span>No “musts” here — do what you can today, even a single quest.</span></div>
+      <div class="rule-row"><span class="rule-emoji">☀️</span><span>We chase no perfection, we chase nothing at all — we stack small things, because real change happens through small things.</span></div>
+      <div class="rule-row"><span class="rule-emoji">⭐</span><span>Every quest = points. The golden legendary quests are worth more because they unlock the rest (in real life 🎉).</span></div>
+      <div class="rule-row"><span class="rule-emoji">🔁</span><span>Every Tuesday a new round begins — and a missed day erases nothing; continue from where you are.</span></div>
+      <div class="rule-row"><span class="rule-emoji">🤙🏻</span><span>We play together, not against each other — the board is for encouragement, the wall is for your questions and thoughts.</span></div>
+      <div class="rule-row"><span class="rule-emoji">🌼</span><span>The Arabic version is written in the feminine, the language of this space — men are fully welcome; same rules, same game.</span></div>
+      <div class="rule-row"><span class="rule-emoji">🤎</span><span>We are a Muslim community and the content is built on that — if you follow another faith, you are most welcome: this is a safe, supportive space for everyone.</span></div>
+      <div class="rule-row"><span class="rule-emoji">#️⃣</span><span>Share the game on Instagram or anywhere (every share counts — it doesn’t have to be perfect). Use our hashtags so we find each other: <bdi dir="ltr">#playovermood</bdi> &amp; <bdi dir="rtl">#نلعب_على_مزاجنا</bdi> 🤙🏻</span></div>`);
+  set('.why-letter summary', 'Why “Play Over Mood”? A letter from me (Aisha) 🤍');
+  set('.letter-body', `
+        <p>I used to be a very serious person (not in a normal way 😅). I didn’t know fun or play, and my life was exhausting me.</p>
+        <p>Until I started playing with my nephews and nieces — not letting them play, not watching them play… <strong>actually playing with them</strong> (on the trampoline, racing them: one of my goals this year was to outrun my 5-year-old nephew 🤣). Since then, I see life as a game.</p>
+        <p>Imagine wearing a VR headset: inside the game we immerse and we play. Easy? We play. Hard? We play. In the game we have tools, powers and rewards… and losses and struggles too. But we know we’re playing, so we keep going.</p>
+        <p class="letter-aside">(Okay, that got deep 🙂)</p>
+        <p>Everything in this life is preparing us for the next one (the Hereafter). If we took it with complete seriousness, it would be impossible to live (it doesn’t weigh a mosquito’s wing with Allah). Doing things and having more fun lets us live it the way it was designed to be lived. We’re not against seriousness… this is just how I see life.</p>
+        <p>And in the game there are players at levels above mine — I learn from them and ask their help. And players at levels I’ve already passed — so I reach out my hand ❤️‍🩹🫂</p>
+        <p>The name itself is a play on words 🙂🤙🏻 “نلعب على مزاجنا” carries two meanings: <strong>first</strong> — we play over the mood (Play Over Mood): I don’t let my mood run me, I lead. <strong>Second</strong> — we play as we please: I play if I want, and I choose what suits me. Pick the meaning that feels like you… or take both 🤙🏻</p>
+        <p><strong>That’s why we chose “Play Over Mood” · نلعب على مزاجنا:</strong> to say we can have fun and change our lives at the same time ☀️💖</p>`);
+  const nickInput = document.getElementById('nick-input');
+  if (nickInput) nickInput.placeholder = 'Your name or nickname…';
+  const emailInput = document.getElementById('email-input');
+  if (emailInput) emailInput.placeholder = 'Your email (optional)';
+  set('#nick-form div', 'Totally optional — only if you’d like news of future rounds 🤍 Never shown to anyone.');
+  set('#nick-form button[type=submit]', 'Start Playing');
+
+  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '📈 My Board']);
+
+  set('#tab-quests .card-label', '① Today’s Quests · مهمات اليوم');
+  set('#tab-quests .card-title', 'Which quests did you complete today?');
+  set('#tab-quests .card-desc', 'Tap every quest you completed — regular = 1 point, legendary ⭐ = more');
+
+  setAll('#tab-growth .card-label', ['③ Leaderboard · لوحة المتصدرات', '④ Growth · النمو']);
+  setAll('#tab-growth .card-title', ['This week’s round', 'Your growth and the community’s']);
+  setAll('#tab-growth .card-desc', ['The board resets every Tuesday — a fresh chance every week for every newcomer', 'Last 14 days']);
+  setAll('#tab-growth .chart-title', ['Community growth 🌍', 'Your growth 💕', 'Each quest 📊']);
+  setAll('#tab-growth .chart-sub', ['Total quests completed daily by everyone', 'Your daily total', 'Per-quest completion this week']);
+
+  set('#tab-why .card-label', '② The Why · لماذا هذه المهمات؟');
+  set('#tab-why .card-title', 'Intention and science, together');
+  set('#tab-why .card-desc', 'Every quest has a root in revelation and support from modern studies');
+
+  set('#tab-wall .card-label', '⑤ The Wall · حائط الأسئلة');
+  set('#tab-wall .card-title', 'Ask or share');
+  set('#tab-wall .card-desc', 'Write a question or thought for everyone — and I answer here');
+  const postInput = document.getElementById('post-input');
+  if (postInput) postInput.placeholder = 'Write your question or thought…';
+  set('#post-form button', 'Post');
+
+  set('#tab-rules .card-label', 'How We Play · قواعد اللعبة');
+  set('#tab-rules .card-title', 'How do we play here?');
+  set('#tab-rules .card-desc', 'The same rules you read at the door — always here when you need them');
+
+  set('#about-box', 'I’m Aisha — 3aosh 🤍 A software engineer and certified teacher. I read psychology, apply what I learn, and explore its connection to Islam. I love learning, serving people, and games — not the electronic kind… competition 🤙🏻 I started this game for myself, then thought: why not share it with the world?');
+  set('.hello-name', 'Hi, <span id="hello-nick"></span> 🌼 <span id="today-date"></span>');
+  set('#change-nick', 'change name');
+}
 
 /* ── Helpers ─────────────────────────────────────────────── */
 const pad = n => String(n).padStart(2, '0');
@@ -359,13 +476,13 @@ function updateSyncUi() {
     } else if (me.isAnonymous) {
       btn.hidden = false;
       btn.disabled = false;
-      btn.textContent = '☁️ احفظي تقدمك (ربط بحساب Google)';
+      btn.textContent = isEN() ? '☁️ Save your progress (link Google)' : '☁️ احفظي تقدمك (ربط بحساب Google)';
     } else {
       btn.hidden = false;
       btn.disabled = true;
       btn.style.textDecoration = 'none';
       btn.style.cursor = 'default';
-      btn.textContent = '✓ تقدمك محفوظ ويتبعك على أجهزتك 🤍';
+      btn.textContent = isEN() ? '✓ Progress saved — follows you on any device 🤍' : '✓ تقدمك محفوظ ويتبعك على أجهزتك 🤍';
     }
   }
   const gate = document.getElementById('nick-gate');
@@ -375,7 +492,7 @@ function updateSyncUi() {
     g.type = 'button';
     g.className = 'change-nick';
     g.style.marginTop = '14px';
-    g.textContent = 'سبق وربطتِ تقدمك بحساب Google؟ ادخلي من هنا';
+    g.textContent = isEN() ? 'Already linked your progress to Google? Sign in here' : 'سبق وربطتِ تقدمك بحساب Google؟ ادخلي من هنا';
     g.addEventListener('click', async () => {
       try { await signInWithPopup(auth, new GoogleAuthProvider()); }
       catch { showToast('لم يكتمل تسجيل الدخول'); }
@@ -472,7 +589,7 @@ document.getElementById('nick-form').addEventListener('submit', async e => {
       setDoc(doc(db, 'mails', me.uid), { email, nick: nickname, newsletter: true, updated: Date.now() }, { merge: true }).catch(() => {});
     }
   }
-  showToast(`أهلًا ${nickname} — بدأ تحديك ☀️`);
+  showToast(isEN() ? `Welcome ${nickname} — your challenge begins ☀️` : `أهلًا ${nickname} — بدأ تحديك ☀️`);
   loadMyDaysLocal();
   initGate();
 });
@@ -486,7 +603,10 @@ document.getElementById('change-nick').addEventListener('click', () => {
 /* ── Today's quests ──────────────────────────────────────── */
 async function toggleHabit(h) {
   if (!me || !nickname) return;
-  if (preLaunch() && !isAdmin) { showToast(`نبدأ معًا يوم ${START_LABEL_AR} 🤍`); return; }
+  if (preLaunch() && !isAdmin) {
+    showToast(isEN() ? 'We start together on Tuesday, July 21 🤍' : `نبدأ معًا يوم ${START_LABEL_AR} 🤍`);
+    return;
+  }
 
   const date = myDayKey();
   const week = thisWeekKey();
@@ -500,9 +620,11 @@ async function toggleHabit(h) {
   renderLeaderboard();
   renderCharts();
   if (day.habits[h.id]) {
+    const name = isEN() ? h.en : h.ar;
+    const n = habitPoints(h);
     showToast(h.legendary
-      ? `مهمة أسطورية! "${h.ar}" = نقطتان ⭐🤙`
-      : `أحسنتِ! "${h.ar}" 🤙`);
+      ? (isEN() ? `Legendary quest! "${name}" = ${n} points ⭐🤙` : `مهمة أسطورية! "${name}" = ${AR_NUMS[n] || n} نقاط ⭐🤙`)
+      : (isEN() ? `Nice! "${name}" 🤙` : `أحسنتِ! "${name}" 🤙`));
   }
 
   try {
@@ -537,22 +659,24 @@ function renderHabits() {
   grid.innerHTML = '';
 
   document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
+    new Date().toLocaleDateString(isEN() ? 'en' : 'ar', { weekday: 'long', day: 'numeric', month: 'long' });
 
   if (preLaunch() && !isAdmin) {
     const days = Math.ceil((START_DATE - new Date()) / 86400000);
-    const daysTxt = days === 1 ? 'يوم واحد ويبدأ اللعب'
-                  : days === 2 ? 'يومان ويبدأ اللعب'
-                  : `${days} أيام ويبدأ اللعب`;
+    const daysTxt = isEN()
+      ? (days === 1 ? '1 day until we play' : `${days} days until we play`)
+      : (days === 1 ? 'يوم واحد ويبدأ اللعب' : days === 2 ? 'يومان ويبدأ اللعب' : `${days} أيام ويبدأ اللعب`);
+    const noteTxt = isEN()
+      ? `Your spot is saved ☀️ We start together on Tuesday, July 21 — and every day until then I explain a part of the game on Instagram. Got a question before we start? The Wall 💬 is already open.`
+      : `مكانك محجوز ☀️ ننطلق معًا يوم ${START_LABEL_AR} — وكل يوم حتى الانطلاقة أشرح شيئًا عن اللعبة على إنستغرام. وإذا خطر لك سؤال قبل البداية، الحائط 💬 مفتوح من الآن.`;
     grid.innerHTML = `
       <div class="countdown-card">
         <div class="countdown-num">${days}</div>
         <div style="font-weight:800;color:var(--deep)">${daysTxt} 🤙</div>
-        <p>مكانك محجوز ☀️ ننطلق معًا يوم ${START_LABEL_AR} — وكل يوم حتى الانطلاقة أشرح شيئًا عن اللعبة على إنستغرام.
-        وإذا خطر لك سؤال قبل البداية، الحائط 💬 مفتوح من الآن.</p>
+        <p>${noteTxt}</p>
       </div>`;
     document.getElementById('today-bar-fill').style.width = '0%';
-    document.getElementById('today-count').textContent = 'قريبًا ☀️';
+    document.getElementById('today-count').textContent = isEN() ? 'Soon ☀️' : 'قريبًا ☀️';
     return;
   }
 
@@ -562,7 +686,7 @@ function renderHabits() {
     if (groupHabits.length === 0) return;
     const header = document.createElement('div');
     header.className = 'quest-group';
-    header.innerHTML = `<span class="quest-group-title">${g.emoji} ${g.ar}</span><span class="quest-group-line"></span>`;
+    header.innerHTML = `<span class="quest-group-title">${g.emoji} ${isEN() ? g.en : g.ar}</span><span class="quest-group-line"></span>`;
     grid.appendChild(header);
     groupHabits.forEach(h => grid.appendChild(buildHabitCard(h, t)));
   });
@@ -570,19 +694,24 @@ function renderHabits() {
   const done = HABITS.filter(h => t[h.id]).length;
   document.getElementById('today-bar-fill').style.width = `${(done / HABITS.length) * 100}%`;
   document.getElementById('today-count').textContent =
-    done === HABITS.length ? `${done}/${HABITS.length} — يوم كامل! 💖` : `${done}/${HABITS.length}`;
+    done === HABITS.length
+      ? `${done}/${HABITS.length} — ${isEN() ? 'Full day! 💖' : 'يوم كامل! 💖'}`
+      : `${done}/${HABITS.length}`;
 }
 
 function buildHabitCard(h, t) {
     const el = document.createElement('div');
     el.className = 'habit-check' + (t[h.id] ? ' done' : '') + (h.legendary ? ' legendary' : '');
     el.style.borderInlineStartColor = habitColor(h);
+    const badge = h.legendary
+      ? (isEN() ? `⭐ Legendary ×${habitPoints(h)}` : `⭐ أسطورية ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}`)
+      : '';
     el.innerHTML = `
-      ${h.legendary ? `<span class="legendary-badge">⭐ أسطورية ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}</span>` : ''}
+      ${badge ? `<span class="legendary-badge">${badge}</span>` : ''}
       <div class="habit-box">✓</div>
       <div class="habit-check-info">
-        <div class="habit-check-ar">${h.ar}</div>
-        <div class="habit-check-en">${h.en}</div>
+        <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
+        <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
       <div class="habit-emoji">${h.emoji}</div>`;
     el.addEventListener('click', () => toggleHabit(h));
@@ -596,12 +725,12 @@ function renderWorldsLegend() {
   Object.values(WORLDS).forEach(w => {
     const item = document.createElement('span');
     item.className = 'world-item';
-    item.innerHTML = `<span class="world-dot" style="background:${w.color}"></span>${w.ar}`;
+    item.innerHTML = `<span class="world-dot" style="background:${w.color}"></span>${isEN() ? w.en : w.ar}`;
     el.appendChild(item);
   });
   const leg = document.createElement('span');
   leg.className = 'world-item';
-  leg.innerHTML = `<span class="world-dot" style="background:${LEGENDARY_COLOR}"></span>مهمة أسطورية ⭐`;
+  leg.innerHTML = `<span class="world-dot" style="background:${LEGENDARY_COLOR}"></span>${isEN() ? 'Legendary quest ⭐' : 'مهمة أسطورية ⭐'}`;
   el.appendChild(leg);
 }
 
@@ -613,16 +742,17 @@ function renderWhy() {
     el.className = 'why-card';
     el.style.borderTopColor = habitColor(h);
     const legendaryTag = h.legendary
-      ? `<span class="why-world" style="background:${LEGENDARY_COLOR}">مهمة أسطورية ⭐ ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}</span> `
+      ? `<span class="why-world" style="background:${LEGENDARY_COLOR}">${isEN() ? `Legendary ⭐ ×${habitPoints(h)}` : `مهمة أسطورية ⭐ ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}`}</span> `
       : '';
     const worldTag = legendaryTag + h.worlds.map(w =>
-      `<span class="why-world" style="background:${WORLDS[w].color}">${WORLDS[w].ar}</span>`).join(' ');
+      `<span class="why-world" style="background:${WORLDS[w].color}">${isEN() ? WORLDS[w].en : WORLDS[w].ar}</span>`).join(' ');
+    const why = whyOf(h);
     el.innerHTML = `
-      <h3>${h.emoji} ${h.ar}</h3>
+      <h3>${h.emoji} ${isEN() ? h.en : h.ar}</h3>
       ${worldTag}
-      <div class="why-quote">${h.quote}</div>
-      <div class="why-source">${h.source}</div>
-      <div class="why-science"><strong>🔬 ماذا يقول العلم؟</strong>${h.science}</div>`;
+      <div class="why-quote">${why.quote}</div>
+      <div class="why-source">${why.source}</div>
+      <div class="why-science"><strong>${isEN() ? '🔬 What does science say?' : '🔬 ماذا يقول العلم؟'}</strong>${why.science}</div>`;
     grid.appendChild(el);
   });
 }
@@ -643,12 +773,18 @@ function renderLeaderboard() {
   if (!list) return;
 
   if (preLaunch() && !isAdmin) {
-    list.innerHTML = `
-      <div class="prelaunch-note">
-        انضمّت حتى الآن <strong id="wl-count">${waitlistCount ?? '…'}</strong> لاعبة 🤍
-        الجولة الأولى تبدأ ${START_LABEL_AR} — واللوحة فارغة لأن الجميع يبدأ من نفس الخط.
-      </div>`;
-    document.getElementById('round-chip').textContent = `⏳ الجولة الأولى تبدأ ${START_LABEL_AR}`;
+    list.innerHTML = isEN()
+      ? `<div class="prelaunch-note">
+          <strong id="wl-count">${waitlistCount ?? '…'}</strong> players have joined so far 🤍
+          The first round starts Tuesday, July 21 — the board is empty because everyone starts from the same line.
+        </div>`
+      : `<div class="prelaunch-note">
+          انضمّت حتى الآن <strong id="wl-count">${waitlistCount ?? '…'}</strong> لاعبة 🤍
+          الجولة الأولى تبدأ ${START_LABEL_AR} — واللوحة فارغة لأن الجميع يبدأ من نفس الخط.
+        </div>`;
+    document.getElementById('round-chip').textContent = isEN()
+      ? '⏳ First round starts Tuesday, July 21'
+      : `⏳ الجولة الأولى تبدأ ${START_LABEL_AR}`;
     if (waitlistCount === null) loadWaitlistCount();
     return;
   }
@@ -669,24 +805,29 @@ function renderLeaderboard() {
     el.className = 'lb-row' + (r.me ? ' me' : '');
     el.innerHTML = `
       <div class="lb-rank">${i + 1}</div>
-      <div class="lb-name">${esc(r.name)} ${r.me ? '<small>(أنتِ)</small>' : ''}</div>
+      <div class="lb-name">${esc(r.name)} ${r.me ? `<small>${isEN() ? '(you)' : '(أنتِ)'}</small>` : ''}</div>
       <div class="lb-bar-wrap"><div class="lb-bar" style="width:${(r.pts / max) * 100}%"></div></div>
-      <div class="lb-pts">${r.pts} نقطة</div>`;
+      <div class="lb-pts">${r.pts} ${isEN() ? 'pts' : 'نقطة'}</div>`;
     list.appendChild(el);
   });
   if (rows.length === 0) {
-    list.innerHTML = '<div class="prelaunch-note">اللوحة فارغة بعد — كوني أول من يسجل نقطة اليوم ☀️</div>';
+    list.innerHTML = isEN()
+      ? '<div class="prelaunch-note">The board is still empty — be the first to score today ☀️</div>'
+      : '<div class="prelaunch-note">اللوحة فارغة بعد — كوني أول من يسجل نقطة اليوم ☀️</div>';
   }
 
   const end = weekStart(new Date());
   end.setDate(end.getDate() + 7);
   const daysLeft = Math.max(0, Math.ceil((end - new Date()) / 86400000));
-  document.getElementById('round-chip').textContent =
-    `⏳ تتجدد الجولة بعد ${daysLeft === 1 ? 'يوم واحد' : daysLeft === 2 ? 'يومين' : daysLeft + ' أيام'}`;
+  document.getElementById('round-chip').textContent = isEN()
+    ? `⏳ New round in ${daysLeft === 1 ? '1 day' : daysLeft + ' days'}`
+    : `⏳ تتجدد الجولة بعد ${daysLeft === 1 ? 'يوم واحد' : daysLeft === 2 ? 'يومين' : daysLeft + ' أيام'}`;
 }
 
 /* ── Charts ──────────────────────────────────────────────── */
-const DAY_LETTERS = ['أحد', 'اثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
+const DAY_LETTERS_AR = ['أحد', 'اثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
+const DAY_LETTERS_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const DAY_LETTERS = new Proxy({}, { get: (_, i) => (isEN() ? DAY_LETTERS_EN : DAY_LETTERS_AR)[i] });
 
 function communityCountOn(dateK) {
   let total = 0;
@@ -750,6 +891,14 @@ async function renderCharts() {
 /* ── Q&A wall ────────────────────────────────────────────── */
 function timeAgo(ts) {
   const mins = Math.floor((Date.now() - ts) / 60000);
+  if (isEN()) {
+    if (mins < 1)  return 'now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)  return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return days === 1 ? 'yesterday' : `${days}d ago`;
+  }
   if (mins < 1)  return 'الآن';
   if (mins < 60) return `قبل ${mins} دقيقة`;
   const hrs = Math.floor(mins / 60);
@@ -771,19 +920,19 @@ function renderPosts() {
     el.innerHTML = `
       <div class="post-head">
         <span class="post-author">${esc(p.author)}</span>
-        ${p.admin ? '<span class="post-badge">المشرفة</span>' : ''}
-        ${p.pinned ? '<span class="post-badge" style="background:var(--accent);color:var(--text)">📌 مثبّت</span>' : ''}
+        ${p.admin ? `<span class="post-badge">${isEN() ? 'Host' : 'المشرفة'}</span>` : ''}
+        ${p.pinned ? `<span class="post-badge" style="background:var(--accent);color:var(--text)">${isEN() ? '📌 Pinned' : '📌 مثبّت'}</span>` : ''}
         <span class="post-time">${timeAgo(p.time)}</span>
         ${isAdmin ? `<button class="post-delete" data-act="reply" data-id="${p.id}">↩ رد</button>
                      <button class="post-delete" data-act="pin" data-id="${p.id}">${p.pinned ? 'إلغاء التثبيت' : '📌 تثبيت'}</button>` : ''}
-        ${canDelete ? `<button class="post-delete" data-act="del" data-id="${p.id}">حذف</button>` : ''}
+        ${canDelete ? `<button class="post-delete" data-act="del" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
       </div>
       <div class="post-body">${esc(p.text)}</div>
       ${p.reply ? `
         <div class="post-reply">
           <div class="post-head">
             <span class="post-author">${esc(p.reply.author)}</span>
-            <span class="post-badge">المشرفة</span>
+            <span class="post-badge">${isEN() ? 'Host' : 'المشرفة'}</span>
           </div>
           ${esc(p.reply.text)}
         </div>` : ''}`;
@@ -828,7 +977,7 @@ document.getElementById('post-form').addEventListener('submit', async e => {
       text, time: Date.now(), reply: null,
     });
     input.value = '';
-    showToast('نُشر سؤالك 🤍');
+    showToast(isEN() ? 'Posted 🤍' : 'نُشر سؤالك 🤍');
   } catch {
     showToast('تعذر النشر — تحققي من الاتصال');
   }
@@ -969,6 +1118,9 @@ async function exportBackup() {
 
 /* ── Tabs ────────────────────────────────────────────────── */
 const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'admin'];
+
+/* طبّقي اللغة أولًا حتى ينسخ تبويب القواعد النسخة الصحيحة */
+applyEnglish();
 
 /* تبويب القواعد يعرض نفس صندوق قواعد صفحة الدخول (مصدر واحد) */
 const rulesClone = document.getElementById('rules-clone');
