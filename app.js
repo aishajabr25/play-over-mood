@@ -185,7 +185,7 @@ const HABITS = [
     science: 'مشاركة ما تحبين تجمع أثرين مدروسين معًا: أثر العطاء في سعادة المعطي (تحليل Curry الشامل 2018)، وأثر الروابط الاجتماعية في الصحة وطول العمر (تحليل Holt-Lunstad على ١٤٨ دراسة) — هوايتك تصبح جسرًا.'
   },
   {
-    id: 'solitude', ar: 'راحة / خلوة', en: 'Rest / Solitude', emoji: '🕯️', worlds: ['spiritual', 'emotional'],
+    id: 'solitude', ar: 'راحة / خلوة مع نفسي', en: 'Rest / Time with Myself', emoji: '🕯️', worlds: ['spiritual', 'emotional'],
     quote: '«إنّ لبدنك عليك حقًا»',
     source: 'متفق عليه',
     science: 'مراجعات منهجية لأبحاث «الاستشفاء النفسي» (Sonnentag وزملاؤها) تجد أن الانفصال الحقيقي عن المشاغل — ولو لفترة قصيرة يوميًا — يتنبأ قياسًا بانخفاض الإرهاق وتحسّن المزاج والنوم. الراحة ليست مكافأة بعد الإنجاز، هي جزء من الإنجاز.'
@@ -322,7 +322,7 @@ function applyEnglish() {
   set('#tab-rules .card-title', 'How do we play here?');
   set('#tab-rules .card-desc', 'The same rules you read at the door — always here when you need them');
 
-  set('#about-box', 'I’m Aisha — 3aosh 🤍 A software engineer and certified teacher. I read psychology, apply what I learn, and explore its connection to Islam. I love learning, serving people, and games — not the electronic kind… competition 🤙🏻 I started this game for myself, then thought: why not share it with the world?');
+  set('#about-box', 'I’m 3aosh 🤍 A software engineer and certified teacher. I read psychology (though these days I prefer fiqh al-nafs — the Islamic understanding of the self), apply what I learn, and explore its connection to Islam. I love learning, helping people, and games — not the electronic kind… competition 🤙🏻 I started this game for myself, then thought: why not share it with the world?');
   set('.hello-name', 'Hi, <span id="hello-nick"></span> 🌼 <span id="today-date"></span>');
   set('#change-nick', 'change name');
 }
