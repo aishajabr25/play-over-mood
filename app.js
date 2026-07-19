@@ -149,10 +149,16 @@ const HABITS = [
     science: 'أشهر تحليل شامل في الموضوع (Holt-Lunstad وزملاؤها 2010، على ١٤٨ دراسة وأكثر من ٣٠٠ ألف شخص) وجد أن العلاقات الاجتماعية القوية ترتبط بزيادة فرص البقاء على قيد الحياة بنحو ٥٠٪ — أثر يوازي ترك التدخين ويفوق أثر السمنة.'
   },
   {
-    id: 'recharge', ar: 'جلسة في الطبيعة / مع صديقة', en: 'Nature or a Friend', emoji: '🌳', worlds: ['emotional'],
+    id: 'recharge', ar: 'جلسة في الطبيعة', en: 'Time in Nature', emoji: '🌳', worlds: ['emotional'],
     quote: '﴿وَيَتَفَكَّرُونَ فِي خَلْقِ السَّمَاوَاتِ وَالْأَرْضِ﴾',
     source: 'سورة آل عمران — ١٩١',
-    science: 'تحليل شامل لـ١٤٣ دراسة (Twohig-Bennett & Jones 2018) وجد أن التعرض للمساحات الخضراء يرتبط بانخفاض الكورتيزول وضغط الدم ومعدل ضربات القلب. ودراسة هارفارد الممتدة ٨٥ عامًا وجدت أن دفء العلاقات هو أقوى مؤشر للسعادة والصحة على المدى الطويل.'
+    science: 'تحليل شامل لـ١٤٣ دراسة (Twohig-Bennett & Jones 2018) وجد أن التعرض للمساحات الخضراء يرتبط بانخفاض الكورتيزول وضغط الدم ومعدل ضربات القلب، ودراسة ستانفورد (Bratman 2015) وجدت أن مشي ٩٠ دقيقة في الطبيعة يقلل الاجترار الذهني ونشاط مناطق القلق في الدماغ.'
+  },
+  {
+    id: 'friend', ar: 'جلسة مع صديقة', en: 'Time with a Friend', emoji: '🫂', worlds: ['emotional'],
+    quote: '«مَثَلُ الجليسِ الصالحِ والجليسِ السَّوْءِ كحاملِ المِسْكِ ونافخِ الكِيرِ»',
+    source: 'متفق عليه',
+    science: 'دراسة هارفارد الممتدة ٨٥ عامًا — أطول دراسة عن السعادة في التاريخ — وجدت أن دفء العلاقات هو أقوى مؤشر للسعادة والصحة على المدى الطويل، أقوى من المال والشهرة والذكاء.'
   },
   {
     id: 'explore', ar: 'زيارة مكان جديد', en: 'Visit a New Place', emoji: '🧭', worlds: ['env'],
@@ -205,7 +211,7 @@ const GROUPS = [
 ];
 const GROUP_ITEMS = {
   morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
-  day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn'],
+  day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn', 'friend'],
   mood:    ['meet', 'recharge', 'explore', 'tidy', 'enjoy', 'goodtrace', 'sharehobby', 'solitude'],
   night:   ['maghrib', 'isha', 'athkareve', 'sleep', 'tahajjud'],
 };
@@ -231,7 +237,8 @@ const EN_WHY = {
   water:      { quote: '“And We made from water every living thing.”', source: 'Quran 21:30', science: 'Even mild dehydration (1–2% of body weight) measurably impairs concentration and mood and increases headaches and fatigue in repeated controlled trials; adequate water improves alertness through the day.' },
   learn:      { quote: '“Whoever travels a path seeking knowledge, Allah eases for him a path to Paradise.”', source: 'Muslim', science: 'Learning new skills builds “cognitive reserve” — neural flexibility that protects memory and brain health with age, linked in broad systematic reviews to delayed cognitive decline.' },
   meet:       { quote: '“And We made you peoples and tribes that you may know one another.”', source: 'Quran 49:13', science: 'The landmark meta-analysis (Holt-Lunstad et al. 2010; 148 studies, 300,000+ people) found strong social ties associated with ~50% higher survival odds — an effect comparable to quitting smoking.' },
-  recharge:   { quote: '“…and they reflect upon the creation of the heavens and the earth.”', source: 'Quran 3:191', science: 'A meta-analysis of 143 studies (Twohig-Bennett & Jones 2018) linked greenspace exposure to lower cortisol, blood pressure and heart rate; and Harvard’s 85-year study found warm relationships the strongest predictor of long-term happiness and health.' },
+  recharge:   { quote: '“…and they reflect upon the creation of the heavens and the earth.”', source: 'Quran 3:191', science: 'A meta-analysis of 143 studies (Twohig-Bennett & Jones 2018) linked greenspace exposure to lower cortisol, blood pressure and heart rate; and a Stanford study (Bratman 2015) found a 90-minute nature walk reduces rumination and anxiety-related brain activity.' },
+  friend:     { quote: '“The likeness of a righteous companion and a bad companion is that of a musk-seller and a blacksmith’s bellows.”', source: 'Agreed upon', science: 'Harvard’s 85-year study — the longest study of happiness ever run — found warm relationships the strongest predictor of long-term happiness and health, stronger than money, fame or IQ.' },
   explore:    { quote: '“Say: travel through the land.”', source: 'Quran 29:20', science: 'GPS-tracking research (Heller et al., Nature Neuroscience 2020) found that variety in the places we visit daily correlates with more positive mood, tied to the brain’s novelty-and-reward circuits — new experiences feed the brain.' },
   tidy:       { quote: '“Indeed, Allah is beautiful and loves beauty.”', source: 'Muslim', science: 'A UCLA study (Saxbe & Repetti 2010) found people who describe their homes as cluttered show elevated cortisol through the day; Princeton research (2011) showed visual clutter competes for your attention and lowers focus.' },
   enjoy:      { quote: '“Let him be, O Umar — for it moves through them faster than a shower of arrows.”', source: 'Said ﷺ about Ibn Rawaha’s poetry — Tirmidhi & Nasa’i, authenticated by al-Albani', science: 'A study of 93,000+ people across 16 countries (Fancourt et al., Nature Medicine 2023) found having a hobby associated with fewer depressive symptoms and higher life satisfaction and sense of meaning — in every country studied.' },
