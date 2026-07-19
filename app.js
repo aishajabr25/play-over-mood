@@ -752,7 +752,7 @@ function renderWhy() {
       ${worldTag}
       <div class="why-quote">${why.quote}</div>
       <div class="why-source">${why.source}</div>
-      <div class="why-science"><strong>${isEN() ? '🔬 What does science say?' : '🔬 ماذا يقول العلم؟'}</strong>${why.science}</div>`;
+      <div class="why-science"><strong>${isEN() ? '🔬 What the studies found' : '🔬 ماذا وجدت الدراسات؟'}</strong>${why.science}</div>`;
     grid.appendChild(el);
   });
 }
