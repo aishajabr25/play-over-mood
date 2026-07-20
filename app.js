@@ -1188,8 +1188,8 @@ function renderPosts() {
         ${p.admin ? `<span class="post-badge">${isEN() ? 'Host' : 'المشرفة'}</span>` : ''}
         ${p.pinned ? `<span class="post-badge" style="background:var(--accent);color:var(--text)">${isEN() ? '📌 Pinned' : '📌 مثبّت'}</span>` : ''}
         <span class="post-time">${timeAgo(p.time)}</span>
-        ${isAdmin ? `<button class="post-delete" data-act="reply" data-id="${p.id}">${p.reply ? '✏️ تعديل الرد' : '↩ رد'}</button>
-                     <button class="post-delete" data-act="pin" data-id="${p.id}">${p.pinned ? 'إلغاء التثبيت' : '📌 تثبيت'}</button>` : ''}
+        ${isAdmin ? `<button class="post-delete" data-act="reply" data-id="${p.id}">${p.reply ? (isEN() ? '✏️ edit reply' : '✏️ تعديل الرد') : (isEN() ? '↩ reply' : '↩ رد')}</button>
+                     <button class="post-delete" data-act="pin" data-id="${p.id}">${p.pinned ? (isEN() ? 'unpin' : 'إلغاء التثبيت') : (isEN() ? '📌 pin' : '📌 تثبيت')}</button>` : ''}
         ${canDelete ? `<button class="post-delete" data-act="del" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
       </div>
       <div class="post-body">${esc(p.text)}</div>
