@@ -676,11 +676,27 @@ function missionModal(initial) {
   });
 }
 
+/* أرشفة المهمة الحالية قبل استبدالها — سجل خاص بالمشرفة فقط */
+async function archiveCurrentMission() {
+  if (!mission) return;
+  const hadContent = mission.text || mission.link || mission.image || (mission.steps || []).length > 0;
+  if (!hadContent) return;
+  try {
+    await addDoc(collection(db, 'missionHistory'), {
+      text: mission.text || '', link: mission.link || '', image: mission.image || '',
+      steps: mission.steps || [],
+      fromDate: mission.updated || null,
+      toDate: Date.now(),
+    });
+  } catch { /* لا نمنع النشر الجديد إن فشلت الأرشفة */ }
+}
+
 async function openMissionEditor() {
   if (!isAdmin) return;
   const result = await missionModal(mission);
   if (!result) return;
   try {
+    await archiveCurrentMission();
     if (!result.text && !result.link && !result.image && result.steps.length === 0) {
       await setDoc(doc(db, 'meta', 'mission'), { text: '', link: '', image: '', steps: [], updated: Date.now() });
       showToast('أُزيلت مهمة الأسبوع');
@@ -1384,6 +1400,34 @@ async function renderAdminDash() {
   } catch {
     showToast('تعذر تحميل البريد');
   }
+
+  /* أرشيف مهمات الأسابيع الماضية — للمرجعية فقط، لا يراه اللاعبات */
+  const archiveEl = document.createElement('div');
+  archiveEl.innerHTML = `<div class="card-title" style="font-size:1rem; margin-top:22px;">🗂️ أرشيف مهمات الأسابيع</div>
+    <div class="card-desc">مرجع خاص بكِ — لا تراه اللاعبات، حتى لا نثقل على من تنضم متأخرة</div>
+    <div id="mission-archive" class="card-desc">جارٍ التحميل…</div>`;
+  el.appendChild(archiveEl);
+  try {
+    const snap = await getDocs(query(collection(db, 'missionHistory'), orderBy('toDate', 'desc'), limit(20)));
+    const rows = snap.docs.map(d => d.data());
+    const archBox = document.getElementById('mission-archive');
+    if (rows.length === 0) {
+      archBox.textContent = 'لا يوجد أرشيف بعد — يُحفظ تلقائيًا كل ما تستبدلين مهمة أسبوع بأخرى';
+    } else {
+      archBox.innerHTML = rows.map(r => {
+        const from = r.fromDate ? new Date(r.fromDate).toLocaleDateString('ar', { day: 'numeric', month: 'short' }) : '؟';
+        const to = new Date(r.toDate).toLocaleDateString('ar', { day: 'numeric', month: 'short' });
+        const stepsLine = (r.steps || []).length ? `<br><span style="color:rgba(74,57,45,.5)">خطوات: ${r.steps.map(esc).join(' · ')}</span>` : '';
+        return `<div class="mail-row" style="direction:rtl; flex-direction:column; align-items:flex-start; gap:2px;">
+          <strong style="color:var(--deep)">${from} → ${to}</strong>
+          <span>${esc(r.text || '(بدون نص)')}</span>${stepsLine}
+        </div>`;
+      }).join('');
+    }
+  } catch {
+    const archBox = document.getElementById('mission-archive');
+    if (archBox) archBox.textContent = 'تعذر تحميل الأرشيف';
+  }
 }
 
 /* ── نسخة احتياطية كاملة (JSON) — للمشرفة فقط ────────────── */
@@ -1397,11 +1441,12 @@ async function exportBackup() {
     return o;
   };
   try {
-    const out = { exportedAt: new Date().toISOString(), users: {}, mails: {}, posts: {}, days: {}, weeks: {}, stats: {} };
+    const out = { exportedAt: new Date().toISOString(), users: {}, mails: {}, posts: {}, days: {}, weeks: {}, stats: {}, missionHistory: {} };
     out.users = await grab('users');
     out.mails = await grab('mails');
     out.posts = await grab('posts');
     out.days  = await grab('days');
+    out.missionHistory = await grab('missionHistory');
     /* كل الأسابيع منذ الانطلاقة + الأسبوع الحالي والسابق */
     const wks = new Set([thisWeekKey(), prevWeekKey()]);
     for (let d = new Date(START_DATE); d <= new Date(); d.setDate(d.getDate() + 7)) {
