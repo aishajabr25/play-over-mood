@@ -1134,32 +1134,55 @@ function renderPosts() {
     list.appendChild(el);
   });
 
+  /* تحديث فوري محلي — يشمل المنشورات القديمة غير المشمولة بالبث الحي */
+  function patchLocal(id, patch) {
+    [postsCache, olderPosts].forEach(arr => {
+      const i = arr.findIndex(x => x.id === id);
+      if (i !== -1) arr[i] = { ...arr[i], ...patch };
+    });
+  }
+  function removeLocal(id) {
+    postsCache = postsCache.filter(x => x.id !== id);
+    olderPosts = olderPosts.filter(x => x.id !== id);
+  }
+
   list.querySelectorAll('.post-delete').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id  = btn.dataset.id;
       const act = btn.dataset.act;
       try {
         if (act === 'del') {
+          removeLocal(id);
+          renderPosts();
           await deleteDoc(doc(db, 'posts', id));
           showToast('تم حذف المنشور');
         } else if (act === 'pin') {
-          const p = postsCache.find(x => x.id === id);
-          await updateDoc(doc(db, 'posts', id), { pinned: !p.pinned });
+          const p = [...postsCache, ...olderPosts].find(x => x.id === id);
+          const newPinned = !p.pinned;
+          patchLocal(id, { pinned: newPinned });
+          renderPosts();
+          await updateDoc(doc(db, 'posts', id), { pinned: newPinned });
         } else if (act === 'reply') {
-          const p = postsCache.find(x => x.id === id);
+          const p = [...postsCache, ...olderPosts].find(x => x.id === id);
           const existing = p && p.reply ? p.reply.text : '';
           const text = await replyModal(p ? p.text : '', existing);
           if (text === null) return; /* إلغاء */
           if (text === '' && existing) {
+            patchLocal(id, { reply: null });
+            renderPosts();
             await updateDoc(doc(db, 'posts', id), { reply: null });
             showToast('أُزيل الرد');
           } else if (text) {
-            await updateDoc(doc(db, 'posts', id), { reply: { author: ADMIN_NAME, text } });
+            const reply = { author: ADMIN_NAME, text };
+            patchLocal(id, { reply });
+            renderPosts();
+            await updateDoc(doc(db, 'posts', id), { reply });
             showToast(existing ? 'عُدّل ردك 🤍' : 'نُشر ردك 🤍');
           }
         }
-      } catch {
+      } catch (err) {
         showToast('لم تنجح العملية — تحققي من الصلاحيات');
+        console.error('wall action failed:', act, err);
       }
     });
   });
