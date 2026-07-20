@@ -53,7 +53,7 @@ const WORLDS = {
   physical:  { ar: 'العنصر الجسدي',  en: 'Physical',      color: '#7BBBD4' },
   spiritual: { ar: 'العنصر الروحي',  en: 'Spiritual',     color: '#5EAF7A' },
   mental:    { ar: 'العنصر الذهني',  en: 'Mental',        color: '#8B7CC0' },
-  emotional: { ar: 'العنصر العاطفي', en: 'Emotional',     color: '#D4819C' },
+  emotional: { ar: 'العنصر الشعوري', en: 'Emotional',     color: '#D4819C' },
   env:       { ar: 'العنصر البيئي',  en: 'Environmental', color: '#4EA89E' },
 };
 const LEGENDARY_COLOR = '#CFA94A';
