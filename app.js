@@ -224,9 +224,9 @@ const GROUPS = [
 ];
 const GROUP_ITEMS = {
   morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
-  day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn', 'friend'],
-  mood:    ['meet', 'recharge', 'explore', 'tidy', 'enjoy', 'goodtrace', 'sharehobby', 'solitude'],
-  night:   ['maghrib', 'isha', 'athkareve', 'sleep', 'tahajjud'],
+  day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn'],
+  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend'],
+  night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'sleep', 'tahajjud'],
 };
 
 /* ── اللغة الإنجليزية (وضع كامل لغير الناطقات بالعربية) ──── */
