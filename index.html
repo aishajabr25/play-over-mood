@@ -468,6 +468,32 @@
       background: var(--yellow-light); border-radius: 999px; padding: 6px 14px;
     }
     .mission-empty { font-size: .8rem; color: rgba(74,57,45,.4); }
+    .mission-steps { margin-top: 12px; }
+    .mission-progress-bar {
+      height: 10px; border-radius: 999px; background: rgba(74,57,45,.08);
+      overflow: hidden; margin-bottom: 10px;
+    }
+    .mission-progress-fill {
+      height: 100%; border-radius: 999px; background: var(--accent);
+      width: 0%; transition: width .4s cubic-bezier(.22,.68,0,1.05);
+    }
+    .mission-step-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 0; cursor: pointer; user-select: none;
+    }
+    .mission-step-box {
+      width: 22px; height: 22px; border-radius: 8px; flex-shrink: 0;
+      border: 2px solid rgba(74,57,45,.25); background: var(--white);
+      display: grid; place-items: center; font-size: .8rem; color: transparent;
+      transition: background .18s, border-color .18s, color .18s;
+    }
+    .mission-step-row.done .mission-step-box {
+      background: var(--secondary); border-color: rgba(160,190,154,.9); color: var(--deep);
+    }
+    .mission-step-row.done .mission-step-text { color: rgba(74,57,45,.5); text-decoration: line-through; }
+    .mission-step-text { font-size: .85rem; color: var(--text); }
+    .mission-pct { font-size: .72rem; font-weight: 800; color: var(--deep); margin-bottom: 4px; }
+    .modal-card textarea#mission-steps-input { min-height: 100px; }
 
     /* ── Toast ───────────────────────────────────────────── */
     #toast {
@@ -694,6 +720,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=29"></script>
+<script type="module" src="app.js?v=30"></script>
 </body>
 </html>

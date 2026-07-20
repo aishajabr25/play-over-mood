@@ -454,6 +454,7 @@ onAuthStateChanged(auth, async user => {
   if (nickname && Object.keys(myDays).length === 0) {
     await fetchMyDaysFromServer();
   }
+  loadMissionProgressLocal();
 
   updateAdminUi();
   updateSyncUi();
@@ -590,6 +591,28 @@ function renderMission() {
     const linkHtml = (mission.link && !yid)
       ? `<a class="mission-link" href="${esc(mission.link)}" target="_blank" rel="noopener">🔗 ${isEN() ? 'Open link' : 'افتحي الرابط'}</a>`
       : '';
+
+    let stepsHtml = '';
+    const steps = mission.steps || [];
+    if (steps.length > 0 && !isAdmin) {
+      const pct = Math.round((myMissionDone.filter(Boolean).length / steps.length) * 100);
+      stepsHtml = `
+        <div class="mission-steps">
+          <div class="mission-pct">${pct}% ${isEN() ? 'complete' : 'مكتمل'}</div>
+          <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:${pct}%"></div></div>
+          ${steps.map((s, i) => `
+            <div class="mission-step-row${myMissionDone[i] ? ' done' : ''}" data-step="${i}">
+              <div class="mission-step-box">✓</div>
+              <div class="mission-step-text">${esc(s)}</div>
+            </div>`).join('')}
+        </div>`;
+    } else if (steps.length > 0 && isAdmin) {
+      stepsHtml = `
+        <div class="mission-steps">
+          ${steps.map(s => `<div class="mission-step-row"><div class="mission-step-box" style="visibility:hidden">✓</div><div class="mission-step-text">${esc(s)}</div></div>`).join('')}
+        </div>`;
+    }
+
     box.innerHTML = `
       <div class="mission-box">
         <div class="mission-head">
@@ -599,7 +622,13 @@ function renderMission() {
         ${mission.text ? `<div class="mission-text">${esc(mission.text)}</div>` : ''}
         ${mediaHtml}
         ${linkHtml}
+        ${stepsHtml}
       </div>`;
+
+    box.querySelectorAll('.mission-step-row').forEach(row => {
+      if (row.dataset.step === undefined) return;
+      row.addEventListener('click', () => toggleMissionStep(Number(row.dataset.step)));
+    });
   }
 
   const btn = document.getElementById('mission-edit-btn');
@@ -619,21 +648,26 @@ function missionModal(initial) {
         <input type="url" id="mission-link-input" placeholder="https://youtube.com/…" />
         <label class="modal-field-label">${isEN() ? 'Image URL (optional)' : 'رابط صورة (اختياري)'}</label>
         <input type="url" id="mission-image-input" placeholder="https://…" />
+        <label class="modal-field-label">${isEN() ? 'Checklist steps — one per line, up to 5 (optional)' : 'خطوات قابلة للتأشير — سطر لكل خطوة، حتى ٥ (اختياري)'}</label>
+        <textarea id="mission-steps-input" maxlength="300" placeholder="${isEN() ? 'e.g.\nRead page 1-10\nWatch the video\n…' : 'مثال:\nاقرئي الصفحة ١-١٠\nشاهدي الفيديو\n…'}"></textarea>
         <div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:8px;">${isEN() ? 'Tip: clear everything and save to remove the mission box.' : 'ملاحظة: امسحي كل الحقول واحفظي لإزالة الصندوق نهائيًا.'}</div>
         <div class="modal-actions">
           <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Publish' : 'نشر'}</button>
           <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
         </div>
       </div>`;
-    const ta = overlay.querySelector('textarea');
-    const linkI = overlay.querySelector('#mission-link-input');
-    const imgI  = overlay.querySelector('#mission-image-input');
+    const ta = overlay.querySelector('textarea:not(#mission-steps-input)');
+    const linkI  = overlay.querySelector('#mission-link-input');
+    const imgI   = overlay.querySelector('#mission-image-input');
+    const stepsI = overlay.querySelector('#mission-steps-input');
     ta.value = initial?.text || '';
     linkI.value = initial?.link || '';
     imgI.value = initial?.image || '';
+    stepsI.value = (initial?.steps || []).join('\n');
     const close = val => { overlay.remove(); resolve(val); };
     overlay.querySelector('[data-act="send"]').addEventListener('click', () => close({
       text: ta.value.trim(), link: linkI.value.trim(), image: imgI.value.trim(),
+      steps: stepsI.value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 5),
     }));
     overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
@@ -647,8 +681,8 @@ async function openMissionEditor() {
   const result = await missionModal(mission);
   if (!result) return;
   try {
-    if (!result.text && !result.link && !result.image) {
-      await setDoc(doc(db, 'meta', 'mission'), { text: '', link: '', image: '', updated: Date.now() });
+    if (!result.text && !result.link && !result.image && result.steps.length === 0) {
+      await setDoc(doc(db, 'meta', 'mission'), { text: '', link: '', image: '', steps: [], updated: Date.now() });
       showToast('أُزيلت مهمة الأسبوع');
     } else {
       await setDoc(doc(db, 'meta', 'mission'), { ...result, updated: Date.now(), by: ADMIN_NAME });
@@ -657,6 +691,26 @@ async function openMissionEditor() {
   } catch {
     showToast('تعذر الحفظ — تحققي من قواعد الحماية');
   }
+}
+
+/* ── تقدّم اللاعبة الشخصي في خطوات مهمة الأسبوع ──────────── */
+function missionProgressKey() { return `${thisWeekKey()}_${me.uid}`; }
+function missionProgressLsKey() { return `pom_mission_${missionProgressKey()}`; }
+let myMissionDone = [];
+
+function loadMissionProgressLocal() {
+  try { myMissionDone = JSON.parse(localStorage.getItem(missionProgressLsKey())) || []; }
+  catch { myMissionDone = []; }
+}
+async function toggleMissionStep(i) {
+  if (!me || isAdmin) return;
+  myMissionDone[i] = !myMissionDone[i];
+  localStorage.setItem(missionProgressLsKey(), JSON.stringify(myMissionDone));
+  renderMission();
+  try {
+    await setDoc(doc(db, 'missionProgress', missionProgressKey()),
+      { uid: me.uid, week: thisWeekKey(), done: myMissionDone, updated: Date.now() }, { merge: true });
+  } catch { /* غير حرج — النسخة المحلية كافية للعرض */ }
 }
 
 /* ── عدّادات المجتمع (ملخصات صغيرة بدل سجلات الجميع) ─────── */
@@ -1302,28 +1356,33 @@ async function renderAdminDash() {
       </div>`;
   });
   html += `</div>
-    <div class="card-title" style="font-size:1rem">البريد الإلكتروني <button class="post-delete" id="copy-mails" style="margin-inline-start:8px">نسخ الكل</button></div>
-    <div id="mails-list" class="card-desc">جارٍ التحميل…</div>`;
+    <div class="card-title" style="font-size:1rem">البريد الإلكتروني</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn btn-deep btn-small" id="download-mails">⬇️ تنزيل البريد (JSON)</button>
+      <button class="btn btn-soft btn-small" id="copy-mails">نسخ الكل كنص</button>
+    </div>
+    <div class="card-desc" style="margin-top:6px;">لا تُعرض هنا — فقط للتنزيل، حتى لا تحتاجي للتمرير بينها.</div>`;
   el.innerHTML = html;
   document.getElementById('export-json').addEventListener('click', exportBackup);
 
   try {
     const snap = await getDocs(collection(db, 'mails'));
     const rows = snap.docs.map(d => d.data());
-    const listEl = document.getElementById('mails-list');
-    if (rows.length === 0) {
-      listEl.textContent = 'لا يوجد بريد بعد — الحقل اختياري عند التسجيل';
-    } else {
-      listEl.innerHTML = rows.map(r =>
-        `<div class="mail-row"><span>${esc(r.email)}</span><span style="color:rgba(74,57,45,.5)">${esc(r.nick || '')}</span></div>`).join('');
-      document.getElementById('copy-mails').addEventListener('click', async () => {
-        await navigator.clipboard.writeText(rows.map(r => r.email).join('\n')).catch(() => {});
-        showToast(`نُسخ ${rows.length} بريدًا 🤍`);
-      });
-    }
+    document.getElementById('download-mails').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `play-over-mood-emails-${dateKey(new Date())}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast(rows.length ? `نُزّل ${rows.length} بريدًا 🤍` : 'لا يوجد بريد بعد');
+    });
+    document.getElementById('copy-mails').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(rows.map(r => r.email).join('\n')).catch(() => {});
+      showToast(rows.length ? `نُسخ ${rows.length} بريدًا 🤍` : 'لا يوجد بريد بعد');
+    });
   } catch {
-    const listEl = document.getElementById('mails-list');
-    if (listEl) listEl.textContent = 'تعذر تحميل البريد';
+    showToast('تعذر تحميل البريد');
   }
 }
 
