@@ -292,7 +292,7 @@ function applyEnglish() {
       <div class="rules-title">How We Play · قواعد اللعبة</div>
       <div class="rule-row"><span class="rule-emoji">🤍</span><span>No “musts” here — do what you can today, even a single quest.</span></div>
       <div class="rule-row"><span class="rule-emoji">☀️</span><span>We chase no perfection, we chase nothing at all — we stack small things, because real change happens through small things.</span></div>
-      <div class="rule-row"><span class="rule-emoji">⭐</span><span>Every quest = points. The golden legendary quests are worth more because they unlock the rest (in real life 🎉).</span></div>
+      <div class="rule-row"><span class="rule-emoji">⭐</span><span>Every quest = 1 point. The golden legendary quests are worth more (2 to 5 points, depending on their impact) because they unlock the rest (in real life 🎉).</span></div>
       <div class="rule-row"><span class="rule-emoji">🔁</span><span>Every Tuesday a new round begins — and a missed day erases nothing; continue from where you are.</span></div>
       <div class="rule-row"><span class="rule-emoji">🤙🏻</span><span>We play together, not against each other — the board is for encouragement, the wall is for your questions and thoughts.</span></div>
       <div class="rule-row"><span class="rule-emoji">🌼</span><span>The Arabic version is written in the feminine, the language of this space — men are fully welcome; same rules, same game.</span></div>
