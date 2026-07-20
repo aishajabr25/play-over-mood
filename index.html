@@ -434,6 +434,40 @@
     }
     .modal-card textarea:focus { border-color: var(--blue-main); box-shadow: 0 0 0 4px rgba(167,216,240,.22); }
     .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-start; }
+    .modal-card input[type="url"], .modal-card input[type="text"] {
+      width: 100%; border: 1.5px solid var(--line); background: var(--blue-light);
+      border-radius: 12px; padding: 9px 12px; font-size: .85rem;
+      color: var(--text); outline: none; font-family: inherit;
+      margin-top: 8px;
+    }
+    .modal-field-label { font-size: .7rem; color: rgba(74,57,45,.55); font-weight: 700; margin-top: 10px; display: block; }
+
+    /* ── Mission of the week ─────────────────────────────── */
+    .mission-box {
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px dashed rgba(74,57,45,.14);
+    }
+    .mission-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .mission-tag {
+      background: var(--accent); color: var(--text);
+      border-radius: 999px; padding: 3px 12px;
+      font-size: .72rem; font-weight: 800;
+    }
+    .mission-edit-btn {
+      margin-inline-start: auto; background: none; border: none;
+      color: rgba(74,57,45,.45); cursor: pointer; font-size: .75rem;
+    }
+    .mission-text { font-size: .9rem; line-height: 1.85; color: var(--text); }
+    .mission-media { margin-top: 10px; }
+    .mission-media img { max-width: 100%; border-radius: 14px; display: block; }
+    .mission-media iframe { width: 100%; aspect-ratio: 16/9; border: 0; border-radius: 14px; }
+    .mission-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 8px; font-size: .82rem; font-weight: 700;
+      color: var(--deep); text-decoration: none;
+      background: var(--yellow-light); border-radius: 999px; padding: 6px 14px;
+    }
+    .mission-empty { font-size: .8rem; color: rgba(74,57,45,.4); }
 
     /* ── Toast ───────────────────────────────────────────── */
     #toast {
@@ -525,10 +559,11 @@
 
     <!-- Welcome box -->
     <section class="card" id="welcome-card" style="padding:16px 24px; margin-bottom:16px;">
-      <div class="hello-row" style="margin-bottom:0;">
+      <div class="hello-row">
         <div class="hello-name">مرحبًا، <span id="hello-nick"></span> 🌼 <span id="today-date"></span></div>
         <button class="change-nick" id="change-nick">تغيير الاسم</button>
       </div>
+      <div id="mission-box" hidden></div>
     </section>
 
     <!-- Tabs -->
@@ -659,6 +694,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=26"></script>
+<script type="module" src="app.js?v=28"></script>
 </body>
 </html>

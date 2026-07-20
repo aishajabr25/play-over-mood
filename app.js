@@ -14,9 +14,16 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   getFirestore, doc, setDoc, getDoc, getDocs, collection, query,
-  onSnapshot, addDoc, updateDoc, deleteDoc, orderBy, limit,
+  onSnapshot, addDoc, updateDoc, deleteDoc, orderBy, limit, startAfter,
   getCountFromServer, increment,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+/* استخراج معرّف فيديو يوتيوب من أي رابط شائع */
+function youtubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyAcz2piDF7lvKygGy5eVf8RESiLFqgvt38",
@@ -165,6 +172,12 @@ const HABITS = [
     quote: '﴿قُلْ سِيرُوا فِي الْأَرْضِ﴾',
     source: 'سورة العنكبوت — ٢٠',
     science: 'دراسة تتبّع يومي بالموقع الجغرافي (Heller وزملاؤها، Nature Neuroscience 2020) وجدت أن تنوّع الأماكن التي نزورها يوميًا يرتبط بمزاج أكثر إيجابية، ويرتبط ذلك بنشاط دوائر الدماغ المسؤولة عن الجِدّة والمكافأة — التجارب الجديدة غذاء للدماغ.'
+  },
+  {
+    id: 'newthing', ar: 'أسوي شي جديد', en: 'Do Something New', emoji: '✨', worlds: ['mental'],
+    quote: '«اثنتان لا تنقضيان: الحرص على العلم، والحرص على العمر»',
+    source: 'من أثر معروف عن الصحابة في الحرص على استغلال العمر بالجديد والنافع',
+    science: 'دراسة تتبّع بالموقع الجغرافي (Heller وزملاؤها، Nature Neuroscience 2020) وجدت أن التجارب الجديدة — لا الأماكن فقط — تنشّط دوائر الدماغ المسؤولة عن المكافأة، ومراجعات علم الأعصاب المعرفي تربط الجِدّة بتحسّن المزاج وتقوية الذاكرة طويلة المدى.'
   },
   {
     id: 'tidy', ar: 'ترتيب مساحتك', en: 'Tidy Your Space', emoji: '🧺', worlds: ['env'],
@@ -368,8 +381,13 @@ let statsWeeks = {};    // week -> {dayCounts, habitCounts}
 let statsFetchedAt = 0;
 let participantsCount = null;
 let participantsFetchedAt = 0;
-let postsCache = [];
+const WALL_PAGE = 20;
+let postsCache = [];   /* أحدث ٢٠ منشورًا — تحديث فوري */
+let olderPosts  = [];  /* منشورات أقدم حُمّلت بالضغط على "تحميل المزيد" */
+let wallHasMore = true;
+let wallLoading = false;
 let listenersStarted = false;
+let mission = null; /* { text, link, image, updated } */
 
 function myDayKey() { return dateKey(new Date()); }
 function myToday() { return (myDays[myDayKey()] || {}).habits || {}; }
@@ -523,7 +541,7 @@ function startListeners() {
   );
 
   onSnapshot(
-    query(collection(db, 'posts'), orderBy('time', 'desc'), limit(30)),
+    query(collection(db, 'posts'), orderBy('time', 'desc'), limit(WALL_PAGE)),
     snap => {
       postsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderPosts();
@@ -531,7 +549,114 @@ function startListeners() {
     () => {}
   );
 
+  onSnapshot(doc(db, 'meta', 'mission'), snap => {
+    mission = snap.exists() ? snap.data() : null;
+    renderMission();
+  }, () => {});
+
   fetchStats();
+}
+
+/* ── مهمة الأسبوع — يحررها المشرفة، يراها الجميع ─────────── */
+function renderMission() {
+  const box = document.getElementById('mission-box');
+  if (!box) return;
+  box.hidden = false;
+
+  const hasContent = mission && (mission.text || mission.link || mission.image);
+  const editBtn = isAdmin
+    ? `<button class="mission-edit-btn" id="mission-edit-btn">${hasContent ? '✏️' : (isEN() ? '+ Add' : '+ إضافة')}</button>`
+    : '';
+
+  if (!hasContent) {
+    box.innerHTML = `
+      <div class="mission-box">
+        <div class="mission-head">
+          <span class="mission-tag">${isEN() ? '🎯 Mission of the Week' : '🎯 مهمة الأسبوع'}</span>
+          ${editBtn}
+        </div>
+        ${isAdmin
+          ? `<div class="mission-empty">${isEN() ? 'Nothing yet — tap + Add to write this week’s focus.' : 'ما في شي بعد — اضغطي + إضافة لكتابة تركيز هذا الأسبوع.'}</div>`
+          : ''}
+      </div>`;
+  } else {
+    const yid = youtubeId(mission.link);
+    let mediaHtml = '';
+    if (yid) {
+      mediaHtml = `<div class="mission-media"><iframe src="https://www.youtube.com/embed/${yid}" allowfullscreen title="mission media"></iframe></div>`;
+    } else if (mission.image) {
+      mediaHtml = `<div class="mission-media"><img src="${esc(mission.image)}" alt="" loading="lazy"></div>`;
+    }
+    const linkHtml = (mission.link && !yid)
+      ? `<a class="mission-link" href="${esc(mission.link)}" target="_blank" rel="noopener">🔗 ${isEN() ? 'Open link' : 'افتحي الرابط'}</a>`
+      : '';
+    box.innerHTML = `
+      <div class="mission-box">
+        <div class="mission-head">
+          <span class="mission-tag">${isEN() ? '🎯 Mission of the Week' : '🎯 مهمة الأسبوع'}</span>
+          ${editBtn}
+        </div>
+        ${mission.text ? `<div class="mission-text">${esc(mission.text)}</div>` : ''}
+        ${mediaHtml}
+        ${linkHtml}
+      </div>`;
+  }
+
+  const btn = document.getElementById('mission-edit-btn');
+  if (btn) btn.addEventListener('click', openMissionEditor);
+}
+
+function missionModal(initial) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">🎯 ${isEN() ? 'Mission of the Week' : 'مهمة الأسبوع'}</div>
+        <label class="modal-field-label">${isEN() ? 'Text' : 'النص'}</label>
+        <textarea maxlength="500" placeholder="${isEN() ? 'This week’s focus…' : 'تركيز هذا الأسبوع…'}"></textarea>
+        <label class="modal-field-label">${isEN() ? 'Link (YouTube auto-embeds)' : 'رابط (يوتيوب يظهر كفيديو تلقائيًا)'}</label>
+        <input type="url" id="mission-link-input" placeholder="https://youtube.com/…" />
+        <label class="modal-field-label">${isEN() ? 'Image URL (optional)' : 'رابط صورة (اختياري)'}</label>
+        <input type="url" id="mission-image-input" placeholder="https://…" />
+        <div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:8px;">${isEN() ? 'Tip: clear everything and save to remove the mission box.' : 'ملاحظة: امسحي كل الحقول واحفظي لإزالة الصندوق نهائيًا.'}</div>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Publish' : 'نشر'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const ta = overlay.querySelector('textarea');
+    const linkI = overlay.querySelector('#mission-link-input');
+    const imgI  = overlay.querySelector('#mission-image-input');
+    ta.value = initial?.text || '';
+    linkI.value = initial?.link || '';
+    imgI.value = initial?.image || '';
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close({
+      text: ta.value.trim(), link: linkI.value.trim(), image: imgI.value.trim(),
+    }));
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    document.body.appendChild(overlay);
+    ta.focus();
+  });
+}
+
+async function openMissionEditor() {
+  if (!isAdmin) return;
+  const result = await missionModal(mission);
+  if (!result) return;
+  try {
+    if (!result.text && !result.link && !result.image) {
+      await setDoc(doc(db, 'meta', 'mission'), { text: '', link: '', image: '', updated: Date.now() });
+      showToast('أُزيلت مهمة الأسبوع');
+    } else {
+      await setDoc(doc(db, 'meta', 'mission'), { ...result, updated: Date.now(), by: ADMIN_NAME });
+      showToast('نُشرت مهمة الأسبوع 🤍');
+    }
+  } catch {
+    showToast('تعذر الحفظ — تحققي من قواعد الحماية');
+  }
 }
 
 /* ── عدّادات المجتمع (ملخصات صغيرة بدل سجلات الجميع) ─────── */
@@ -575,6 +700,7 @@ function initGate() {
     renderLeaderboard();
     renderCharts();
     renderPosts();
+    renderMission();
   } else {
     gate.hidden = false; app.hidden = true;
   }
@@ -950,11 +1076,37 @@ function replyModal(postText, initial) {
   });
 }
 
+async function loadOlderPosts() {
+  if (wallLoading || !wallHasMore) return;
+  wallLoading = true;
+  const btn = document.getElementById('load-more-posts');
+  if (btn) btn.textContent = isEN() ? 'Loading…' : 'جارٍ التحميل…';
+
+  const combined = [...postsCache, ...olderPosts].sort((a, b) => b.time - a.time);
+  const last = combined[combined.length - 1];
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'posts'), orderBy('time', 'desc'),
+      startAfter(last ? last.time : Date.now()), limit(WALL_PAGE),
+    ));
+    const fresh = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const existingIds = new Set(combined.map(p => p.id));
+    olderPosts = [...olderPosts, ...fresh.filter(p => !existingIds.has(p.id))];
+    if (fresh.length < WALL_PAGE) wallHasMore = false;
+  } catch {
+    showToast(isEN() ? 'Could not load more' : 'تعذر تحميل المزيد');
+  }
+  wallLoading = false;
+  renderPosts();
+}
+
 function renderPosts() {
   const list = document.getElementById('posts-list');
   if (!list) return;
   list.innerHTML = '';
-  const sorted = [...postsCache].sort((a, b) => (b.pinned === true) - (a.pinned === true) || b.time - a.time);
+  const merged = [...postsCache, ...olderPosts];
+  const uniq = [...new Map(merged.map(p => [p.id, p])).values()];
+  const sorted = uniq.sort((a, b) => (b.pinned === true) - (a.pinned === true) || b.time - a.time);
 
   sorted.forEach(p => {
     const el = document.createElement('div');
@@ -1011,6 +1163,22 @@ function renderPosts() {
       }
     });
   });
+
+  if (wallHasMore) {
+    const moreBtn = document.createElement('button');
+    moreBtn.id = 'load-more-posts';
+    moreBtn.className = 'btn btn-soft btn-small';
+    moreBtn.style.cssText = 'display:block; margin:14px auto 0;';
+    moreBtn.textContent = isEN() ? 'Load older posts' : 'تحميل منشورات أقدم';
+    moreBtn.addEventListener('click', loadOlderPosts);
+    list.appendChild(moreBtn);
+  } else if (sorted.length > WALL_PAGE) {
+    const endNote = document.createElement('div');
+    endNote.className = 'mission-empty';
+    endNote.style.cssText = 'text-align:center; margin-top:10px;';
+    endNote.textContent = isEN() ? 'That’s all the posts 🤍' : 'وصلتِ لأقدم المنشورات 🤍';
+    list.appendChild(endNote);
+  }
 }
 
 document.getElementById('post-form').addEventListener('submit', async e => {
