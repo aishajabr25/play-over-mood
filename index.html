@@ -434,6 +434,28 @@
     }
     .modal-card textarea:focus { border-color: var(--blue-main); box-shadow: 0 0 0 4px rgba(167,216,240,.22); }
     .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-start; }
+    .voice-box {
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px dashed rgba(74,57,45,.14);
+    }
+    .voice-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .voice-rec-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1.5px solid var(--line); background: var(--white);
+      border-radius: 999px; padding: 7px 14px; font-size: .82rem; font-weight: 700;
+      color: var(--text); cursor: pointer; font-family: inherit;
+    }
+    .voice-rec-btn.recording { background: #fdeaea; border-color: #e6a5a5; color: #a83e3e; }
+    .voice-dot {
+      width: 9px; height: 9px; border-radius: 50%; background: #d94f4f;
+      animation: voicepulse 1s ease-in-out infinite;
+    }
+    @keyframes voicepulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+    .voice-timer { font-size: .78rem; color: rgba(74,57,45,.55); font-weight: 700; }
+    .voice-row audio { height: 34px; max-width: 220px; }
+    .voice-remove { background: none; border: none; color: rgba(74,57,45,.45); font-size: .75rem; cursor: pointer; }
+    .reply-audio { margin-top: 8px; }
+    .reply-audio audio { width: 100%; max-width: 320px; height: 36px; }
     .modal-card input[type="url"], .modal-card input[type="text"] {
       width: 100%; border: 1.5px solid var(--line); background: var(--blue-light);
       border-radius: 12px; padding: 9px 12px; font-size: .85rem;
@@ -726,6 +748,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=39"></script>
+<script type="module" src="app.js?v=40"></script>
 </body>
 </html>
