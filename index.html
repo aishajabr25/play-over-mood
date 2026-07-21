@@ -443,9 +443,11 @@
     .modal-field-label { font-size: .7rem; color: rgba(74,57,45,.55); font-weight: 700; margin-top: 10px; display: block; }
 
     /* ── Mission of the week ─────────────────────────────── */
-    .mission-box {
-      margin-top: 14px; padding-top: 14px;
-      border-top: 1px dashed rgba(74,57,45,.14);
+    #mission-box:not([hidden]) {
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: var(--radius-lg); padding: 16px 20px;
+      box-shadow: 0 10px 24px rgba(74,57,45,.06);
+      margin-bottom: 16px;
     }
     .mission-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
     .mission-tag {
@@ -599,10 +601,11 @@
         <div class="hello-name">مرحبًا، <span id="hello-nick"></span> 🌼 <span id="today-date"></span></div>
         <button class="change-nick" id="change-nick">تغيير الاسم</button>
       </div>
-      <div id="mission-box" hidden></div>
     </section>
 
     <div id="tab-quests" class="tab-pane">
+
+    <div id="mission-box" hidden></div>
 
     <!-- Today's log -->
     <section class="card">
@@ -720,6 +723,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=37"></script>
+<script type="module" src="app.js?v=38"></script>
 </body>
 </html>

@@ -562,9 +562,10 @@ function startListeners() {
 function renderMission() {
   const box = document.getElementById('mission-box');
   if (!box) return;
-  box.hidden = false;
 
   const hasContent = mission && (mission.text || mission.link || mission.image);
+  box.hidden = !hasContent && !isAdmin; /* اللاعبات لا يرين صندوقًا فارغًا */
+  if (box.hidden) return;
   const editBtn = isAdmin
     ? `<button class="mission-edit-btn" id="mission-edit-btn">${hasContent ? '✏️' : (isEN() ? '+ Add' : '+ إضافة')}</button>`
     : '';
