@@ -583,15 +583,6 @@
 
   <div id="app" hidden>
 
-    <!-- Welcome box -->
-    <section class="card" id="welcome-card" style="padding:16px 24px; margin-bottom:16px;">
-      <div class="hello-row">
-        <div class="hello-name">مرحبًا، <span id="hello-nick"></span> 🌼 <span id="today-date"></span></div>
-        <button class="change-nick" id="change-nick">تغيير الاسم</button>
-      </div>
-      <div id="mission-box" hidden></div>
-    </section>
-
     <!-- Tabs -->
     <nav class="tabs-bar" aria-label="أقسام الصفحة">
       <button class="tab-btn active" data-tab="quests" type="button">🎮 المهمات</button>
@@ -601,6 +592,15 @@
       <button class="tab-btn" data-tab="rules" type="button">📜 القواعد</button>
       <button class="tab-btn" data-tab="admin" id="tab-btn-admin" type="button" hidden>📈 لوحتي</button>
     </nav>
+
+    <!-- Welcome box -->
+    <section class="card" id="welcome-card" style="padding:16px 24px; margin-bottom:16px;">
+      <div class="hello-row">
+        <div class="hello-name">مرحبًا، <span id="hello-nick"></span> 🌼 <span id="today-date"></span></div>
+        <button class="change-nick" id="change-nick">تغيير الاسم</button>
+      </div>
+      <div id="mission-box" hidden></div>
+    </section>
 
     <div id="tab-quests" class="tab-pane">
 
@@ -720,6 +720,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=36"></script>
+<script type="module" src="app.js?v=37"></script>
 </body>
 </html>
