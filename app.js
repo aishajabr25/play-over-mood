@@ -15,7 +15,7 @@ import {
 import {
   getFirestore, doc, setDoc, getDoc, getDocs, collection, query,
   onSnapshot, addDoc, updateDoc, deleteDoc, orderBy, limit, startAfter,
-  getCountFromServer, increment,
+  increment,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 /* استخراج معرّف فيديو يوتيوب من أي رابط شائع */
@@ -401,6 +401,16 @@ function myWeekPoints() {
     .reduce((s, [, d]) => s + (d.points || 0), 0);
 }
 
+/* نقاطك ظاهرة دائمًا أعلى الصفحة — تحدّث فورًا عند كل تأشير */
+function updateMyPointsChip() {
+  const row = document.getElementById('my-points-row');
+  const chip = document.getElementById('my-points-chip');
+  if (!row || !chip || !nickname || isAdmin || preLaunch()) { if (row) row.hidden = true; return; }
+  row.hidden = false;
+  const pts = myWeekPoints();
+  chip.textContent = isEN() ? `⭐ Your points this week: ${pts}` : `⭐ نقاطك هذا الأسبوع: ${pts}`;
+}
+
 /* المرآة المحلية — تقلل القراءات: نقرأ أيامنا من الجهاز لا من الخادم */
 function daysLsKey() { return `pom_days_${me?.uid || 'anon'}`; }
 function loadMyDaysLocal() {
@@ -754,8 +764,9 @@ async function fetchParticipants() {
   if (Date.now() - participantsFetchedAt < 60000) return participantsCount;
   participantsFetchedAt = Date.now();
   try {
-    const snap = await getCountFromServer(collection(db, `weeks/${thisWeekKey()}/players`));
-    participantsCount = snap.data().count;
+    /* getDocs بدل getCountFromServer — بعض المتصفحات/إضافات الخصوصية تحجب استعلامات العدّ */
+    const snap = await getDocs(collection(db, `weeks/${thisWeekKey()}/players`));
+    participantsCount = snap.size;
   } catch { /* غير حرج */ }
   return participantsCount;
 }
@@ -864,6 +875,7 @@ function renderHabits() {
 
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString(isEN() ? 'en' : 'ar', { weekday: 'long', day: 'numeric', month: 'long' });
+  updateMyPointsChip();
 
   if (preLaunch() && !isAdmin) {
     const days = Math.ceil((START_DATE - new Date()) / 86400000);
@@ -965,8 +977,8 @@ function renderWhy() {
 let waitlistCount = null;
 async function loadWaitlistCount() {
   try {
-    const snap = await getCountFromServer(collection(db, 'users'));
-    waitlistCount = snap.data().count;
+    const snap = await getDocs(collection(db, 'users'));
+    waitlistCount = snap.size;
     const el = document.getElementById('wl-count');
     if (el) el.textContent = waitlistCount;
   } catch { /* غير حرج */ }
@@ -1340,8 +1352,9 @@ async function renderAdminDash() {
   el.innerHTML = '<div class="card-desc">جارٍ تحميل الأرقام…</div>';
 
   const wk = thisWeekKey();
-  const countOf = path => getCountFromServer(collection(db, path))
-    .then(s => s.data().count).catch(() => '؟');
+  /* getDocs بدل getCountFromServer — بعض المتصفحات/إضافات الخصوصية تحجب استعلامات العدّ */
+  const countOf = path => getDocs(collection(db, path))
+    .then(s => s.size).catch(() => '؟');
 
   const [usersC, mailsC, postsC, playersC] = await Promise.all([
     countOf('users'), countOf('mails'), countOf('posts'), countOf(`weeks/${wk}/players`),
