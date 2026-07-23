@@ -221,14 +221,12 @@ const HABITS = [
     science: 'مراجعة شاملة في The New England Journal of Medicine (de Cabo & Mattson 2019) لعشرات الدراسات على الصيام المتقطع وجدت تحسّنًا في حساسية الإنسولين وضغط الدم ومؤشرات الالتهاب — والأيام البيض نمط صيام متقطع منتظم كل شهر.'
   },
   */
-  /* مؤجلة عمدًا — عائشة تريد تصميمها بطريقة خاصة (مقيّدة بيوم الجمعة) قبل تفعيلها
   {
-    id: 'kahf', ar: 'قراءة سورة الكهف يوم الجمعة', en: 'Reading Surat Al-Kahf on Friday', emoji: '🕋', worlds: ['spiritual'],
+    id: 'kahf', ar: 'قراءة سورة الكهف', en: 'Reading Surat Al-Kahf', emoji: '🕋', worlds: ['spiritual'],
     quote: '«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين»',
     source: 'رواه الحاكم والبيهقي وصححه الألباني في صحيح الجامع (يُنصح بمراجعة اللفظ والتخريج)',
     science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
   },
-  */
 ];
 
 function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.worlds[0]].color; }
@@ -987,10 +985,50 @@ async function toggleHabit(h) {
   }
 }
 
+/* ── مهمة موقوتة (سورة الكهف يوم الجمعة) — تظهر يوم الجمعة فقط ─── */
+function renderTimelyBox() {
+  const box = document.getElementById('timely-box');
+  if (!box) return;
+
+  const kahf = HABITS.find(h => h.id === 'kahf');
+  const isFriday = new Date().getDay() === 5;
+  const show = kahf && !(preLaunch() && !isAdmin) && (isFriday || isAdmin);
+  box.hidden = !show;
+  if (!show) return;
+
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  const msLeft = midnight - new Date();
+  const hLeft = Math.floor(msLeft / 3600000);
+  const mLeft = Math.floor((msLeft % 3600000) / 60000);
+  const countdownTxt = isEN()
+    ? `⏳ ${hLeft}h ${mLeft}m left today`
+    : `⏳ باقي ${hLeft} س ${mLeft} د على انتهاء اليوم`;
+
+  const done = !!myToday()[kahf.id];
+  box.innerHTML = `
+    <div class="timely-head">
+      <span class="timely-tag">${isEN() ? '🕋 Friday Mission' : '🕋 مهمة موقوتة'}</span>
+      <span class="timely-countdown">${isFriday ? countdownTxt : (isEN() ? 'Preview (admin) — not Friday' : 'معاينة (مشرفة) — اليوم مش جمعة')}</span>
+    </div>
+    <div class="timely-quote">${isEN() ? '“Whoever reads Surat Al-Kahf on Friday will be illuminated with light between the two Fridays.”' : '«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين»'}</div>
+    <div class="habit-check${done ? ' done' : ''}" id="timely-check" style="border-inline-start-color:${habitColor(kahf)}">
+      <div class="habit-box">✓</div>
+      <div class="habit-check-info">
+        <div class="habit-check-ar">${isEN() ? kahf.en : kahf.ar}</div>
+        <div class="habit-check-en">${isEN() ? kahf.ar : kahf.en}</div>
+      </div>
+      <div class="habit-emoji">${kahf.emoji}</div>
+    </div>`;
+  document.getElementById('timely-check').addEventListener('click', () => toggleHabit(kahf));
+}
+setInterval(renderTimelyBox, 60000);
+
 function renderHabits() {
   const grid = document.getElementById('habits-grid');
   if (!grid) return;
   grid.innerHTML = '';
+  renderTimelyBox();
 
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString(isEN() ? 'en' : 'ar', { weekday: 'long', day: 'numeric', month: 'long' });
