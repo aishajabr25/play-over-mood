@@ -364,7 +364,7 @@ function applyEnglish() {
   set('#tab-rules .card-title', 'How do we play here?');
   set('#tab-rules .card-desc', 'The same rules you read at the door — always here when you need them');
 
-  set('#tab-features .card-label', '💡 Feature Requests · اقتراحاتكن');
+  set('#tab-features .card-label', '💡 Feature Requests · اقتراحك');
   set('#tab-features .card-title', 'Your voice reaches us 🤍');
   set('#tab-features .card-desc', 'Write any idea or feature you’d love to see — every suggestion reaches me and is genuinely considered, and you can track its status right here');
   const featureInput = document.getElementById('feature-input');
