@@ -347,6 +347,20 @@
       padding: 1px 9px; font-size: .6rem; font-weight: 800;
     }
     .post-time { font-size: .64rem; color: rgba(74,57,45,.45); }
+    .status-badge {
+      border-radius: 999px; padding: 1px 10px; font-size: .62rem; font-weight: 800;
+    }
+    .status-new      { background: rgba(74,57,45,.08); color: var(--deep); }
+    .status-progress { background: var(--blue-main); color: var(--text); }
+    .status-planned  { background: var(--yellow-light); color: var(--deep); }
+    .status-done     { background: var(--secondary); color: var(--deep); }
+    .status-declined { background: rgba(200,90,90,.14); color: #a3453f; }
+    .status-select {
+      margin-inline-start: auto; font-size: .72rem; font-weight: 700;
+      border: 1.5px solid var(--line); border-radius: 999px;
+      padding: 3px 8px; background: var(--white); color: var(--text);
+      font-family: inherit; cursor: pointer;
+    }
     .post-delete {
       margin-inline-start: auto; background: none; border: none;
       color: rgba(74,57,45,.4); cursor: pointer; font-size: .7rem;
@@ -614,6 +628,7 @@
       <button class="tab-btn" data-tab="why" type="button">📖 لماذا؟</button>
       <button class="tab-btn" data-tab="wall" type="button">💬 الحائط</button>
       <button class="tab-btn" data-tab="rules" type="button">📜 القواعد</button>
+      <button class="tab-btn" data-tab="features" type="button">💡 اقتراحاتكن</button>
       <button class="tab-btn" data-tab="admin" id="tab-btn-admin" type="button" hidden>📈 لوحتي</button>
     </nav>
 
@@ -723,6 +738,21 @@
       </section>
     </div><!-- /tab-rules -->
 
+    <div id="tab-features" class="tab-pane" hidden>
+      <section class="card">
+        <span class="card-label label-green">💡 اقتراحاتكن · Feature Requests</span>
+        <div class="card-title">شو ناقص اللعبة؟</div>
+        <div class="card-desc">اكتبي فكرة أو ميزة تحبين نضيفها — الجميع يشوفها، وأنا أحدّث حالتها أول بأول</div>
+        <form class="post-form" id="feature-form">
+          <textarea id="feature-input" placeholder="اكتبي اقتراحك هنا…" maxlength="300"></textarea>
+          <div class="post-form-row">
+            <button type="submit" class="btn btn-deep btn-small">إرسال الاقتراح</button>
+          </div>
+        </form>
+        <div class="posts-list" id="features-list"></div>
+      </section>
+    </div><!-- /tab-features -->
+
     <div id="tab-admin" class="tab-pane" hidden>
       <section class="card">
         <span class="card-label">📈 لوحة المشرفة · Admin Only</span>
@@ -748,6 +778,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="app.js?v=40"></script>
+<script type="module" src="app.js?v=41"></script>
 </body>
 </html>

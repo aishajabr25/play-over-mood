@@ -213,6 +213,18 @@ const HABITS = [
     source: 'رواه البخاري',
     science: 'مراجعات منهجية لأبحاث «الاستشفاء النفسي» (Sonnentag وزملاؤها) تجد أن الانفصال الحقيقي عن المشاغل — ولو لفترة قصيرة يوميًا — يتنبأ قياسًا بانخفاض الإرهاق وتحسّن المزاج والنوم. الراحة ليست مكافأة بعد الإنجاز، هي جزء من الإنجاز.'
   },
+  {
+    id: 'whitedays', ar: 'صيام الأيام البيض', en: 'Fasting the White Days', emoji: '🌕', worlds: ['spiritual'],
+    quote: '«أمرنا رسول الله ﷺ أن نصوم من الشهر ثلاثة أيام: ثلاث عشرة، وأربع عشرة، وخمس عشرة»',
+    source: 'عن أبي ذر رضي الله عنه — رواه النسائي وصححه الألباني (يُنصح بمراجعة اللفظ والتخريج)',
+    science: 'مراجعة شاملة في The New England Journal of Medicine (de Cabo & Mattson 2019) لعشرات الدراسات على الصيام المتقطع وجدت تحسّنًا في حساسية الإنسولين وضغط الدم ومؤشرات الالتهاب — والأيام البيض نمط صيام متقطع منتظم كل شهر.'
+  },
+  {
+    id: 'kahf', ar: 'قراءة سورة الكهف يوم الجمعة', en: 'Reading Surat Al-Kahf on Friday', emoji: '🕋', worlds: ['spiritual'],
+    quote: '«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين»',
+    source: 'رواه الحاكم والبيهقي وصححه الألباني في صحيح الجامع (يُنصح بمراجعة اللفظ والتخريج)',
+    science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
+  },
 ];
 
 function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.worlds[0]].color; }
@@ -229,7 +241,7 @@ const GROUPS = [
 const GROUP_ITEMS = {
   morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
   day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn'],
-  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend'],
+  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend', 'whitedays', 'kahf'],
   night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'sleep', 'tahajjud'],
 };
 
@@ -262,6 +274,8 @@ const EN_WHY = {
   goodtrace:  { quote: '“And removing something harmful from the path is charity.”', source: 'Agreed upon', science: 'A meta-analysis of 27 experiments (Curry et al. 2018) found small acts of kindness measurably raise the giver’s happiness — goodness returns to its doer first, and the surroundings win too.' },
   sharehobby: { quote: '“Allah is in the aid of His servant as long as the servant is in the aid of his brother.”', source: 'Muslim', science: 'Sharing what you love combines two studied effects: giving boosts the giver’s wellbeing (Curry’s 2018 meta-analysis), and social bonds predict health and longevity (Holt-Lunstad’s 148-study meta-analysis) — your hobby becomes a bridge.' },
   solitude:   { quote: '“Indeed, your body has a right over you.”', source: 'Bukhari', science: 'Systematic reviews of psychological recovery research (Sonnentag et al.) find that genuine daily detachment — even briefly — measurably predicts less exhaustion and better mood and sleep. Rest is not a reward after the work; it is part of the work.' },
+  whitedays:  { quote: '“The Messenger of Allah ﷺ commanded us to fast three days of the month: the 13th, 14th, and 15th.”', source: 'Narrated by Abu Dharr — Nasa’i, authenticated by al-Albani (wording/chain worth double-checking)', science: 'A major review in The New England Journal of Medicine (de Cabo & Mattson 2019) covering dozens of studies on intermittent fasting found improvements in insulin sensitivity, blood pressure, and inflammation markers — the White Days are a naturally recurring monthly pattern of exactly this kind of fasting.' },
+  kahf:       { quote: '“Whoever reads Surat Al-Kahf on Friday will be illuminated with light between the two Fridays.”', source: 'Al-Hakim & al-Bayhaqi, authenticated by al-Albani in Sahih al-Jami (wording/chain worth double-checking)', science: 'Broad systematic reviews (including Koenig’s work at Duke) find that regular, recurring weekly religious rituals are associated with lower anxiety and greater sense of meaning and psychological stability.' },
 };
 
 function whyOf(h) {
@@ -319,7 +333,7 @@ function applyEnglish() {
   set('#nick-form div', 'Totally optional — only for news of future rounds 🤍 Never shown to anyone, and it does not save your progress: progress is saved automatically on this device, and to carry it across devices link your Google account inside the game.');
   set('#nick-form button[type=submit]', 'Start Playing');
 
-  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '📈 My Board']);
+  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '💡 Ideas', '📈 My Board']);
 
   set('#tab-quests .card-label', '① Today’s Quests · مهمات اليوم');
   set('#tab-quests .card-title', 'Which quests did you complete today?');
@@ -345,6 +359,13 @@ function applyEnglish() {
   set('#tab-rules .card-label', 'How We Play · قواعد اللعبة');
   set('#tab-rules .card-title', 'How do we play here?');
   set('#tab-rules .card-desc', 'The same rules you read at the door — always here when you need them');
+
+  set('#tab-features .card-label', '💡 Feature Requests · اقتراحاتكن');
+  set('#tab-features .card-title', 'What’s missing from the game?');
+  set('#tab-features .card-desc', 'Write an idea or feature you’d like added — everyone can see it, and I update its status as we go');
+  const featureInput = document.getElementById('feature-input');
+  if (featureInput) featureInput.placeholder = 'Write your suggestion here…';
+  set('#feature-form button[type=submit]', 'Send suggestion');
 
   set('#about-box', 'I’m 3aosh 🤍 A software engineer and certified teacher. I read psychology (though these days I prefer fiqh al-nafs — the Islamic understanding of the self), apply what I learn, and explore its connection to Islam. I love learning, helping people, and games — not the electronic kind… competition 🤙🏻 I started this game for myself, then thought: why not share it with the world?');
   set('.hello-name', 'Hi, <span id="hello-nick"></span> 🌼 <span id="today-date"></span>');
@@ -387,6 +408,7 @@ let participantsCount = null;
 let participantsFetchedAt = 0;
 const WALL_PAGE = 20;
 let postsCache = [];   /* أحدث ٢٠ منشورًا — تحديث فوري */
+let featuresCache = []; /* طلبات الميزات */
 let olderPosts  = [];  /* منشورات أقدم حُمّلت بالضغط على "تحميل المزيد" */
 let wallHasMore = true;
 let wallLoading = false;
@@ -569,8 +591,97 @@ function startListeners() {
     renderMission();
   }, () => {});
 
+  onSnapshot(
+    query(collection(db, 'features'), orderBy('time', 'desc'), limit(50)),
+    snap => {
+      featuresCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderFeatures();
+    },
+    () => {}
+  );
+
   fetchStats();
 }
+
+/* ── اقتراحاتكن — طلبات ميزات عامة تراها الجميع ──────────── */
+const STATUS = {
+  new:      { ar: 'جديد',        en: 'New',         cls: 'status-new' },
+  progress: { ar: 'قيد التنفيذ', en: 'In Progress',  cls: 'status-progress' },
+  planned:  { ar: 'لاحقًا',      en: 'Planned',      cls: 'status-planned' },
+  done:     { ar: 'تم التنفيذ',  en: 'Done',         cls: 'status-done' },
+  declined: { ar: 'ملغاة',       en: 'Declined',     cls: 'status-declined' },
+};
+
+function renderFeatures() {
+  const list = document.getElementById('features-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (featuresCache.length === 0) {
+    list.innerHTML = `<div class="mission-empty">${isEN() ? 'No suggestions yet — be the first 🤍' : 'ما في اقتراحات بعد — كوني أول من يقترح 🤍'}</div>`;
+    return;
+  }
+
+  featuresCache.forEach(f => {
+    const st = STATUS[f.status] || STATUS.new;
+    const canDelete = isAdmin || (me && f.uid === me.uid);
+    const el = document.createElement('div');
+    el.className = 'post-item';
+    el.innerHTML = `
+      <div class="post-head">
+        <span class="post-author">${esc(f.author)}</span>
+        <span class="status-badge ${st.cls}">${isEN() ? st.en : st.ar}</span>
+        <span class="post-time">${timeAgo(f.time)}</span>
+        ${canDelete ? `<button class="post-delete" data-act="fdel" data-id="${f.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
+      </div>
+      <div class="post-body">${esc(f.text)}</div>
+      ${isAdmin ? `
+        <select class="status-select" data-id="${f.id}" style="margin-top:8px; display:block;">
+          ${Object.entries(STATUS).map(([k, v]) =>
+            `<option value="${k}" ${f.status === k || (!f.status && k === 'new') ? 'selected' : ''}>${isEN() ? v.en : v.ar}</option>`).join('')}
+        </select>` : ''}`;
+    list.appendChild(el);
+  });
+
+  list.querySelectorAll('.status-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const id = sel.dataset.id;
+      const status = sel.value;
+      const i = featuresCache.findIndex(x => x.id === id);
+      if (i !== -1) featuresCache[i] = { ...featuresCache[i], status };
+      renderFeatures();
+      try { await updateDoc(doc(db, 'features', id), { status }); }
+      catch { showToast('تعذر تحديث الحالة'); }
+    });
+  });
+
+  list.querySelectorAll('[data-act="fdel"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      featuresCache = featuresCache.filter(x => x.id !== id);
+      renderFeatures();
+      try { await deleteDoc(doc(db, 'features', id)); }
+      catch { showToast('تعذر الحذف'); }
+    });
+  });
+}
+
+document.getElementById('feature-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = document.getElementById('feature-input');
+  const text = input.value.trim();
+  if (!text || !me || !nickname) return;
+  try {
+    await addDoc(collection(db, 'features'), {
+      uid: me.uid, author: isAdmin ? ADMIN_NAME : nickname,
+      text, time: Date.now(), status: 'new',
+    });
+    input.value = '';
+    showToast(isEN() ? 'Suggestion sent 🤍' : 'أُرسل اقتراحك 🤍');
+  } catch {
+    showToast(isEN() ? 'Could not send' : 'تعذر الإرسال');
+  }
+});
 
 /* ── مهمة الأسبوع — يحررها المشرفة، يراها الجميع ─────────── */
 function renderMission() {
@@ -1595,7 +1706,7 @@ async function exportBackup() {
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
-const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'admin'];
+const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'features', 'admin'];
 
 /* طبّقي اللغة أولًا حتى ينسخ تبويب القواعد النسخة الصحيحة */
 applyEnglish();
