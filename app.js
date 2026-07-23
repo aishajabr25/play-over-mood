@@ -213,12 +213,14 @@ const HABITS = [
     source: 'رواه البخاري',
     science: 'مراجعات منهجية لأبحاث «الاستشفاء النفسي» (Sonnentag وزملاؤها) تجد أن الانفصال الحقيقي عن المشاغل — ولو لفترة قصيرة يوميًا — يتنبأ قياسًا بانخفاض الإرهاق وتحسّن المزاج والنوم. الراحة ليست مكافأة بعد الإنجاز، هي جزء من الإنجاز.'
   },
+  /* مؤجلة عمدًا مع سورة الكهف — بانتظار تصميم خاص من عائشة
   {
     id: 'whitedays', ar: 'صيام الأيام البيض', en: 'Fasting the White Days', emoji: '🌕', worlds: ['spiritual'],
     quote: '«أمرنا رسول الله ﷺ أن نصوم من الشهر ثلاثة أيام: ثلاث عشرة، وأربع عشرة، وخمس عشرة»',
     source: 'عن أبي ذر رضي الله عنه — رواه النسائي وصححه الألباني (يُنصح بمراجعة اللفظ والتخريج)',
     science: 'مراجعة شاملة في The New England Journal of Medicine (de Cabo & Mattson 2019) لعشرات الدراسات على الصيام المتقطع وجدت تحسّنًا في حساسية الإنسولين وضغط الدم ومؤشرات الالتهاب — والأيام البيض نمط صيام متقطع منتظم كل شهر.'
   },
+  */
   /* مؤجلة عمدًا — عائشة تريد تصميمها بطريقة خاصة (مقيّدة بيوم الجمعة) قبل تفعيلها
   {
     id: 'kahf', ar: 'قراءة سورة الكهف يوم الجمعة', en: 'Reading Surat Al-Kahf on Friday', emoji: '🕋', worlds: ['spiritual'],
@@ -243,7 +245,7 @@ const GROUPS = [
 const GROUP_ITEMS = {
   morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
   day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn'],
-  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend', 'whitedays'],
+  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend'],
   night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'sleep', 'tahajjud'],
 };
 
