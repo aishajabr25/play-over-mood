@@ -219,12 +219,14 @@ const HABITS = [
     source: 'عن أبي ذر رضي الله عنه — رواه النسائي وصححه الألباني (يُنصح بمراجعة اللفظ والتخريج)',
     science: 'مراجعة شاملة في The New England Journal of Medicine (de Cabo & Mattson 2019) لعشرات الدراسات على الصيام المتقطع وجدت تحسّنًا في حساسية الإنسولين وضغط الدم ومؤشرات الالتهاب — والأيام البيض نمط صيام متقطع منتظم كل شهر.'
   },
+  /* مؤجلة عمدًا — عائشة تريد تصميمها بطريقة خاصة (مقيّدة بيوم الجمعة) قبل تفعيلها
   {
     id: 'kahf', ar: 'قراءة سورة الكهف يوم الجمعة', en: 'Reading Surat Al-Kahf on Friday', emoji: '🕋', worlds: ['spiritual'],
     quote: '«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين»',
     source: 'رواه الحاكم والبيهقي وصححه الألباني في صحيح الجامع (يُنصح بمراجعة اللفظ والتخريج)',
     science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
   },
+  */
 ];
 
 function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.worlds[0]].color; }
@@ -241,7 +243,7 @@ const GROUPS = [
 const GROUP_ITEMS = {
   morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
   day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn'],
-  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend', 'whitedays', 'kahf'],
+  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend', 'whitedays'],
   night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'sleep', 'tahajjud'],
 };
 
