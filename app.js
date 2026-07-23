@@ -365,8 +365,8 @@ function applyEnglish() {
   set('#tab-rules .card-desc', 'The same rules you read at the door — always here when you need them');
 
   set('#tab-features .card-label', '💡 Feature Requests · اقتراحاتكن');
-  set('#tab-features .card-title', 'What’s missing from the game?');
-  set('#tab-features .card-desc', 'Write an idea or feature you’d like added — everyone can see it, and I update its status as we go');
+  set('#tab-features .card-title', 'Your voice reaches us 🤍');
+  set('#tab-features .card-desc', 'Write any idea or feature you’d love to see — every suggestion reaches me and is genuinely considered, and you can track its status right here');
   const featureInput = document.getElementById('feature-input');
   if (featureInput) featureInput.placeholder = 'Write your suggestion here…';
   set('#feature-form button[type=submit]', 'Send suggestion');
@@ -609,7 +609,7 @@ function startListeners() {
 
 /* ── اقتراحاتكن — طلبات ميزات عامة تراها الجميع ──────────── */
 const STATUS = {
-  new:      { ar: 'جديد',        en: 'New',         cls: 'status-new' },
+  new:      { ar: 'قيد المراجعة', en: 'Under Review', cls: 'status-new' },
   progress: { ar: 'قيد التنفيذ', en: 'In Progress',  cls: 'status-progress' },
   planned:  { ar: 'لاحقًا',      en: 'Planned',      cls: 'status-planned' },
   done:     { ar: 'تم التنفيذ',  en: 'Done',         cls: 'status-done' },
