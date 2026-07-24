@@ -985,31 +985,100 @@ async function toggleHabit(h) {
   }
 }
 
-/* ── مهمة موقوتة (سورة الكهف يوم الجمعة) — تظهر يوم الجمعة فقط ─── */
-function renderTimelyBox() {
+/* ── مهمة مؤقتة (سورة الكهف): من مغرب الخميس إلى مغرب الجمعة ─────
+   نحسب المغرب الحقيقي حسب موقع الزائرة (خط العرض/الطول) عبر Aladhan API.
+   إن تعذّر تحديد الموقع، نستخدم نافذة تقويمية تقريبية (يوم الجمعة كاملاً). */
+let geoCoords = null, geoAsked = false;
+const maghribCache = {};
+
+function getGeo() {
+  if (geoCoords) return Promise.resolve(geoCoords);
+  if (geoAsked) return Promise.resolve(null);
+  geoAsked = true;
+  return new Promise(resolve => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => { geoCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude }; resolve(geoCoords); },
+      () => resolve(null),
+      { timeout: 8000 }
+    );
+  });
+}
+
+function apiDate(d) { return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`; }
+
+async function fetchMaghrib(dateObj, coords) {
+  const key = `${coords.lat.toFixed(2)},${coords.lon.toFixed(2)}_${apiDate(dateObj)}`;
+  if (maghribCache[key]) return maghribCache[key];
+  try {
+    const res = await fetch(`https://api.aladhan.com/v1/timings/${apiDate(dateObj)}?latitude=${coords.lat}&longitude=${coords.lon}`);
+    const json = await res.json();
+    const [hh, mm] = json.data.timings.Maghrib.split(':').map(Number);
+    const m = new Date(dateObj);
+    m.setHours(hh, mm, 0, 0);
+    maghribCache[key] = m;
+    return m;
+  } catch { return null; }
+}
+
+async function renderTimelyBox() {
   const box = document.getElementById('timely-box');
   if (!box) return;
-
   const kahf = HABITS.find(h => h.id === 'kahf');
-  const isFriday = new Date().getDay() === 5;
-  const show = kahf && !(preLaunch() && !isAdmin) && (isFriday || isAdmin);
+  if (!kahf || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
+
+  const now = new Date();
+  const dow = now.getDay(); /* ٠=أحد … ٤=خميس، ٥=جمعة */
+  const relevantDay = dow === 4 || dow === 5;
+  if (!relevantDay && !isAdmin) { box.hidden = true; return; }
+
+  let windowStart = null, windowEnd = null, approx = false;
+  const coords = relevantDay ? await getGeo() : null;
+
+  if (coords && relevantDay) {
+    if (dow === 4) {
+      const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+      windowStart = await fetchMaghrib(now, coords);
+      windowEnd   = await fetchMaghrib(tomorrow, coords);
+    } else {
+      const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+      windowStart = await fetchMaghrib(yesterday, coords);
+      windowEnd   = await fetchMaghrib(now, coords);
+    }
+  }
+  if (!windowStart || !windowEnd) {
+    approx = true;
+    windowStart = new Date(now); windowStart.setHours(0, 0, 0, 0);
+    windowEnd   = new Date(now); windowEnd.setHours(24, 0, 0, 0);
+    if (dow !== 5 && !isAdmin) { box.hidden = true; return; }
+  }
+
+  const inWindow = now >= windowStart && now < windowEnd;
+  const show = isAdmin || inWindow;
   box.hidden = !show;
   if (!show) return;
 
-  const midnight = new Date();
-  midnight.setHours(24, 0, 0, 0);
-  const msLeft = midnight - new Date();
+  const msLeft = Math.max(0, windowEnd - now);
   const hLeft = Math.floor(msLeft / 3600000);
   const mLeft = Math.floor((msLeft % 3600000) / 60000);
-  const countdownTxt = isEN()
-    ? `⏳ ${hLeft}h ${mLeft}m left today`
-    : `⏳ باقي ${hLeft} س ${mLeft} د على انتهاء اليوم`;
+  let countdownTxt;
+  if (!inWindow) {
+    countdownTxt = isEN() ? 'Preview (admin) — outside the window' : 'معاينة (مشرفة) — خارج نافذة المغرب';
+  } else if (approx) {
+    countdownTxt = isEN()
+      ? `⏳ ~${hLeft}h ${mLeft}m left (approx., location unavailable)`
+      : `⏳ تقريبًا ${hLeft} س ${mLeft} د (بدون تحديد موقعك)`;
+  } else {
+    countdownTxt = isEN()
+      ? `⏳ ${hLeft}h ${mLeft}m until Maghrib`
+      : `⏳ باقي ${hLeft} س ${mLeft} د على المغرب`;
+  }
 
   const done = !!myToday()[kahf.id];
   box.innerHTML = `
     <div class="timely-head">
-      <span class="timely-tag">${isEN() ? '🕋 Friday Mission' : '🕋 مهمة موقوتة'}</span>
-      <span class="timely-countdown">${isFriday ? countdownTxt : (isEN() ? 'Preview (admin) — not Friday' : 'معاينة (مشرفة) — اليوم مش جمعة')}</span>
+      <span class="timely-tag">${isEN() ? '🕋 Timely Mission' : '🕋 مهمة مؤقتة'}</span>
+      <span class="timely-countdown">${countdownTxt}</span>
     </div>
     <div class="timely-quote">${isEN() ? '“Whoever reads Surat Al-Kahf on Friday will be illuminated with light between the two Fridays.”' : '«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين»'}</div>
     <div class="habit-check${done ? ' done' : ''}" id="timely-check" style="border-inline-start-color:${habitColor(kahf)}">
