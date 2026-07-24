@@ -1462,6 +1462,9 @@ function replyModal(postText, initial) {
     overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
     ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        close({ text: ta.value.trim(), audioBlob: recordedBlob, removeAudio: removeAudioFlag });
+      }
       if (e.key === 'Escape') close(null);
     });
     document.body.appendChild(overlay);
