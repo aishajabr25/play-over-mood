@@ -384,8 +384,19 @@ function weekStart(d) {
   x.setHours(0, 0, 0, 0);
   return x;
 }
-function thisWeekKey() { return dateKey(weekStart(new Date())); }
-function prevWeekKey() { const d = weekStart(new Date()); d.setDate(d.getDate() - 7); return dateKey(d); }
+
+/* ── يبدأ اليوم من الفجر لا من منتصف الليل ───────────────────
+   قبل فجر اليوم الحقيقي: نعتبر أن «اليوم» لا يزال أمس (نافذة سماح).
+   dayShiftDays: 0 عادي، -1 لا زلنا في يوم الأمس بانتظار الفجر.
+   بدون تحديد الموقع: نبقى على منتصف الليل تلقائيًا (fallback آمن). */
+let dayShiftDays = 0;
+function effectiveNow() {
+  const d = new Date();
+  if (dayShiftDays) d.setDate(d.getDate() + dayShiftDays);
+  return d;
+}
+function thisWeekKey() { return dateKey(weekStart(effectiveNow())); }
+function prevWeekKey() { const d = weekStart(effectiveNow()); d.setDate(d.getDate() - 7); return dateKey(d); }
 const esc = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
@@ -417,7 +428,7 @@ let wallLoading = false;
 let listenersStarted = false;
 let mission = null; /* { text, link, image, updated } */
 
-function myDayKey() { return dateKey(new Date()); }
+function myDayKey() { return dateKey(effectiveNow()); }
 function myToday() { return (myDays[myDayKey()] || {}).habits || {}; }
 function dayPoints(habits) {
   return HABITS.reduce((s, h) => s + (habits[h.id] ? habitPoints(h) : 0), 0);
@@ -488,6 +499,8 @@ onAuthStateChanged(auth, async user => {
     }
   }
 
+  /* لا نطلب الموقع إلا للاعبة معروفة مسبقًا — الزائرة الجديدة تشوف شاشة الاسم فورًا بدون تأخير */
+  if (nickname) await refreshDayBoundary();
   loadMyDaysLocal();
   if (nickname && Object.keys(myDays).length === 0) {
     await fetchMyDaysFromServer();
@@ -922,6 +935,7 @@ document.getElementById('nick-form').addEventListener('submit', async e => {
     }
   }
   showToast(isEN() ? `Welcome ${nickname} — your challenge begins ☀️` : `أهلًا ${nickname} — بدأ تحديك ☀️`);
+  await refreshDayBoundary();
   loadMyDaysLocal();
   initGate();
 });
@@ -1021,6 +1035,86 @@ async function fetchMaghrib(dateObj, coords) {
   } catch { return null; }
 }
 
+/* نفس فكرة المغرب، لكن لوقت الفجر — لتحديد بداية «يوم اللعبة» */
+const fajrCache = {};
+async function fetchFajr(dateObj, coords) {
+  const key = `${coords.lat.toFixed(2)},${coords.lon.toFixed(2)}_${apiDate(dateObj)}`;
+  if (fajrCache[key]) return fajrCache[key];
+  try {
+    const res = await fetch(`https://api.aladhan.com/v1/timings/${apiDate(dateObj)}?latitude=${coords.lat}&longitude=${coords.lon}`);
+    const json = await res.json();
+    const [hh, mm] = json.data.timings.Fajr.split(':').map(Number);
+    const f = new Date(dateObj);
+    f.setHours(hh, mm, 0, 0);
+    fajrCache[key] = f;
+    return f;
+  } catch { return null; }
+}
+
+/* موعد الفجر القادم — لعرض العدّ التنازلي فقط */
+let nextFajrForCountdown = null;
+let fajrBoundaryLoaded = false;
+
+async function refreshDayBoundary() {
+  const wasShift = dayShiftDays;
+  const coords = await getGeo();
+
+  if (coords) {
+    const now = new Date();
+    const todayFajr = await fetchFajr(now, coords);
+    if (todayFajr) {
+      if (now < todayFajr) {
+        dayShiftDays = -1;
+        nextFajrForCountdown = todayFajr;
+      } else {
+        dayShiftDays = 0;
+        const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+        nextFajrForCountdown = await fetchFajr(tomorrow, coords);
+      }
+    }
+  } else {
+    dayShiftDays = 0;
+    nextFajrForCountdown = null; /* بدون موقع: نعرض احتياطًا تقريبيًا (منتصف الليل) */
+  }
+
+  const firstRun = !fajrBoundaryLoaded;
+  fajrBoundaryLoaded = true;
+  renderDayCountdown();
+
+  /* إن تغيّر «يوم اللعبة» فعليًا بعد أول تحميل، أعيدي رسم كل ما يعتمد عليه */
+  if (!firstRun && wasShift !== dayShiftDays && nickname) {
+    loadMyDaysLocal();
+    renderHabits();
+    renderLeaderboard();
+    renderCharts();
+    updateMyPointsChip();
+  }
+}
+setInterval(refreshDayBoundary, 60000);
+
+function renderDayCountdown() {
+  const el = document.getElementById('day-countdown');
+  if (!el) return;
+  if (!nickname || isAdmin) { el.hidden = true; return; }
+
+  let msLeft, approx = false;
+  if (nextFajrForCountdown) {
+    msLeft = nextFajrForCountdown - new Date();
+  } else {
+    const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
+    msLeft = midnight - new Date();
+    approx = true;
+  }
+  if (msLeft < 0) msLeft = 0;
+  const hLeft = Math.floor(msLeft / 3600000);
+  const mLeft = Math.floor((msLeft % 3600000) / 60000);
+
+  el.hidden = false;
+  el.textContent = approx
+    ? (isEN() ? `⏳ ~${hLeft}h ${mLeft}m until a new day (location unavailable)` : `⏳ تقريبًا ${hLeft} س ${mLeft} د حتى يوم جديد (بدون تحديد موقعك)`)
+    : (isEN() ? `⏳ ${hLeft}h ${mLeft}m until Fajr — new day begins` : `⏳ باقي ${hLeft} س ${mLeft} د على الفجر — يبدأ يوم جديد`);
+}
+
 async function renderTimelyBox() {
   const box = document.getElementById('timely-box');
   if (!box) return;
@@ -1098,9 +1192,10 @@ function renderHabits() {
   if (!grid) return;
   grid.innerHTML = '';
   renderTimelyBox();
+  renderDayCountdown();
 
   document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString(isEN() ? 'en' : 'ar', { weekday: 'long', day: 'numeric', month: 'long' });
+    effectiveNow().toLocaleDateString(isEN() ? 'en' : 'ar', { weekday: 'long', day: 'numeric', month: 'long' });
   updateMyPointsChip();
 
   if (preLaunch() && !isAdmin) {
@@ -1258,7 +1353,7 @@ function renderLeaderboard() {
       : '<div class="prelaunch-note">اللوحة فارغة بعد — كوني أول من يسجل نقطة اليوم ☀️</div>';
   }
 
-  const end = weekStart(new Date());
+  const end = weekStart(effectiveNow());
   end.setDate(end.getDate() + 7);
   const daysLeft = Math.max(0, Math.ceil((end - new Date()) / 86400000));
   document.getElementById('round-chip').textContent = isEN()
