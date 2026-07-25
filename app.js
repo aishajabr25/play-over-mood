@@ -1002,19 +1002,21 @@ async function toggleHabit(h) {
 /* ── مهمة مؤقتة (سورة الكهف): من مغرب الخميس إلى مغرب الجمعة ─────
    نحسب المغرب الحقيقي حسب موقع الزائرة (خط العرض/الطول) عبر Aladhan API.
    إن تعذّر تحديد الموقع، نستخدم نافذة تقويمية تقريبية (يوم الجمعة كاملاً). */
-let geoCoords = null, geoAsked = false;
+let geoCoords = null, geoDenied = false;
 const maghribCache = {};
 
 function getGeo() {
   if (geoCoords) return Promise.resolve(geoCoords);
-  if (geoAsked) return Promise.resolve(null);
-  geoAsked = true;
+  if (geoDenied) return Promise.resolve(null); /* رفض صريح فقط يوقف المحاولات — التأخير أو الانتهاء لا يوقفها */
   return new Promise(resolve => {
     if (!navigator.geolocation) { resolve(null); return; }
     navigator.geolocation.getCurrentPosition(
       pos => { geoCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude }; resolve(geoCoords); },
-      () => resolve(null),
-      { timeout: 8000 }
+      err => {
+        if (err && err.code === 1) geoDenied = true; /* PERMISSION_DENIED فقط */
+        resolve(null);
+      },
+      { timeout: 15000, maximumAge: 600000 }
     );
   });
 }
