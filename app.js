@@ -1199,9 +1199,14 @@ async function renderTimelyBox() {
         <div class="habit-check-ar">${isEN() ? kahf.en : kahf.ar}</div>
         <div class="habit-check-en">${isEN() ? kahf.ar : kahf.en}</div>
       </div>
+      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${kahf.emoji}</div>
     </div>`;
   document.getElementById('timely-check').addEventListener('click', () => toggleHabit(kahf));
+  document.querySelector('#timely-check .habit-share-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    shareQuestSticker(kahf, done);
+  });
 }
 setInterval(renderTimelyBox, 60000);
 
@@ -1221,6 +1226,7 @@ function whiteDaysCheckRow(h, done) {
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
+      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${h.emoji}</div>
     </div>`;
 }
@@ -1308,6 +1314,14 @@ async function renderWhiteDaysBox() {
   `;
   document.getElementById(`check-${wd.id}`).addEventListener('click', () => toggleHabit(wd));
   document.getElementById(`check-${sh.id}`).addEventListener('click', () => toggleHabit(sh));
+  document.querySelector(`#check-${wd.id} .habit-share-btn`).addEventListener('click', e => {
+    e.stopPropagation();
+    shareQuestSticker({ ...wd, ar: titleAr, en: titleEn }, doneWd);
+  });
+  document.querySelector(`#check-${sh.id} .habit-share-btn`).addEventListener('click', e => {
+    e.stopPropagation();
+    shareQuestSticker({ ...sh, ar: suhoorTitleAr, en: suhoorTitleEn }, doneSh);
+  });
 }
 setInterval(renderWhiteDaysBox, 60000);
 
