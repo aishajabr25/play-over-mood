@@ -213,14 +213,12 @@ const HABITS = [
     source: 'رواه البخاري',
     science: 'مراجعات منهجية لأبحاث «الاستشفاء النفسي» (Sonnentag وزملاؤها) تجد أن الانفصال الحقيقي عن المشاغل — ولو لفترة قصيرة يوميًا — يتنبأ قياسًا بانخفاض الإرهاق وتحسّن المزاج والنوم. الراحة ليست مكافأة بعد الإنجاز، هي جزء من الإنجاز.'
   },
-  /* مؤجلة عمدًا مع سورة الكهف — بانتظار تصميم خاص من عائشة
   {
     id: 'whitedays', ar: 'صيام الأيام البيض', en: 'Fasting the White Days', emoji: '🌕', worlds: ['spiritual'],
     quote: '«أمرنا رسول الله ﷺ أن نصوم من الشهر ثلاثة أيام: ثلاث عشرة، وأربع عشرة، وخمس عشرة»',
     source: 'عن أبي ذر رضي الله عنه — رواه النسائي وصححه الألباني (يُنصح بمراجعة اللفظ والتخريج)',
     science: 'مراجعة شاملة في The New England Journal of Medicine (de Cabo & Mattson 2019) لعشرات الدراسات على الصيام المتقطع وجدت تحسّنًا في حساسية الإنسولين وضغط الدم ومؤشرات الالتهاب — والأيام البيض نمط صيام متقطع منتظم كل شهر.'
   },
-  */
   {
     id: 'kahf', ar: 'قراءة سورة الكهف', en: 'Reading Surat Al-Kahf', emoji: '🕋', worlds: ['spiritual'],
     quote: '«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين»',
@@ -1039,6 +1037,7 @@ async function fetchMaghrib(dateObj, coords) {
 
 /* نفس فكرة المغرب، لكن لوقت الفجر — لتحديد بداية «يوم اللعبة» */
 const fajrCache = {};
+const hijriDayCache = {};
 async function fetchFajr(dateObj, coords) {
   const key = `${coords.lat.toFixed(2)},${coords.lon.toFixed(2)}_${apiDate(dateObj)}`;
   if (fajrCache[key]) return fajrCache[key];
@@ -1049,8 +1048,18 @@ async function fetchFajr(dateObj, coords) {
     const f = new Date(dateObj);
     f.setHours(hh, mm, 0, 0);
     fajrCache[key] = f;
+    /* نفس الاستدعاء يرجّع التاريخ الهجري — نخزّنه لاستخدام الأيام البيض بدون طلب إضافي */
+    const hd = parseInt(json?.data?.date?.hijri?.day, 10);
+    if (!Number.isNaN(hd)) hijriDayCache[key] = hd;
     return f;
   } catch { return null; }
+}
+
+async function getHijriDay(dateObj, coords) {
+  const key = `${coords.lat.toFixed(2)},${coords.lon.toFixed(2)}_${apiDate(dateObj)}`;
+  if (hijriDayCache[key] !== undefined) return hijriDayCache[key];
+  await fetchFajr(dateObj, coords); /* يملأ الكاش كأثر جانبي */
+  return hijriDayCache[key];
 }
 
 /* موعد الفجر القادم — لعرض العدّ التنازلي فقط */
@@ -1189,11 +1198,70 @@ async function renderTimelyBox() {
 }
 setInterval(renderTimelyBox, 60000);
 
+/* ── الأيام البيض: ١٣–١٥ هجري، كل يوم يظهر بيومه وله نقطته ───
+   نعتمد على التاريخ الهجري الذي ترجعه Aladhan لموقع الزائرة نفسه؛
+   بدون تحديد الموقع لا يمكننا معرفة التاريخ الهجري بثقة، فنخفيها بدل التخمين. */
+async function renderWhiteDaysBox() {
+  const box = document.getElementById('whitedays-box');
+  if (!box) return;
+  const wd = HABITS.find(h => h.id === 'whitedays');
+  if (!wd || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
+
+  const coords = await getGeo();
+  if (!coords) { box.hidden = !isAdmin; if (!isAdmin) return; }
+
+  const now = new Date();
+  const hijriDay = coords ? await getHijriDay(now, coords) : null;
+  const isWhiteDay = [13, 14, 15].includes(hijriDay);
+  const show = isAdmin || isWhiteDay;
+  box.hidden = !show;
+  if (!show) return;
+
+  let countdownTxt;
+  if (coords) {
+    const todayMaghrib = await fetchMaghrib(now, coords);
+    if (todayMaghrib && now < todayMaghrib) {
+      const msLeft = todayMaghrib - now;
+      const hLeft = Math.floor(msLeft / 3600000), mLeft = Math.floor((msLeft % 3600000) / 60000);
+      countdownTxt = isEN() ? `⏳ ${hLeft}h ${mLeft}m until Maghrib` : `⏳ باقي ${hLeft} س ${mLeft} د على المغرب`;
+    } else {
+      countdownTxt = isEN() ? 'Maghrib has passed for today' : 'انتهى وقت المغرب لهذا اليوم';
+    }
+  } else {
+    countdownTxt = isEN() ? 'Preview (admin) — location unavailable' : 'معاينة (مشرفة) — بدون تحديد موقع';
+  }
+
+  const dLabel = isWhiteDay ? hijriDay : '—';
+  const titleAr = `${wd.ar} - اليوم ${dLabel}`;
+  const titleEn = `${wd.en} - Day ${dLabel}`;
+  const noteTxt = isWhiteDay ? '' : (isEN() ? 'Not a White Day today (admin preview)' : 'اليوم ليس من الأيام البيض (معاينة مشرفة)');
+
+  const done = !!myToday()[wd.id];
+  box.innerHTML = `
+    <div class="timely-head">
+      <span class="timely-tag">${isEN() ? '🌕 White Days' : '🌕 الأيام البيض'}</span>
+      <span class="timely-countdown">${countdownTxt}</span>
+    </div>
+    ${noteTxt ? `<div style="font-size:.72rem; color:rgba(74,57,45,.55); margin-bottom:8px;">${noteTxt}</div>` : ''}
+    <div class="timely-quote">${isEN() ? whyOf(wd).quote : wd.quote}</div>
+    <div class="habit-check${done ? ' done' : ''}" id="whitedays-check" style="border-inline-start-color:${habitColor(wd)}">
+      <div class="habit-box">✓</div>
+      <div class="habit-check-info">
+        <div class="habit-check-ar">${isEN() ? titleEn : titleAr}</div>
+        <div class="habit-check-en">${isEN() ? titleAr : titleEn}</div>
+      </div>
+      <div class="habit-emoji">${wd.emoji}</div>
+    </div>`;
+  document.getElementById('whitedays-check').addEventListener('click', () => toggleHabit(wd));
+}
+setInterval(renderWhiteDaysBox, 60000);
+
 function renderHabits() {
   const grid = document.getElementById('habits-grid');
   if (!grid) return;
   grid.innerHTML = '';
   renderTimelyBox();
+  renderWhiteDaysBox();
   renderDayCountdown();
 
   document.getElementById('today-date').textContent =
