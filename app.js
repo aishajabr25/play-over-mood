@@ -1199,11 +1199,11 @@ async function renderTimelyBox() {
         <div class="habit-check-ar">${isEN() ? kahf.en : kahf.ar}</div>
         <div class="habit-check-en">${isEN() ? kahf.ar : kahf.en}</div>
       </div>
-      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
+      ${isAdmin ? `<button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>` : ''}
       <div class="habit-emoji">${kahf.emoji}</div>
     </div>`;
   document.getElementById('timely-check').addEventListener('click', () => toggleHabit(kahf));
-  document.querySelector('#timely-check .habit-share-btn').addEventListener('click', e => {
+  if (isAdmin) document.querySelector('#timely-check .habit-share-btn').addEventListener('click', e => {
     e.stopPropagation();
     shareQuestSticker(kahf, done);
   });
@@ -1226,7 +1226,7 @@ function whiteDaysCheckRow(h, done) {
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
-      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
+      ${isAdmin ? `<button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>` : ''}
       <div class="habit-emoji">${h.emoji}</div>
     </div>`;
 }
@@ -1314,11 +1314,11 @@ async function renderWhiteDaysBox() {
   `;
   document.getElementById(`check-${wd.id}`).addEventListener('click', () => toggleHabit(wd));
   document.getElementById(`check-${sh.id}`).addEventListener('click', () => toggleHabit(sh));
-  document.querySelector(`#check-${wd.id} .habit-share-btn`).addEventListener('click', e => {
+  if (isAdmin) document.querySelector(`#check-${wd.id} .habit-share-btn`).addEventListener('click', e => {
     e.stopPropagation();
     shareQuestSticker({ ...wd, ar: titleAr, en: titleEn }, doneWd);
   });
-  document.querySelector(`#check-${sh.id} .habit-share-btn`).addEventListener('click', e => {
+  if (isAdmin) document.querySelector(`#check-${sh.id} .habit-share-btn`).addEventListener('click', e => {
     e.stopPropagation();
     shareQuestSticker({ ...sh, ar: suhoorTitleAr, en: suhoorTitleEn }, doneSh);
   });
@@ -1446,24 +1446,57 @@ function drawQuestSticker(h, done) {
   return canvas;
 }
 
-async function shareQuestSticker(h, done) {
+/* معاينة صريحة بدل التنزيل الصامت — أوضح وأوثق على كل الأجهزة،
+   وتتيح لمن على آيفون حفظ الصورة بالضغط المطوّل إن لم يعمل زر التنزيل. */
+function shareQuestSticker(h, done) {
   const canvas = drawQuestSticker(h, done);
-  canvas.toBlob(async blob => {
-    if (!blob) { showToast('تعذر إنشاء الصورة'); return; }
-    const fileName = `${h.id}-${done ? 'done' : 'todo'}.png`;
+  const fileName = `${h.id}-${done ? 'done' : 'todo'}.png`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-card" style="text-align:center;">
+      <div class="modal-title">${isEN() ? '📤 Share your quest' : '📤 شاركي مهمتك'}</div>
+      <img id="sticker-preview" style="max-width:100%; border-radius:16px; margin:10px 0; display:block;" />
+      <div style="font-size:.72rem; color:rgba(74,57,45,.55); margin-bottom:10px;">
+        ${isEN() ? 'On iPhone: press and hold the image to save it if the button below doesn’t work.' : 'على الآيفون: اضغطي مطوّلًا على الصورة لحفظها إذا لم يعمل الزر بالأسفل.'}
+      </div>
+      <div class="modal-actions" style="justify-content:center;">
+        <button class="btn btn-deep btn-small" data-act="download">⬇️ ${isEN() ? 'Save image' : 'حفظ الصورة'}</button>
+        <button class="btn btn-small" id="native-share-btn" style="background:var(--bg); border:1.5px solid var(--line); display:none;">📤 ${isEN() ? 'Share' : 'مشاركة'}</button>
+        <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="close">${isEN() ? 'Close' : 'إغلاق'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  overlay.querySelector('[data-act="close"]').addEventListener('click', close);
+
+  canvas.toBlob(blob => {
+    if (!blob) { showToast('تعذر إنشاء الصورة'); close(); return; }
+    const url = URL.createObjectURL(blob);
+    overlay.querySelector('#sticker-preview').src = url;
+
+    overlay.querySelector('[data-act="download"]').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast(isEN() ? 'Saved (check your downloads) 🤍' : 'تم الحفظ (تحققي من التنزيلات) 🤍');
+    });
+
     const file = new File([blob], fileName, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: isEN() ? h.en : h.ar });
-        return;
-      } catch { /* المستخدم ألغى المشاركة — لا حاجة لخطأ */ return; }
+      const shareBtn = overlay.querySelector('#native-share-btn');
+      shareBtn.style.display = '';
+      shareBtn.addEventListener('click', async () => {
+        try { await navigator.share({ files: [file], title: isEN() ? h.en : h.ar }); }
+        catch { /* ألغت المستخدمة — لا حاجة لخطأ */ }
+      });
     }
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    showToast(isEN() ? 'Image downloaded 🤍' : 'تم تنزيل الصورة 🤍');
   }, 'image/png');
 }
 
@@ -1482,10 +1515,10 @@ function buildHabitCard(h, t) {
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
-      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
+      ${isAdmin ? `<button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>` : ''}
       <div class="habit-emoji">${h.emoji}</div>`;
     el.addEventListener('click', () => toggleHabit(h));
-    el.querySelector('.habit-share-btn').addEventListener('click', e => {
+    if (isAdmin) el.querySelector('.habit-share-btn').addEventListener('click', e => {
       e.stopPropagation();
       shareQuestSticker(h, done);
     });
