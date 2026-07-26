@@ -1231,10 +1231,12 @@ async function renderWhiteDaysBox() {
     countdownTxt = isEN() ? 'Preview (admin) — location unavailable' : 'معاينة (مشرفة) — بدون تحديد موقع';
   }
 
-  const dLabel = isWhiteDay ? hijriDay : '—';
+  const dLabel = hijriDay ?? '؟';
   const titleAr = `${wd.ar} - اليوم ${dLabel}`;
   const titleEn = `${wd.en} - Day ${dLabel}`;
-  const noteTxt = isWhiteDay ? '' : (isEN() ? 'Not a White Day today (admin preview)' : 'اليوم ليس من الأيام البيض (معاينة مشرفة)');
+  const noteTxt = isWhiteDay ? '' : (isEN()
+    ? `Today is Hijri day ${dLabel} — not a White Day yet (admin preview)`
+    : `اليوم ${dLabel} هجريًا — ليس من الأيام البيض بعد (معاينة مشرفة)`);
 
   const done = !!myToday()[wd.id];
   box.innerHTML = `
