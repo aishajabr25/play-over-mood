@@ -1376,80 +1376,35 @@ function renderHabits() {
 }
 
 /* ── بطاقة مشاركة على إنستغرام — تُرسم لحظيًا بدون صور جاهزة ─── */
-function roundRectPath(ctx, x, y, w, hgt, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + hgt, r);
-  ctx.arcTo(x + w, y + hgt, x, y + hgt, r);
-  ctx.arcTo(x, y + hgt, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
+/* لقطة حقيقية من نفس بطاقة الموقع (نفس الخط ونفس الألوان تمامًا)
+   بدل إعادة رسمها يدويًا — نستنسخ العنصر فعليًا ونصوّره بـ html2canvas. */
+async function buildStickerCanvas(h, done) {
+  const node = document.createElement('div');
+  node.className = 'habit-check' + (done ? ' done' : '');
+  node.style.cssText = 'position:fixed; left:-9999px; top:0; width:560px; margin:0;';
+  node.style.borderInlineStartColor = habitColor(h);
+  node.innerHTML = `
+    <div class="habit-box">✓</div>
+    <div class="habit-check-info">
+      <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
+      <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
+    </div>
+    <div class="habit-emoji">${h.emoji}</div>`;
+  document.body.appendChild(node);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-function drawQuestSticker(h, done) {
-  const S = 3; /* عامل تكبير لصورة حادة */
-  const W = 640 * S, H = 168 * S;
-  const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-
-  ctx.save();
-  ctx.shadowColor = 'rgba(74,57,45,.28)';
-  ctx.shadowBlur = 22 * S;
-  ctx.shadowOffsetY = 8 * S;
-  roundRectPath(ctx, 10 * S, 8 * S, W - 20 * S, H - 24 * S, 26 * S);
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fill();
-  ctx.restore();
-
-  /* دائرة الأيقونة */
-  const iconCx = 62 * S, iconCy = H / 2 - 6 * S, iconR = 34 * S;
-  ctx.beginPath();
-  ctx.arc(iconCx, iconCy, iconR, 0, Math.PI * 2);
-  ctx.fillStyle = habitColor(h) + '33';
-  ctx.fill();
-  ctx.font = `${34 * S}px system-ui, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(h.emoji, iconCx, iconCy + 2 * S);
-
-  /* النصوص */
-  const textX = 118 * S;
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#4B3A2F';
-  ctx.font = `800 ${25 * S}px "Segoe UI", Tahoma, sans-serif`;
-  ctx.fillText(h.ar, textX, H / 2 - 16 * S);
-  ctx.fillStyle = 'rgba(74,57,45,.55)';
-  ctx.font = `600 ${17 * S}px "Segoe UI", Tahoma, sans-serif`;
-  ctx.fillText(h.en, textX, H / 2 + 16 * S);
-
-  /* دائرة الصح */
-  const checkCx = W - 62 * S, checkCy = H / 2 - 6 * S, checkR = 26 * S;
-  ctx.beginPath();
-  ctx.arc(checkCx, checkCy, checkR, 0, Math.PI * 2);
-  ctx.fillStyle = done ? '#5EAF7A' : '#F4FBFE';
-  ctx.fill();
-  ctx.lineWidth = 3 * S;
-  ctx.strokeStyle = done ? '#5EAF7A' : 'rgba(74,57,45,.25)';
-  ctx.stroke();
-  if (done) {
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 4.5 * S;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(checkCx - 11 * S, checkCy + 1 * S);
-    ctx.lineTo(checkCx - 3 * S, checkCy + 9 * S);
-    ctx.lineTo(checkCx + 12 * S, checkCy - 10 * S);
-    ctx.stroke();
+  let canvas;
+  try {
+    canvas = await html2canvas(node, { backgroundColor: null, scale: 3 });
+  } finally {
+    node.remove();
   }
   return canvas;
 }
 
 /* معاينة صريحة بدل التنزيل الصامت — أوضح وأوثق على كل الأجهزة،
    وتتيح لمن على آيفون حفظ الصورة بالضغط المطوّل إن لم يعمل زر التنزيل. */
-function shareQuestSticker(h, done) {
-  const canvas = drawQuestSticker(h, done);
+async function shareQuestSticker(h, done) {
   const fileName = `${h.id}-${done ? 'done' : 'todo'}.png`;
 
   const overlay = document.createElement('div');
@@ -1473,6 +1428,7 @@ function shareQuestSticker(h, done) {
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   overlay.querySelector('[data-act="close"]').addEventListener('click', close);
 
+  const canvas = await buildStickerCanvas(h, done);
   canvas.toBlob(blob => {
     if (!blob) { showToast('تعذر إنشاء الصورة'); close(); return; }
     const url = URL.createObjectURL(blob);
