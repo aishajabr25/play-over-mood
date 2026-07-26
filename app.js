@@ -1199,11 +1199,11 @@ async function renderTimelyBox() {
         <div class="habit-check-ar">${isEN() ? kahf.en : kahf.ar}</div>
         <div class="habit-check-en">${isEN() ? kahf.ar : kahf.en}</div>
       </div>
-      ${isAdmin ? `<button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>` : ''}
+      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${kahf.emoji}</div>
     </div>`;
   document.getElementById('timely-check').addEventListener('click', () => toggleHabit(kahf));
-  if (isAdmin) document.querySelector('#timely-check .habit-share-btn').addEventListener('click', e => {
+  document.querySelector('#timely-check .habit-share-btn').addEventListener('click', e => {
     e.stopPropagation();
     shareQuestSticker(kahf, done);
   });
@@ -1226,7 +1226,7 @@ function whiteDaysCheckRow(h, done) {
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
-      ${isAdmin ? `<button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>` : ''}
+      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${h.emoji}</div>
     </div>`;
 }
@@ -1314,11 +1314,11 @@ async function renderWhiteDaysBox() {
   `;
   document.getElementById(`check-${wd.id}`).addEventListener('click', () => toggleHabit(wd));
   document.getElementById(`check-${sh.id}`).addEventListener('click', () => toggleHabit(sh));
-  if (isAdmin) document.querySelector(`#check-${wd.id} .habit-share-btn`).addEventListener('click', e => {
+  document.querySelector(`#check-${wd.id} .habit-share-btn`).addEventListener('click', e => {
     e.stopPropagation();
     shareQuestSticker({ ...wd, ar: titleAr, en: titleEn }, doneWd);
   });
-  if (isAdmin) document.querySelector(`#check-${sh.id} .habit-share-btn`).addEventListener('click', e => {
+  document.querySelector(`#check-${sh.id} .habit-share-btn`).addEventListener('click', e => {
     e.stopPropagation();
     shareQuestSticker({ ...sh, ar: suhoorTitleAr, en: suhoorTitleEn }, doneSh);
   });
@@ -1471,10 +1471,10 @@ function buildHabitCard(h, t) {
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
-      ${isAdmin ? `<button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>` : ''}
+      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${h.emoji}</div>`;
     el.addEventListener('click', () => toggleHabit(h));
-    if (isAdmin) el.querySelector('.habit-share-btn').addEventListener('click', e => {
+    el.querySelector('.habit-share-btn').addEventListener('click', e => {
       e.stopPropagation();
       shareQuestSticker(h, done);
     });
