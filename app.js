@@ -220,6 +220,12 @@ const HABITS = [
     science: 'مراجعة شاملة في The New England Journal of Medicine (de Cabo & Mattson 2019) لعشرات الدراسات على الصيام المتقطع وجدت تحسّنًا في حساسية الإنسولين وضغط الدم ومؤشرات الالتهاب — والأيام البيض نمط صيام متقطع منتظم كل شهر.'
   },
   {
+    id: 'suhoor', ar: 'السحور', en: 'Suhoor', emoji: '🌙', worlds: ['spiritual'],
+    quote: '«تسحّروا فإن في السحور بركة»',
+    source: 'متفق عليه (يُنصح بمراجعة اللفظ والتخريج)',
+    science: 'وجبة قبل الفجر تُبقي سكر الدم أكثر استقرارًا خلال ساعات الصيام الطويلة مقارنة بالصيام دون سحور، وهو ما تدعمه الأبحاث العامة في توقيت الوجبات وتنظيم الطاقة أثناء الصيام المتقطع (de Cabo & Mattson 2019).'
+  },
+  {
     id: 'kahf', ar: 'قراءة سورة الكهف', en: 'Reading Surat Al-Kahf', emoji: '🕋', worlds: ['spiritual'],
     quote: '«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين»',
     source: 'رواه الحاكم والبيهقي وصححه الألباني في صحيح الجامع (يُنصح بمراجعة اللفظ والتخريج)',
@@ -275,6 +281,7 @@ const EN_WHY = {
   sharehobby: { quote: '“Allah is in the aid of His servant as long as the servant is in the aid of his brother.”', source: 'Muslim', science: 'Sharing what you love combines two studied effects: giving boosts the giver’s wellbeing (Curry’s 2018 meta-analysis), and social bonds predict health and longevity (Holt-Lunstad’s 148-study meta-analysis) — your hobby becomes a bridge.' },
   solitude:   { quote: '“Indeed, your body has a right over you.”', source: 'Bukhari', science: 'Systematic reviews of psychological recovery research (Sonnentag et al.) find that genuine daily detachment — even briefly — measurably predicts less exhaustion and better mood and sleep. Rest is not a reward after the work; it is part of the work.' },
   whitedays:  { quote: '“The Messenger of Allah ﷺ commanded us to fast three days of the month: the 13th, 14th, and 15th.”', source: 'Narrated by Abu Dharr — Nasa’i, authenticated by al-Albani (wording/chain worth double-checking)', science: 'A major review in The New England Journal of Medicine (de Cabo & Mattson 2019) covering dozens of studies on intermittent fasting found improvements in insulin sensitivity, blood pressure, and inflammation markers — the White Days are a naturally recurring monthly pattern of exactly this kind of fasting.' },
+  suhoor:     { quote: '“Eat suhoor, for in suhoor there is blessing.”', source: 'Agreed upon (wording/chain worth double-checking)', science: 'A pre-dawn meal keeps blood sugar more stable through the long fasting hours compared to fasting without it — consistent with broader research on meal timing and energy regulation during intermittent fasting (de Cabo & Mattson 2019).' },
   kahf:       { quote: '“Whoever reads Surat Al-Kahf on Friday will be illuminated with light between the two Fridays.”', source: 'Al-Hakim & al-Bayhaqi, authenticated by al-Albani in Sahih al-Jami (wording/chain worth double-checking)', science: 'Broad systematic reviews (including Koenig’s work at Duke) find that regular, recurring weekly religious rituals are associated with lower anxiety and greater sense of meaning and psychological stability.' },
 };
 
@@ -1201,11 +1208,29 @@ setInterval(renderTimelyBox, 60000);
 /* ── الأيام البيض: ١٣–١٥ هجري، كل يوم يظهر بيومه وله نقطته ───
    نعتمد على التاريخ الهجري الذي ترجعه Aladhan لموقع الزائرة نفسه؛
    بدون تحديد الموقع لا يمكننا معرفة التاريخ الهجري بثقة، فنخفيها بدل التخمين. */
+function fmtHM(ms) {
+  const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+  return { h, m };
+}
+
+function whiteDaysCheckRow(h, done) {
+  return `
+    <div class="habit-check${done ? ' done' : ''}" id="check-${h.id}" style="border-inline-start-color:${habitColor(h)}">
+      <div class="habit-box">✓</div>
+      <div class="habit-check-info">
+        <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
+        <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
+      </div>
+      <div class="habit-emoji">${h.emoji}</div>
+    </div>`;
+}
+
 async function renderWhiteDaysBox() {
   const box = document.getElementById('whitedays-box');
   if (!box) return;
   const wd = HABITS.find(h => h.id === 'whitedays');
-  if (!wd || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
+  const sh = HABITS.find(h => h.id === 'suhoor');
+  if (!wd || !sh || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
 
   const coords = await getGeo();
   if (!coords) { box.hidden = !isAdmin; if (!isAdmin) return; }
@@ -1213,48 +1238,76 @@ async function renderWhiteDaysBox() {
   const now = new Date();
   const hijriDay = coords ? await getHijriDay(now, coords) : null;
   const isWhiteDay = [13, 14, 15].includes(hijriDay);
-  const show = isAdmin || isWhiteDay;
+  const isEve = hijriDay === 12; /* اليوم السابق — تذكير فقط، بدون تفعيل */
+  const show = isAdmin || isWhiteDay || isEve;
   box.hidden = !show;
   if (!show) return;
 
-  let countdownTxt;
-  if (coords) {
-    const todayMaghrib = await fetchMaghrib(now, coords);
-    if (todayMaghrib && now < todayMaghrib) {
-      const msLeft = todayMaghrib - now;
-      const hLeft = Math.floor(msLeft / 3600000), mLeft = Math.floor((msLeft % 3600000) / 60000);
-      countdownTxt = isEN() ? `⏳ ${hLeft}h ${mLeft}m until Maghrib` : `⏳ باقي ${hLeft} س ${mLeft} د على المغرب`;
-    } else {
-      countdownTxt = isEN() ? 'Maghrib has passed for today' : 'انتهى وقت المغرب لهذا اليوم';
+  const dLabel = hijriDay ?? '؟';
+  const tag = `<span class="timely-tag">${isEN() ? '🌕 White Days' : '🌕 الأيام البيض'}</span>`;
+
+  if (isEve && !isWhiteDay) {
+    /* تذكير اليوم ١٢: بدون تفعيل، فقط عدّاد حتى الفجر القادم */
+    let countdownTxt = isEN() ? 'Preview (admin) — location unavailable' : 'معاينة (مشرفة) — بدون تحديد موقع';
+    if (coords) {
+      const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+      const nextFajr = await fetchFajr(tomorrow, coords);
+      if (nextFajr) {
+        const { h, m } = fmtHM(Math.max(0, nextFajr - now));
+        countdownTxt = isEN() ? `⏳ ${h}h ${m}m until Fajr` : `⏳ باقي ${h} س ${m} د على الفجر`;
+      }
     }
-  } else {
-    countdownTxt = isEN() ? 'Preview (admin) — location unavailable' : 'معاينة (مشرفة) — بدون تحديد موقع';
+    box.innerHTML = `
+      <div class="timely-head">${tag}<span class="timely-countdown">${countdownTxt}</span></div>
+      <div class="timely-quote">${isEN()
+        ? '☀️ The White Days start tomorrow (after the next Fajr) — get ready and plan your Suhoor!'
+        : '☀️ الأيام البيض تبدأ غدًا (بعد الفجر القادم) — جهّزي نفسك وخططي لسحورك!'}</div>`;
+    return;
   }
 
-  const dLabel = hijriDay ?? '؟';
-  const titleAr = `${wd.ar} - اليوم ${dLabel}`;
-  const titleEn = `${wd.en} - Day ${dLabel}`;
+  /* الأيام الفعلية ١٣-١٥: مهمتان منفصلتان — الصيام (حتى المغرب) والسحور (حتى الفجر) */
+  const titleAr = `${wd.ar} - اليوم ${dLabel}`, titleEn = `${wd.en} - Day ${dLabel}`;
+  const suhoorTitleAr = `${sh.ar} - اليوم ${dLabel}`, suhoorTitleEn = `${sh.en} - Day ${dLabel}`;
   const noteTxt = isWhiteDay ? '' : (isEN()
     ? `Today is Hijri day ${dLabel} — not a White Day yet (admin preview)`
     : `اليوم ${dLabel} هجريًا — ليس من الأيام البيض بعد (معاينة مشرفة)`);
 
-  const done = !!myToday()[wd.id];
+  let fastTxt = isEN() ? 'Preview (admin) — location unavailable' : 'معاينة (مشرفة) — بدون تحديد موقع';
+  let suhoorTxt = fastTxt;
+  if (coords) {
+    const todayMaghrib = await fetchMaghrib(now, coords);
+    if (todayMaghrib) {
+      if (now < todayMaghrib) {
+        const { h, m } = fmtHM(todayMaghrib - now);
+        fastTxt = isEN() ? `⏳ ${h}h ${m}m until Maghrib` : `⏳ باقي ${h} س ${m} د على المغرب`;
+      } else {
+        fastTxt = isEN() ? 'Maghrib has passed for today' : 'انتهى وقت المغرب لهذا اليوم';
+      }
+    }
+    const todayFajr = await fetchFajr(now, coords);
+    if (todayFajr) {
+      if (now < todayFajr) {
+        const { h, m } = fmtHM(todayFajr - now);
+        suhoorTxt = isEN() ? `⏳ ${h}h ${m}m until Fajr` : `⏳ باقي ${h} س ${m} د على الفجر`;
+      } else {
+        suhoorTxt = isEN() ? 'Fajr has passed for today' : 'انتهى وقت السحور لهذا اليوم';
+      }
+    }
+  }
+
+  const doneWd = !!myToday()[wd.id];
+  const doneSh = !!myToday()[sh.id];
   box.innerHTML = `
-    <div class="timely-head">
-      <span class="timely-tag">${isEN() ? '🌕 White Days' : '🌕 الأيام البيض'}</span>
-      <span class="timely-countdown">${countdownTxt}</span>
-    </div>
+    <div class="timely-head">${tag}</div>
     ${noteTxt ? `<div style="font-size:.72rem; color:rgba(74,57,45,.55); margin-bottom:8px;">${noteTxt}</div>` : ''}
     <div class="timely-quote">${isEN() ? whyOf(wd).quote : wd.quote}</div>
-    <div class="habit-check${done ? ' done' : ''}" id="whitedays-check" style="border-inline-start-color:${habitColor(wd)}">
-      <div class="habit-box">✓</div>
-      <div class="habit-check-info">
-        <div class="habit-check-ar">${isEN() ? titleEn : titleAr}</div>
-        <div class="habit-check-en">${isEN() ? titleAr : titleEn}</div>
-      </div>
-      <div class="habit-emoji">${wd.emoji}</div>
-    </div>`;
-  document.getElementById('whitedays-check').addEventListener('click', () => toggleHabit(wd));
+    <div class="timely-head" style="margin:0 0 4px;"><span class="timely-countdown">${fastTxt}</span></div>
+    ${whiteDaysCheckRow({ ...wd, ar: titleAr, en: titleEn }, doneWd)}
+    <div class="timely-head" style="margin:14px 0 4px;"><span class="timely-countdown">${suhoorTxt}</span></div>
+    ${whiteDaysCheckRow({ ...sh, ar: suhoorTitleAr, en: suhoorTitleEn }, doneSh)}
+  `;
+  document.getElementById(`check-${wd.id}`).addEventListener('click', () => toggleHabit(wd));
+  document.getElementById(`check-${sh.id}`).addEventListener('click', () => toggleHabit(sh));
 }
 setInterval(renderWhiteDaysBox, 60000);
 
