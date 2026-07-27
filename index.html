@@ -333,6 +333,25 @@
     .hbar-track { height: 10px; border-radius: 999px; background: rgba(74,57,45,.07); overflow: hidden; }
     .hbar-fill  { height: 100%; border-radius: 999px; transition: width .5s cubic-bezier(.22,.68,0,1.05); }
 
+    /* ── تقدمي الشخصي ─────────────────────────────────────── */
+    .progress-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 0; border-bottom: 1px dashed rgba(74,57,45,.1);
+    }
+    .progress-row:last-child { border-bottom: 0; }
+    .progress-name { font-size: .85rem; font-weight: 700; color: var(--deep); flex: 1; min-width: 0; }
+    .progress-nums { display: flex; gap: 6px; flex-shrink: 0; }
+    .progress-pill {
+      background: var(--blue-light); border: 1px solid var(--line);
+      border-radius: 999px; padding: 3px 11px; font-size: .72rem; font-weight: 800; color: var(--text);
+      white-space: nowrap;
+    }
+    .progress-group-title {
+      font-size: .74rem; font-weight: 800; color: var(--deep); opacity: .6;
+      margin: 16px 0 4px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .progress-group-title:first-child { margin-top: 0; }
+
     /* ── Q&A wall ────────────────────────────────────────── */
     .post-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
     .post-form textarea {
@@ -702,6 +721,15 @@
       </div>
     </section>
 
+    <section class="card" id="custom-habits-section" hidden>
+      <div class="hello-row" style="margin-bottom:6px;">
+        <span class="card-label">🧩 عاداتي الخاصة · My Own Habits</span>
+        <button class="change-nick" id="add-custom-btn">+ أضيفي عادة</button>
+      </div>
+      <div class="card-desc">اختياري وشخصي بالكامل — لا يدخل لوحة المتصدرات المشتركة</div>
+      <div class="habits-grid" id="custom-habits-list"></div>
+    </section>
+
     </div><!-- /tab-quests -->
 
     <div id="tab-why" class="tab-pane" hidden>
@@ -749,6 +777,13 @@
           <div class="hbar-list" id="habit-chart"></div>
         </div>
       </div>
+    </section>
+
+    <section class="card" id="my-progress-section" hidden>
+      <span class="card-label label-green">📈 تقدمك الشخصي · Your Progress</span>
+      <div class="card-title">كم مرة أنجزتِ كل مهمة؟</div>
+      <div class="card-desc">هذا الأسبوع وهذا الشهر — للمراجعة فقط، لا يمكن تعديل الأيام السابقة</div>
+      <div id="my-progress-list"></div>
     </section>
 
     </div><!-- /tab-growth -->
@@ -821,6 +856,6 @@
 <div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script type="module" src="app.js?v=61"></script>
+<script type="module" src="app.js?v=62"></script>
 </body>
 </html>

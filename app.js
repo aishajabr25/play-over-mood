@@ -433,7 +433,8 @@ function showToast(msg) {
 let me        = null;   // Firebase user (anonymous أو Google)
 let isAdmin   = false;
 let nickname  = localStorage.getItem('pom_nick') || null;
-let myDays    = {};     // مرآة محلية لأيامي: date -> {habits, points}
+let myDays    = {};     // مرآة محلية لأيامي: date -> {habits, points, custom}
+let myCustomHabits = []; // عاداتي الخاصة: [{id, ar, world}, ...] — شخصية، لا تدخل اللوحة العامة
 let lbRows    = [];     // أفضل ٣٠ لاعبة هذا الأسبوع
 let statsWeeks = {};    // week -> {dayCounts, habitCounts}
 let statsFetchedAt = 0;
@@ -483,9 +484,9 @@ function saveMyDaysLocal() {
   localStorage.setItem(daysLsKey(), JSON.stringify(myDays));
 }
 async function fetchMyDaysFromServer() {
-  /* عند جهاز جديد/تخزين ممسوح: ١٤ قراءة مباشرة لمرة واحدة */
+  /* عند جهاز جديد/تخزين ممسوح: قراءة مباشرة لآخر شهر لمرة واحدة (يكفي لتقدم الأسبوع والشهر) */
   const gets = [];
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 31; i++) {
     const k = dateKey(daysAgo(i));
     gets.push(getDoc(doc(db, 'days', `${me.uid}_${k}`)).then(s => {
       if (s.exists()) myDays[k] = { habits: s.data().habits || {}, points: s.data().points || 0 };
@@ -526,6 +527,7 @@ onAuthStateChanged(auth, async user => {
     await fetchMyDaysFromServer();
   }
   loadMissionProgressLocal();
+  if (nickname) await loadMyCustomHabits();
 
   updateAdminUi();
   updateSyncUi();
@@ -716,6 +718,11 @@ document.getElementById('feature-form').addEventListener('submit', async e => {
   } catch {
     showToast(isEN() ? 'Could not send' : 'تعذر الإرسال');
   }
+});
+
+document.getElementById('add-custom-btn').addEventListener('click', async () => {
+  const result = await customHabitModal();
+  if (result) await addCustomHabit(result.ar, result.world);
 });
 
 /* ── مهمة الأسبوع — يحررها المشرفة، يراها الجميع ─────────── */
@@ -957,6 +964,7 @@ document.getElementById('nick-form').addEventListener('submit', async e => {
   showToast(isEN() ? `Welcome ${nickname} — your challenge begins ☀️` : `أهلًا ${nickname} — بدأ تحديك ☀️`);
   await refreshDayBoundary();
   loadMyDaysLocal();
+  await loadMyCustomHabits();
   initGate();
 });
 
@@ -967,6 +975,114 @@ document.getElementById('change-nick').addEventListener('click', () => {
 });
 
 /* ── Today's quests ──────────────────────────────────────── */
+/* ── عاداتي الخاصة — شخصية بالكامل، لا تدخل اللوحة أو إحصاءات المجتمع ── */
+async function loadMyCustomHabits() {
+  try {
+    const snap = await getDoc(doc(db, 'customHabits', me.uid));
+    myCustomHabits = (snap.exists() && snap.data().items) || [];
+  } catch { myCustomHabits = []; }
+}
+async function saveMyCustomHabitsRemote() {
+  try { await setDoc(doc(db, 'customHabits', me.uid), { items: myCustomHabits, updated: Date.now() }); }
+  catch { showToast(isEN() ? 'Could not save' : 'تعذر الحفظ'); }
+}
+async function addCustomHabit(ar, world) {
+  const id = `c${Date.now()}`;
+  myCustomHabits.push({ id, ar, world });
+  renderCustomHabits();
+  renderMyProgress();
+  await saveMyCustomHabitsRemote();
+}
+async function deleteCustomHabit(id) {
+  myCustomHabits = myCustomHabits.filter(c => c.id !== id);
+  renderCustomHabits();
+  renderMyProgress();
+  await saveMyCustomHabitsRemote();
+}
+async function toggleCustomHabit(id) {
+  if (!me || !nickname) return;
+  const date = myDayKey();
+  const day = (myDays[date] = myDays[date] || { habits: {}, points: 0, custom: {} });
+  day.custom = day.custom || {};
+  day.custom[id] = !day.custom[id];
+  saveMyDaysLocal();
+  renderCustomHabits();
+  renderMyProgress();
+  try {
+    await setDoc(doc(db, 'days', `${me.uid}_${date}`),
+      { uid: me.uid, date, custom: day.custom }, { merge: true });
+  } catch {
+    showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
+  }
+}
+
+function customHabitModal() {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">🧩 ${isEN() ? 'Add your own habit' : 'أضيفي عادة خاصة بك'}</div>
+        <label class="modal-field-label">${isEN() ? 'Name' : 'الاسم'}</label>
+        <input type="text" id="custom-name-input" maxlength="40" placeholder="${isEN() ? 'e.g. Journaling' : 'مثال: كتابة يومياتي'}" />
+        <label class="modal-field-label">${isEN() ? 'Element' : 'العنصر'}</label>
+        <select id="custom-world-input" class="status-select" style="width:100%; margin-top:8px; margin-inline-start:0;">
+          ${Object.entries(WORLDS).map(([k, w]) => `<option value="${k}">${isEN() ? w.en : w.ar}</option>`).join('')}
+        </select>
+        <div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:8px;">${isEN()
+          ? 'Personal only — won’t appear on the shared leaderboard.'
+          : 'شخصية بالكامل — لا تظهر في لوحة المتصدرات المشتركة.'}</div>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Add' : 'إضافة'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => {
+      const ar = overlay.querySelector('#custom-name-input').value.trim();
+      const world = overlay.querySelector('#custom-world-input').value;
+      close(ar ? { ar, world } : null);
+    });
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    document.body.appendChild(overlay);
+  });
+}
+
+function renderCustomHabits() {
+  const section = document.getElementById('custom-habits-section');
+  if (!section) return;
+  const show = CUSTOM_HABITS_PUBLIC || isAdmin;
+  section.hidden = !show;
+  if (!show) return;
+
+  const list = document.getElementById('custom-habits-list');
+  const todayCustom = (myDays[myDayKey()] || {}).custom || {};
+  list.innerHTML = myCustomHabits.map(c => `
+    <div class="habit-check${todayCustom[c.id] ? ' done' : ''}" data-cid="${c.id}" style="border-inline-start-color:${WORLDS[c.world]?.color || '#755F4D'}">
+      <div class="habit-box">✓</div>
+      <div class="habit-check-info">
+        <div class="habit-check-ar">${esc(c.ar)}</div>
+        <div class="habit-check-en">${isEN() ? WORLDS[c.world]?.en : WORLDS[c.world]?.ar}</div>
+      </div>
+      <button class="post-delete" data-act="delcustom" data-cid="${c.id}" style="margin-inline-start:6px;">${isEN() ? 'remove' : 'حذف'}</button>
+      <div class="habit-emoji">🧩</div>
+    </div>`).join('');
+
+  list.querySelectorAll('.habit-check').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('[data-act="delcustom"]')) return;
+      toggleCustomHabit(el.dataset.cid);
+    });
+  });
+  list.querySelectorAll('[data-act="delcustom"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteCustomHabit(btn.dataset.cid);
+    });
+  });
+}
+
 async function toggleHabit(h) {
   if (!me || !nickname) return;
   if (preLaunch() && !isAdmin) {
@@ -1347,6 +1463,7 @@ function renderHabits() {
   renderTimelyBox();
   renderWhiteDaysBox();
   renderDayCountdown();
+  renderCustomHabits();
 
   document.getElementById('today-date').textContent =
     effectiveNow().toLocaleDateString(isEN() ? 'en' : 'ar', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -1630,7 +1747,68 @@ function renderBars(elId, counts, maxOverride, mine) {
   });
 }
 
+/* ── تقدمي الشخصي: كم مرة أنجزت كل مهمة هذا الأسبوع/الشهر ── */
+function renderMyProgress() {
+  const section = document.getElementById('my-progress-section');
+  if (!section) return;
+  const show = PROGRESS_VIEW_PUBLIC || isAdmin;
+  section.hidden = !show;
+  if (!show) return;
+
+  const list = document.getElementById('my-progress-list');
+  if (!list) return;
+  const wk = thisWeekKey();
+  const now = effectiveNow();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  function countsFor(id, isCustom) {
+    let weekN = 0, monthN = 0;
+    Object.entries(myDays).forEach(([date, d]) => {
+      const bag = isCustom ? d.custom : d.habits;
+      if (!bag || !bag[id]) return;
+      const dt = new Date(date + 'T12:00:00');
+      if (dateKey(weekStart(dt)) === wk) weekN++;
+      if (dt >= monthStart) monthN++;
+    });
+    return { weekN, monthN };
+  }
+
+  function row(emoji, name, id, isCustom) {
+    const { weekN, monthN } = countsFor(id, isCustom);
+    return `
+      <div class="progress-row">
+        <div class="progress-name">${emoji} ${name}</div>
+        <div class="progress-nums">
+          <span class="progress-pill">${isEN() ? `Week: ${weekN}` : `الأسبوع: ${weekN}`}</span>
+          <span class="progress-pill">${isEN() ? `Month: ${monthN}` : `الشهر: ${monthN}`}</span>
+        </div>
+      </div>`;
+  }
+
+  let html = '';
+  GROUPS.forEach(g => {
+    const items = (GROUP_ITEMS[g.id] || [])
+      .map(id => HABITS.find(h => h.id === id))
+      .filter(Boolean)
+      .filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin);
+    if (items.length === 0) return;
+    html += `<div class="progress-group-title">${g.emoji} ${isEN() ? g.en : g.ar}</div>`;
+    items.forEach(h => { html += row(h.emoji, isEN() ? h.en : h.ar, h.id, false); });
+  });
+
+  if (CUSTOM_HABITS_PUBLIC || isAdmin) {
+    const customs = myCustomHabits || [];
+    if (customs.length > 0) {
+      html += `<div class="progress-group-title">🧩 ${isEN() ? 'My Own Habits' : 'عاداتي الخاصة'}</div>`;
+      customs.forEach(c => { html += row('🧩', c.ar, c.id, true); });
+    }
+  }
+
+  list.innerHTML = html || `<div class="mission-empty">${isEN() ? 'No data yet' : 'لا يوجد بيانات بعد'}</div>`;
+}
+
 async function renderCharts() {
+  renderMyProgress();
   const days = [];
   for (let i = 13; i >= 0; i--) days.push(daysAgo(i));
 
@@ -2011,6 +2189,8 @@ function updateAdminUi() {
   if (dashBtn) dashBtn.hidden = !isAdmin;
   updateWhyTab();
   renderWhy(); /* لإظهار/إخفاء بطاقات المشرفة فقط (مثل ميزات الأمهات) بعد تسجيل الدخول أو الخروج */
+  renderMyProgress();
+  renderCustomHabits();
   if (isAdmin) renderPosts();
 }
 
@@ -2018,6 +2198,9 @@ function updateAdminUi() {
 const SHOW_WHY_PUBLIC = true;
 /* ميزات الأمهات — لصفحة المشرفة فقط حتى تراجعها وتعتمدها */
 const MOM_FEATURES_PUBLIC = false;
+/* تقدمي الشخصي (أسبوع/شهر بكل مهمة) والعادات الخاصة — لصفحة المشرفة فقط حتى تُعتمد */
+const PROGRESS_VIEW_PUBLIC = false;
+const CUSTOM_HABITS_PUBLIC = false;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
