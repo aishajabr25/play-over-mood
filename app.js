@@ -109,7 +109,9 @@ const HABITS = [
     id: 'duha', ar: 'صلاة الضحى', en: 'Duha Prayer', emoji: '☀️', worlds: ['spiritual'], legendary: true, pts: 3,
     quote: '«ويُجزئ من ذلك ركعتان يركعهما من الضحى»',
     source: 'رواه مسلم — عن صدقة تلزم كل مفصل من الإنسان كل يوم',
-    science: 'وقفة قصيرة في ضحى النهار تجمع فائدتين مدروستين: التعرض لضوء النهار الذي يثبّت الساعة البيولوجية والمزاج، وأثر الفواصل القصيرة المنتظمة في استعادة التركيز والنشاط (التحليل الشامل PLOS ONE 2022).'
+    science: 'وقفة قصيرة في ضحى النهار تجمع فائدتين مدروستين: التعرض لضوء النهار الذي يثبّت الساعة البيولوجية والمزاج، وأثر الفواصل القصيرة المنتظمة في استعادة التركيز والنشاط (التحليل الشامل PLOS ONE 2022).',
+    momTip: 'مع طفلك: صلّيها وطفلك يلعب أو ينام بقربك — النية أهم من العزلة.',
+    momTipEn: 'With your child: pray it while she plays or naps beside you — intention matters more than isolation.'
   },
   {
     id: 'athkar', ar: 'أذكار الصباح (مش لازم كلها)', en: 'Morning Adhkar', emoji: '📿', worlds: ['spiritual'],
@@ -139,7 +141,9 @@ const HABITS = [
     id: 'walk', ar: 'المشي / حركة يومية', en: 'Daily Walk / Movement', emoji: '🚶🏻‍♀️', worlds: ['physical'],
     quote: '«المؤمن القوي خير وأحب إلى الله من المؤمن الضعيف»',
     source: 'رواه مسلم',
-    science: 'تحليل شامل في The Lancet Public Health (2022) على أكثر من ٤٧ ألف شخص وجد أن ٧ آلاف خطوة يوميًا تقريبًا ترتبط بانخفاض خطر الوفاة المبكرة بنسبة تصل إلى ٥٠٪ مقارنة بقلة الحركة.'
+    science: 'تحليل شامل في The Lancet Public Health (2022) على أكثر من ٤٧ ألف شخص وجد أن ٧ آلاف خطوة يوميًا تقريبًا ترتبط بانخفاض خطر الوفاة المبكرة بنسبة تصل إلى ٥٠٪ مقارنة بقلة الحركة.',
+    momTip: 'مع طفلك: امشي وهو في العربة — نفس الأثر، ورفقة أجمل.',
+    momTipEn: 'With your child: walk with the stroller — same benefit, sweeter company.'
   },
   {
     id: 'water', ar: 'شرب الماء الكافي', en: 'Enough Water', emoji: '💧', worlds: ['physical'],
@@ -151,7 +155,9 @@ const HABITS = [
     id: 'learn', ar: 'أتعلم شي جديد', en: 'Learn Something New', emoji: '🎧', worlds: ['mental'],
     quote: '«من سلك طريقًا يلتمس فيه علمًا سهّل الله له به طريقًا إلى الجنة»',
     source: 'رواه مسلم',
-    science: 'تعلّم مهارات ومعارف جديدة يبني «الاحتياطي المعرفي» — مرونة عصبية تحمي الذاكرة والدماغ مع التقدم في العمر، وترتبط في مراجعات منهجية واسعة بتأخر ظهور أعراض التدهور المعرفي.'
+    science: 'تعلّم مهارات ومعارف جديدة يبني «الاحتياطي المعرفي» — مرونة عصبية تحمي الذاكرة والدماغ مع التقدم في العمر، وترتبط في مراجعات منهجية واسعة بتأخر ظهور أعراض التدهور المعرفي.',
+    momTip: 'مع طفلك: استمعي لبودكاست قصير أثناء الرضاعة أو وقت النوم — التعلم لا يحتاج مكتبًا هادئًا.',
+    momTipEn: 'With your child: listen to a short podcast while nursing or during nap time — learning doesn’t need a quiet office.'
   },
   {
     id: 'meet', ar: 'تعرّف على شخص جديد', en: 'Meet Someone New', emoji: '🤝', worlds: ['env'],
@@ -211,7 +217,15 @@ const HABITS = [
     id: 'solitude', ar: 'راحة / خلوة مع نفسي', en: 'Rest / Time with Myself', emoji: '🕯️', worlds: ['spiritual', 'emotional'],
     quote: '«فإنّ لجسدك عليك حقًا»',
     source: 'رواه البخاري',
-    science: 'مراجعات منهجية لأبحاث «الاستشفاء النفسي» (Sonnentag وزملاؤها) تجد أن الانفصال الحقيقي عن المشاغل — ولو لفترة قصيرة يوميًا — يتنبأ قياسًا بانخفاض الإرهاق وتحسّن المزاج والنوم. الراحة ليست مكافأة بعد الإنجاز، هي جزء من الإنجاز.'
+    science: 'مراجعات منهجية لأبحاث «الاستشفاء النفسي» (Sonnentag وزملاؤها) تجد أن الانفصال الحقيقي عن المشاغل — ولو لفترة قصيرة يوميًا — يتنبأ قياسًا بانخفاض الإرهاق وتحسّن المزاج والنوم. الراحة ليست مكافأة بعد الإنجاز، هي جزء من الإنجاز.',
+    momTip: 'مع طفلك: خمس دقائق هدوء وهو يلعب بأمان بقربك تكفي — الراحة لا تحتاج غرفة مغلقة.',
+    momTipEn: 'With your child: five quiet minutes while she plays safely nearby is enough — rest doesn’t need a closed door.'
+  },
+  {
+    id: 'caregiving', ar: 'اعتنيتِ بطفلك اليوم', en: 'You Cared for Your Child Today', emoji: '🤱', worlds: ['emotional'], adminOnly: true,
+    quote: '«كلكم راعٍ وكلكم مسؤول عن رعيته... والمرأة راعية في بيت زوجها ومسؤولة عن رعيتها»',
+    source: 'متفق عليه',
+    science: 'رعاية طفل صغير عمل ذهني وجسدي مستمر تقريبًا على مدار الساعة — أبحاث «الحِمل الذهني» للأمهات، إلى جانب أبحاث الرحمة الذاتية (Kristin Neff)، تجد أن الاعتراف الواعي بهذا الجهد اليومي يخفف من إرهاقه النفسي، حتى قبل أي راحة فعلية.'
   },
   {
     id: 'whitedays', ar: 'صيام الأيام البيض', en: 'Fasting the White Days', emoji: '🌕', worlds: ['spiritual'],
@@ -247,7 +261,7 @@ const GROUPS = [
 const GROUP_ITEMS = {
   morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
   day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn'],
-  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend'],
+  mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend', 'caregiving'],
   night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'sleep', 'tahajjud'],
 };
 
@@ -280,6 +294,7 @@ const EN_WHY = {
   goodtrace:  { quote: '“And removing something harmful from the path is charity.”', source: 'Agreed upon', science: 'A meta-analysis of 27 experiments (Curry et al. 2018) found small acts of kindness measurably raise the giver’s happiness — goodness returns to its doer first, and the surroundings win too.' },
   sharehobby: { quote: '“Allah is in the aid of His servant as long as the servant is in the aid of his brother.”', source: 'Muslim', science: 'Sharing what you love combines two studied effects: giving boosts the giver’s wellbeing (Curry’s 2018 meta-analysis), and social bonds predict health and longevity (Holt-Lunstad’s 148-study meta-analysis) — your hobby becomes a bridge.' },
   solitude:   { quote: '“Indeed, your body has a right over you.”', source: 'Bukhari', science: 'Systematic reviews of psychological recovery research (Sonnentag et al.) find that genuine daily detachment — even briefly — measurably predicts less exhaustion and better mood and sleep. Rest is not a reward after the work; it is part of the work.' },
+  caregiving: { quote: '“Each of you is a guardian and responsible for those in his care… and the woman is a guardian in her husband’s home and responsible for those in her care.”', source: 'Agreed upon', science: 'Caring for a young child is near-constant mental and physical labor — research on maternal “mental load,” alongside self-compassion research (Kristin Neff), finds that consciously acknowledging this daily effort eases its psychological toll, even before any actual rest arrives.' },
   whitedays:  { quote: '“The Messenger of Allah ﷺ commanded us to fast three days of the month: the 13th, 14th, and 15th.”', source: 'Narrated by Abu Dharr — Nasa’i, authenticated by al-Albani (wording/chain worth double-checking)', science: 'A major review in The New England Journal of Medicine (de Cabo & Mattson 2019) covering dozens of studies on intermittent fasting found improvements in insulin sensitivity, blood pressure, and inflammation markers — the White Days are a naturally recurring monthly pattern of exactly this kind of fasting.' },
   suhoor:     { quote: '“Eat suhoor, for in suhoor there is blessing.”', source: 'Agreed upon (wording/chain worth double-checking)', science: 'A pre-dawn meal keeps blood sugar more stable through the long fasting hours compared to fasting without it — consistent with broader research on meal timing and energy regulation during intermittent fasting (de Cabo & Mattson 2019).' },
   kahf:       { quote: '“Whoever reads Surat Al-Kahf on Friday will be illuminated with light between the two Fridays.”', source: 'Al-Hakim & al-Bayhaqi, authenticated by al-Albani in Sahih al-Jami (wording/chain worth double-checking)', science: 'Broad systematic reviews (including Koenig’s work at Duke) find that regular, recurring weekly religious rituals are associated with lower anxiety and greater sense of meaning and psychological stability.' },
@@ -1358,7 +1373,8 @@ function renderHabits() {
 
   const t = myToday();
   GROUPS.forEach(g => {
-    const groupHabits = (GROUP_ITEMS[g.id] || []).map(id => HABITS.find(h => h.id === id)).filter(Boolean);
+    const groupHabits = (GROUP_ITEMS[g.id] || []).map(id => HABITS.find(h => h.id === id))
+      .filter(Boolean).filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin);
     if (groupHabits.length === 0) return;
     const header = document.createElement('div');
     header.className = 'quest-group';
@@ -1500,7 +1516,7 @@ function renderWorldsLegend() {
 function renderWhy() {
   const grid = document.getElementById('why-grid');
   grid.innerHTML = '';
-  HABITS.forEach(h => {
+  HABITS.filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin).forEach(h => {
     const el = document.createElement('div');
     el.className = 'why-card';
     el.style.borderTopColor = habitColor(h);
@@ -1510,12 +1526,14 @@ function renderWhy() {
     const worldTag = legendaryTag + h.worlds.map(w =>
       `<span class="why-world" style="background:${WORLDS[w].color}">${isEN() ? WORLDS[w].en : WORLDS[w].ar}</span>`).join(' ');
     const why = whyOf(h);
+    const showMomTip = h.momTip && (MOM_FEATURES_PUBLIC || isAdmin);
     el.innerHTML = `
       <h3>${h.emoji} ${isEN() ? h.en : h.ar}</h3>
       ${worldTag}
       <div class="why-quote">${why.quote}</div>
       <div class="why-source">${why.source}</div>
-      <div class="why-science"><strong>${isEN() ? '🔬 What the studies found' : '🔬 ماذا وجدت الدراسات؟'}</strong>${why.science}</div>`;
+      <div class="why-science"><strong>${isEN() ? '🔬 What the studies found' : '🔬 ماذا وجدت الدراسات؟'}</strong>${why.science}</div>
+      ${showMomTip ? `<div class="mom-tip">🤱 ${isEN() ? h.momTipEn : h.momTip}</div>` : ''}`;
     grid.appendChild(el);
   });
 }
@@ -1992,11 +2010,14 @@ function updateAdminUi() {
   const dashBtn = document.getElementById('tab-btn-admin');
   if (dashBtn) dashBtn.hidden = !isAdmin;
   updateWhyTab();
+  renderWhy(); /* لإظهار/إخفاء بطاقات المشرفة فقط (مثل ميزات الأمهات) بعد تسجيل الدخول أو الخروج */
   if (isAdmin) renderPosts();
 }
 
 /* تبويب "لماذا؟" ظاهر للجميع بعد مراجعة الأحاديث */
 const SHOW_WHY_PUBLIC = true;
+/* ميزات الأمهات — لصفحة المشرفة فقط حتى تراجعها وتعتمدها */
+const MOM_FEATURES_PUBLIC = false;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
