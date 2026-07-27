@@ -126,6 +126,12 @@ const HABITS = [
     science: 'إنهاء اليوم بطقس هادئ ثابت هو أحد أكثر ما توصي به أبحاث النوم: الروتين المسائي المنتظم يرتبط قياسًا بنوم أسرع وأعمق، والذكر التأملي قبل النوم يخفض التوتر (التحليلات الشاملة نفسها لتدخلات الامتنان والذكر). ومش لازم كلها — المهم اللحظة الهادئة.'
   },
   {
+    id: 'athkarsleep', ar: 'أذكار النوم', en: 'Sleep-Time Adhkar', emoji: '🌘', worlds: ['spiritual'],
+    quote: '«اللَّهُمَّ إِنِّي أَسْلَمْتُ نَفْسِي إِلَيْكَ، وَفَوَّضْتُ أَمْرِي إِلَيْكَ، وَأَلْجَأْتُ ظَهْرِي إِلَيْكَ، رَغْبَةً وَرَهْبَةً إِلَيْكَ، لَا مَلْجَأَ وَلَا مَنْجَا مِنْكَ إِلَّا إِلَيْكَ، آمَنْتُ بِكِتَابِكَ الَّذِي أَنْزَلْتَ، وَبِنَبِيِّكَ الَّذِي أَرْسَلْتَ»',
+    source: 'متفق عليه — عن البراء بن عازب رضي الله عنه',
+    science: 'روتين ختامي ثابت قبل النوم — كلمات معروفة تُقال كل ليلة — يرتبط في أبحاث النوم بانخفاض القلق واسترخاء أسرع، وهو نفس مبدأ «طقوس النوم الثابتة» (sleep hygiene rituals) الموصى به لتحسين جودة النوم.'
+  },
+  {
     id: 'fajr', ar: 'الاستيقاظ بعد الفجر (التعرض للشمس)', en: 'Awake after Fajr + Sunlight', emoji: '🌅', worlds: ['physical', 'emotional', 'mental'],
     quote: '«اللهم بارك لأمتي في بكورها»',
     source: 'رواه أبو داود والترمذي — دعاء النبي ﷺ بالبركة في أول النهار',
@@ -262,7 +268,7 @@ const GROUP_ITEMS = {
   morning: ['fajrprayer', 'fajr', 'athkar', 'duha'],
   day:     ['dhuhr', 'asr', 'quran', 'walk', 'water', 'learn'],
   mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend', 'caregiving'],
-  night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'sleep', 'tahajjud'],
+  night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'athkarsleep', 'sleep', 'tahajjud'],
 };
 
 /* ── اللغة الإنجليزية (وضع كامل لغير الناطقات بالعربية) ──── */
@@ -280,6 +286,7 @@ const EN_WHY = {
   duha:       { quote: '“…and two rak‘ahs of Duha suffice for all of it.”', source: 'Muslim — on the daily charity due from every joint of the body', science: 'A brief mid-morning pause combines two studied benefits: daylight exposure that stabilizes the body clock and mood, and the measurable recharge of short regular breaks (PLOS ONE 2022 meta-analysis).' },
   athkar:     { quote: '“Whoever says upon waking: I am pleased with Allah as my Lord, with Islam as my religion, and with Muhammad ﷺ as my prophet — it becomes a right upon Allah to please him.”', source: 'Ahmad, Tirmidhi & Abu Dawud, graded hasan by al-Albani (wording/chain worth double-checking)', science: 'Meta-analyses of gratitude and contemplative practice (incl. Cregg & Cheavens 2021, 25 trials) find a consistent — if quiet — effect on anxiety, low mood and wellbeing. Consistency beats quantity, hence: you don’t need all of them.' },
   athkareve:  { quote: '“And glorify the praise of your Lord before sunrise and before sunset.”', source: 'Quran 50:39', science: 'Ending the day with a calm fixed ritual is a top recommendation of sleep research: regular evening wind-downs are linked with faster, deeper sleep, and contemplative practice lowers stress. You don’t need all of them — the calm moment is the point.' },
+  athkarsleep: { quote: '“O Allah, I submit myself to You, entrust my affair to You, and turn my back to You, out of desire and fear of You. There is no refuge or escape except to You. I believe in Your Book which You revealed, and Your Prophet whom You sent.”', source: 'Agreed upon — narrated by al-Bara’ ibn ‘Azib', science: 'A fixed closing ritual before sleep — the same familiar words said every night — is linked in sleep research to lower anxiety and faster relaxation, the same principle behind recommended sleep-hygiene rituals.' },
   fajr:       { quote: '“O Allah, bless my nation in its early mornings.”', source: 'Abu Dawud & Tirmidhi — the Prophet’s ﷺ prayer for the early hours', science: 'Early morning light anchors the circadian clock and lifts mood. A study of 800,000+ people (JAMA Psychiatry 2021) found shifting sleep midpoint one hour earlier is associated with ~23% lower depression risk.' },
   quran:      { quote: '“Read the Quran, for it will come on the Day of Resurrection as an intercessor for its companions.”', source: 'Muslim', science: 'Studies of Quran recitation and listening recorded lower anxiety markers, blood pressure and heart rate; regular daily reading in general builds cognitive reserve that protects memory with age.' },
   walk:       { quote: '“The strong believer is better and more beloved to Allah than the weak believer.”', source: 'Muslim', science: 'A meta-analysis in The Lancet Public Health (2022, 47,000+ people) found ~7,000 daily steps associated with up to 50% lower risk of early death compared to being sedentary.' },
