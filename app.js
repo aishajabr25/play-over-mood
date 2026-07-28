@@ -1891,6 +1891,78 @@ function renderBars(elId, counts, maxOverride, mine) {
   });
 }
 
+/* ── لوحتك الأسبوعية الشخصية — تصفّح أي أسبوع سابق (✓/فارغ لا أرقام) ── */
+let progressWeekOffset = 0; /* ٠ = هذا الأسبوع، سالب = أسابيع سابقة */
+
+function progressWeekStartDate() {
+  const d = weekStart(effectiveNow());
+  d.setDate(d.getDate() + progressWeekOffset * 7);
+  return d;
+}
+
+async function ensureDaysLoaded(weekStartDate) {
+  const gets = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStartDate); d.setDate(d.getDate() + i);
+    const k = dateKey(d);
+    if (!myDays[k] && d <= effectiveNow()) {
+      gets.push(getDoc(doc(db, 'days', `${me.uid}_${k}`)).then(s => {
+        if (s.exists()) myDays[k] = { habits: s.data().habits || {}, points: s.data().points || 0, custom: s.data().custom || {} };
+      }).catch(() => {}));
+    }
+  }
+  if (gets.length) await Promise.all(gets);
+}
+
+async function renderPersonalWeekGrid() {
+  const gridEl = document.getElementById('progress-week-grid');
+  const labelEl = document.getElementById('progress-week-label');
+  if (!gridEl || !labelEl) return;
+
+  const wkStart = progressWeekStartDate();
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) { const d = new Date(wkStart); d.setDate(d.getDate() + i); weekDays.push(d); }
+  const endD = weekDays[6];
+  labelEl.textContent = `${wkStart.toLocaleDateString(isEN() ? 'en' : 'ar', { day: 'numeric', month: 'short' })} – ${endD.toLocaleDateString(isEN() ? 'en' : 'ar', { day: 'numeric', month: 'short' })}`;
+  const nextBtn = document.getElementById('progress-week-next');
+  if (nextBtn) nextBtn.disabled = progressWeekOffset >= 0;
+
+  gridEl.innerHTML = `<div class="card-desc">جارٍ التحميل…</div>`;
+  await ensureDaysLoaded(wkStart);
+
+  const rows = [
+    ...HABITS.filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin).map(h => ({ id: h.id, ar: h.ar, en: h.en, emoji: h.emoji, color: habitColor(h), custom: false })),
+    ...myCustomHabits.map(c => ({ id: c.id, ar: c.ar, en: c.ar, emoji: '🧩', color: WORLDS[c.world]?.color || '#755F4D', custom: true })),
+  ];
+
+  let html = `<table class="week-table"><thead><tr><th></th>
+    ${weekDays.map(d => `<th>${DAY_LETTERS[d.getDay()]}<small>${pad(d.getDate())}/${pad(d.getMonth() + 1)}</small></th>`).join('')}
+  </tr></thead><tbody>`;
+  rows.forEach(r => {
+    html += `<tr><td class="week-question">${r.emoji} ${isEN() ? r.en : r.ar}</td>`;
+    weekDays.forEach(d => {
+      if (d > effectiveNow()) { html += `<td></td>`; return; }
+      const dayDoc = myDays[dateKey(d)];
+      const bag = r.custom ? dayDoc?.custom : dayDoc?.habits;
+      const done = !!(bag && bag[r.id]);
+      html += `<td>${done ? `<span class="week-check-mark" style="background:${r.color}">✓</span>` : ''}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  gridEl.innerHTML = `<div class="week-table-wrap">${html}</div>`;
+}
+
+document.getElementById('progress-week-prev')?.addEventListener('click', () => {
+  progressWeekOffset--;
+  renderPersonalWeekGrid();
+});
+document.getElementById('progress-week-next')?.addEventListener('click', () => {
+  if (progressWeekOffset >= 0) return;
+  progressWeekOffset++;
+  renderPersonalWeekGrid();
+});
+
 /* ── تقدمي الشخصي: كم مرة أنجزت كل مهمة هذا الأسبوع/الشهر ── */
 function renderMyProgress() {
   const section = document.getElementById('my-progress-section');
@@ -1898,6 +1970,8 @@ function renderMyProgress() {
   const show = PROGRESS_VIEW_PUBLIC || isAdmin;
   section.hidden = !show;
   if (!show) return;
+
+  renderPersonalWeekGrid();
 
   const list = document.getElementById('my-progress-list');
   if (!list) return;
