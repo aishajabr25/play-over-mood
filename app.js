@@ -538,8 +538,10 @@ async function fetchMyDaysFromServer() {
 /* ── Auth ────────────────────────────────────────────────── */
 onAuthStateChanged(auth, async user => {
   if (!user) {
-    signInAnonymously(auth).catch(() =>
-      showToast('تعذر الاتصال — تأكدي من تفعيل Anonymous في Firebase'));
+    signInAnonymously(auth).catch(err => {
+      console.error('signInAnonymously failed:', err.code, err.message);
+      showToast(`تعذر الاتصال (${err.code || 'خطأ'}) — تحققي من الشبكة أو أغلقي أي حاجب إعلانات وحاولي مجددًا`);
+    });
     return;
   }
   me = user;
