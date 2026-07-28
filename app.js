@@ -2350,37 +2350,59 @@ function updateWhyTab() {
 }
 
 /* ── لوحة المشرفة (تظهر لها فقط) ─────────────────────────── */
-async function renderAdminDash() {
-  if (!isAdmin) return;
-  const el = document.getElementById('admin-stats');
-  if (!el) return;
-  el.innerHTML = '<div class="card-desc">جارٍ تحميل الأرقام…</div>';
+/* قائمة كل الأسابيع منذ الانطلاقة حتى الآن، الأحدث أولًا */
+function allWeeksList() {
+  const weeks = [];
+  const cursor = weekStart(START_DATE);
+  const last = weekStart(effectiveNow());
+  while (cursor <= last) {
+    const startK = dateKey(cursor);
+    const endD = new Date(cursor); endD.setDate(endD.getDate() + 6);
+    const label = `${cursor.toLocaleDateString('ar', { day: 'numeric', month: 'short' })} – ${endD.toLocaleDateString('ar', { day: 'numeric', month: 'short' })}`;
+    weeks.push({ key: startK, label });
+    cursor.setDate(cursor.getDate() + 7);
+  }
+  return weeks.reverse();
+}
 
-  const wk = thisWeekKey();
-  /* getDocs بدل getCountFromServer — بعض المتصفحات/إضافات الخصوصية تحجب استعلامات العدّ */
-  const countOf = path => getDocs(collection(db, path))
-    .then(s => s.size).catch(() => '؟');
+/* ملخص شامل بحسب الأسبوع — تُجلب وتُخزَّن مؤقتًا لكل أسبوع يُطلب */
+async function fetchStatsForWeek(wk, force) {
+  if (!force && statsWeeks[wk]) return statsWeeks[wk];
+  try {
+    const snap = await getDocs(collection(db, `stats/${wk}/shards`));
+    const agg = { dayCounts: {}, habitCounts: {} };
+    snap.forEach(s => {
+      const d = s.data();
+      Object.entries(d.dayCounts || {}).forEach(([k, v]) => { agg.dayCounts[k] = (agg.dayCounts[k] || 0) + v; });
+      Object.entries(d.habitCounts || {}).forEach(([k, v]) => { agg.habitCounts[k] = (agg.habitCounts[k] || 0) + v; });
+    });
+    statsWeeks[wk] = agg;
+  } catch { statsWeeks[wk] = { dayCounts: {}, habitCounts: {} }; }
+  return statsWeeks[wk];
+}
 
-  const [usersC, mailsC, postsC, playersC] = await Promise.all([
-    countOf('users'), countOf('mails'), countOf('posts'), countOf(`weeks/${wk}/players`),
-  ]);
-  await fetchStats(true);
-  const agg = statsWeeks[wk] || { habitCounts: {}, dayCounts: {} };
+async function renderWeekStats(wk) {
+  const block = document.getElementById('week-stats-block');
+  if (!block) return;
+  block.innerHTML = '<div class="card-desc">جارٍ تحميل أرقام هذا الأسبوع…</div>';
+
+  const countOf = path => getDocs(collection(db, path)).then(s => s.size).catch(() => '؟');
+  const [playersC, agg] = await Promise.all([countOf(`weeks/${wk}/players`), fetchStatsForWeek(wk, true)]);
   const weekTotal = Object.values(agg.dayCounts || {}).reduce((s, v) => s + Math.max(0, v), 0);
-  const todayTotal = Math.max(0, agg.dayCounts?.[myDayKey()] || 0);
+  const isCurrent = wk === thisWeekKey();
+  const dayCount = Math.max(1, Object.keys(agg.dayCounts || {}).length);
+  const avgPerDay = Math.round((weekTotal / dayCount) * 10) / 10;
 
   let html = `
-    <div style="margin-bottom:14px"><button class="btn btn-deep btn-small" id="export-json">⬇️ تنزيل نسخة احتياطية (JSON)</button></div>
     <div class="stat-grid">
-      <div class="stat-box"><div class="stat-num">${usersC}</div><div class="stat-lbl">إجمالي المسجلات</div></div>
-      <div class="stat-box"><div class="stat-num">${playersC}</div><div class="stat-lbl">لعبن هذا الأسبوع</div></div>
-      <div class="stat-box"><div class="stat-num">${todayTotal}</div><div class="stat-lbl">مهمات أُنجزت اليوم</div></div>
+      <div class="stat-box"><div class="stat-num">${playersC}</div><div class="stat-lbl">${isCurrent ? 'لعبن هذا الأسبوع' : 'لعبن ذلك الأسبوع'}</div></div>
       <div class="stat-box"><div class="stat-num">${weekTotal}</div><div class="stat-lbl">مهمات هذا الأسبوع</div></div>
-      <div class="stat-box"><div class="stat-num">${postsC}</div><div class="stat-lbl">منشورات الحائط</div></div>
-      <div class="stat-box"><div class="stat-num">${mailsC}</div><div class="stat-lbl">تركن بريدهن</div></div>
+      ${isCurrent
+        ? `<div class="stat-box"><div class="stat-num">${Math.max(0, agg.dayCounts?.[myDayKey()] || 0)}</div><div class="stat-lbl">مهمات أُنجزت اليوم</div></div>`
+        : `<div class="stat-box"><div class="stat-num">${avgPerDay}</div><div class="stat-lbl">متوسط يوميًا</div></div>`}
     </div>
-    <div class="card-title" style="font-size:1rem">كل مهمة هذا الأسبوع</div>
-    <div class="hbar-list" style="margin-bottom:18px">`;
+    <div class="card-title" style="font-size:1rem">كل مهمة — ${isCurrent ? 'هذا الأسبوع' : 'ذلك الأسبوع'}</div>
+    <div class="hbar-list">`;
   const maxHabit = Math.max(1, ...HABITS.map(h => Math.max(0, agg.habitCounts?.[h.id] || 0)));
   HABITS.forEach(h => {
     const n = Math.max(0, agg.habitCounts?.[h.id] || 0);
@@ -2390,7 +2412,39 @@ async function renderAdminDash() {
         <div class="hbar-track"><div class="hbar-fill" style="width:${(n / maxHabit) * 100}%; background:${habitColor(h)}"></div></div>
       </div>`;
   });
-  html += `</div>
+  html += `</div>`;
+  block.innerHTML = html;
+}
+
+async function renderAdminDash() {
+  if (!isAdmin) return;
+  const el = document.getElementById('admin-stats');
+  if (!el) return;
+  el.innerHTML = '<div class="card-desc">جارٍ تحميل الأرقام…</div>';
+
+  /* getDocs بدل getCountFromServer — بعض المتصفحات/إضافات الخصوصية تحجب استعلامات العدّ */
+  const countOf = path => getDocs(collection(db, path))
+    .then(s => s.size).catch(() => '؟');
+
+  const [usersC, mailsC, postsC] = await Promise.all([
+    countOf('users'), countOf('mails'), countOf('posts'),
+  ]);
+
+  const weeks = allWeeksList();
+  let html = `
+    <div style="margin-bottom:14px"><button class="btn btn-deep btn-small" id="export-json">⬇️ تنزيل نسخة احتياطية (JSON)</button></div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num">${usersC}</div><div class="stat-lbl">إجمالي المسجلات</div></div>
+      <div class="stat-box"><div class="stat-num">${postsC}</div><div class="stat-lbl">منشورات الحائط</div></div>
+      <div class="stat-box"><div class="stat-num">${mailsC}</div><div class="stat-lbl">تركن بريدهن</div></div>
+    </div>
+    <div class="hello-row" style="margin-bottom:6px;">
+      <div class="card-title" style="font-size:1rem; margin:0;">أرقام اللعبة بحسب الأسبوع</div>
+      <select id="admin-week-select" class="status-select">
+        ${weeks.map((w, i) => `<option value="${w.key}" ${i === 0 ? 'selected' : ''}>${i === 0 ? 'الأسبوع الحالي' : w.label}</option>`).join('')}
+      </select>
+    </div>
+    <div id="week-stats-block" style="margin-bottom:18px"></div>
     <div class="card-title" style="font-size:1rem">البريد الإلكتروني</div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
       <button class="btn btn-deep btn-small" id="download-mails">⬇️ تنزيل البريد (JSON)</button>
@@ -2399,6 +2453,8 @@ async function renderAdminDash() {
     <div class="card-desc" style="margin-top:6px;">لا تُعرض هنا — فقط للتنزيل، حتى لا تحتاجي للتمرير بينها.</div>`;
   el.innerHTML = html;
   document.getElementById('export-json').addEventListener('click', exportBackup);
+  document.getElementById('admin-week-select').addEventListener('change', e => renderWeekStats(e.target.value));
+  renderWeekStats(weeks[0]?.key || thisWeekKey());
 
   try {
     const snap = await getDocs(collection(db, 'mails'));
