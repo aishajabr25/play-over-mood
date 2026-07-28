@@ -178,7 +178,7 @@ const HABITS = [
     science: 'تحليل شامل لـ١٤٣ دراسة (Twohig-Bennett & Jones 2018) وجد أن التعرض للمساحات الخضراء يرتبط بانخفاض الكورتيزول وضغط الدم ومعدل ضربات القلب، ودراسة ستانفورد (Bratman 2015) وجدت أن مشي ٩٠ دقيقة في الطبيعة يقلل الاجترار الذهني ونشاط مناطق القلق في الدماغ.'
   },
   {
-    id: 'friend', ar: 'جلسة وجهًا لوجه مع صديقة', en: 'Face-to-Face Time with a Friend', emoji: '🫂', worlds: ['emotional'],
+    id: 'friend', ar: 'تواصل وجهًا لوجه مع شخص', en: 'Face-to-Face Connection with Someone', emoji: '🫂', worlds: ['emotional'],
     quote: '«مَثَلُ الجليسِ الصالحِ والجليسِ السَّوْءِ كحاملِ المِسْكِ ونافخِ الكِيرِ»',
     source: 'متفق عليه',
     science: 'دراسة هارفارد الممتدة ٨٥ عامًا — أطول دراسة عن السعادة في التاريخ — وجدت أن دفء العلاقات هو أقوى مؤشر للسعادة والصحة على المدى الطويل، أقوى من المال والشهرة والذكاء.'
@@ -2343,7 +2343,7 @@ const MOM_FEATURES_PUBLIC = false;
 /* تقدمي الشخصي (أسبوع/شهر بكل مهمة) والعادات الخاصة — لصفحة المشرفة فقط حتى تُعتمد */
 const PROGRESS_VIEW_PUBLIC = false;
 const CUSTOM_HABITS_PUBLIC = false;
-const REFLECT_PUBLIC = false;
+const REFLECT_PUBLIC = true;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
