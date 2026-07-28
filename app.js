@@ -788,6 +788,7 @@ document.getElementById('reflect-form').addEventListener('submit', async e => {
   try {
     await setDoc(doc(db, 'reflections', reflectWeekKey()),
       { uid: me.uid, nick: nickname, week: thisWeekKey(), text, time: Date.now() });
+    document.getElementById('reflect-input').value = '';
     showToast(isEN() ? 'Saved 🤍' : 'تم الحفظ 🤍');
   } catch {
     showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
