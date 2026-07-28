@@ -683,6 +683,7 @@
       <button class="tab-btn" data-tab="wall" type="button">💬 الحائط</button>
       <button class="tab-btn" data-tab="rules" type="button">📜 القواعد</button>
       <button class="tab-btn" data-tab="features" type="button">💡 اقتراحك</button>
+      <button class="tab-btn" data-tab="reflect" id="tab-btn-reflect" type="button" hidden>📝 التدبرات والتأملات</button>
       <button class="tab-btn" data-tab="admin" id="tab-btn-admin" type="button" hidden>📈 لوحتي</button>
     </nav>
 
@@ -830,6 +831,23 @@
       </section>
     </div><!-- /tab-features -->
 
+    <div id="tab-reflect" class="tab-pane" hidden>
+      <section class="card">
+        <div class="hello-row" style="margin-bottom:6px;">
+          <span class="card-label label-yellow">📝 التدبرات والتأملات · Reflections</span>
+          <button class="change-nick" id="reflect-edit-btn" hidden>✏️ تعديل السؤال</button>
+        </div>
+        <div class="card-title" id="reflect-question">ماذا تعلمتِ هذا الأسبوع؟</div>
+        <div class="card-desc">إجابتك خاصة — تراها المشرفة فقط للمراجعة، ويمكنك تعديلها طوال الأسبوع</div>
+        <form class="post-form" id="reflect-form">
+          <textarea id="reflect-input" maxlength="600" placeholder="اكتبي إجابتك هنا…"></textarea>
+          <div class="post-form-row">
+            <button type="submit" class="btn btn-deep btn-small">حفظ إجابتي</button>
+          </div>
+        </form>
+      </section>
+    </div><!-- /tab-reflect -->
+
     <div id="tab-admin" class="tab-pane" hidden>
       <section class="card">
         <span class="card-label">📈 لوحة المشرفة · Admin Only</span>
@@ -856,6 +874,6 @@
 <div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script type="module" src="app.js?v=63"></script>
+<script type="module" src="app.js?v=64"></script>
 </body>
 </html>

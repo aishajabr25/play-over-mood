@@ -15,7 +15,7 @@ import {
 import {
   getFirestore, doc, setDoc, getDoc, getDocs, collection, query,
   onSnapshot, addDoc, updateDoc, deleteDoc, orderBy, limit, startAfter,
-  increment,
+  increment, where,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
   getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject,
@@ -362,7 +362,7 @@ function applyEnglish() {
   set('#nick-form div', 'Totally optional — only for news of future rounds 🤍 Never shown to anyone, and it does not save your progress: progress is saved automatically on this device, and to carry it across devices link your Google account inside the game.');
   set('#nick-form button[type=submit]', 'Start Playing');
 
-  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '💡 Ideas', '📈 My Board']);
+  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '💡 Ideas', '📝 Reflections', '📈 My Board']);
 
   set('#tab-quests .card-label', '① Today’s Quests · مهمات اليوم');
   set('#tab-quests .card-title', 'Which quests did you complete today?');
@@ -395,6 +395,13 @@ function applyEnglish() {
   const featureInput = document.getElementById('feature-input');
   if (featureInput) featureInput.placeholder = 'Write your suggestion here…';
   set('#feature-form button[type=submit]', 'Send suggestion');
+
+  set('#tab-reflect .card-label', '📝 Reflections · التدبرات والتأملات');
+  set('#reflect-edit-btn', '✏️ edit question');
+  set('#tab-reflect .card-desc', 'Your answer is private — only the host sees it for review, and you can update it anytime this week');
+  const reflectInput = document.getElementById('reflect-input');
+  if (reflectInput) reflectInput.placeholder = 'Write your answer here…';
+  set('#reflect-form button[type=submit]', 'Save my answer');
 
   set('#about-box', 'I’m 3aosh 🤍 A software engineer and certified teacher. I read psychology (though these days I prefer fiqh al-nafs — the Islamic understanding of the self), apply what I learn, and explore its connection to Islam. I love learning, helping people, and games — not the electronic kind… competition 🤙🏻 I started this game for myself, then thought: why not share it with the world?');
   set('.hello-name', 'Hi, <span id="hello-nick"></span> 🌼 <span id="today-date"></span>');
@@ -455,6 +462,10 @@ let wallHasMore = true;
 let wallLoading = false;
 let listenersStarted = false;
 let mission = null; /* { text, link, image, updated } */
+const DEFAULT_REFLECT_Q = 'ماذا تعلمتِ هذا الأسبوع؟';
+let reflectQuestion = DEFAULT_REFLECT_Q;
+let myReflectAnswer = '';
+let myReflectLoaded = false;
 
 function myDayKey() { return dateKey(effectiveNow()); }
 function myToday() { return (myDays[myDayKey()] || {}).habits || {}; }
@@ -534,7 +545,7 @@ onAuthStateChanged(auth, async user => {
     await fetchMyDaysFromServer();
   }
   loadMissionProgressLocal();
-  if (nickname) await loadMyCustomHabits();
+  if (nickname) { await loadMyCustomHabits(); await loadMyReflectAnswer(); }
 
   updateAdminUi();
   updateSyncUi();
@@ -635,6 +646,11 @@ function startListeners() {
     renderMission();
   }, () => {});
 
+  onSnapshot(doc(db, 'meta', 'reflectQuestion'), snap => {
+    reflectQuestion = snap.exists() && snap.data().text ? snap.data().text : DEFAULT_REFLECT_Q;
+    renderReflectTab();
+  }, () => {});
+
   onSnapshot(
     query(collection(db, 'features'), orderBy('time', 'desc'), limit(50)),
     snap => {
@@ -732,7 +748,59 @@ document.getElementById('add-custom-btn').addEventListener('click', async () => 
   if (result) await addCustomHabit(result.ar, result.world);
 });
 
+document.getElementById('reflect-edit-btn').addEventListener('click', editReflectQuestion);
+
+document.getElementById('reflect-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!me || !nickname) return;
+  const text = document.getElementById('reflect-input').value.trim();
+  myReflectAnswer = text;
+  try {
+    await setDoc(doc(db, 'reflections', reflectWeekKey()),
+      { uid: me.uid, nick: nickname, week: thisWeekKey(), text, time: Date.now() });
+    showToast(isEN() ? 'Saved 🤍' : 'تم الحفظ 🤍');
+  } catch {
+    showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
+  }
+});
+
 /* ── مهمة الأسبوع — يحررها المشرفة، يراها الجميع ─────────── */
+/* ── تبويب التقدم: سؤال أسبوعي — إجابة كل لاعبة خاصة بها ─── */
+function reflectWeekKey() { return `${thisWeekKey()}_${me.uid}`; }
+
+async function loadMyReflectAnswer() {
+  if (!me) return;
+  try {
+    const snap = await getDoc(doc(db, 'reflections', reflectWeekKey()));
+    myReflectAnswer = (snap.exists() && snap.data().text) || '';
+  } catch { myReflectAnswer = ''; }
+  myReflectLoaded = true;
+  renderReflectTab();
+}
+
+function renderReflectTab() {
+  const dashBtn = document.getElementById('tab-btn-reflect');
+  if (dashBtn) dashBtn.hidden = !(REFLECT_PUBLIC || isAdmin);
+
+  const qEl = document.getElementById('reflect-question');
+  if (qEl) qEl.textContent = reflectQuestion;
+  const editBtn = document.getElementById('reflect-edit-btn');
+  if (editBtn) editBtn.hidden = !isAdmin;
+  const input = document.getElementById('reflect-input');
+  if (input && myReflectLoaded && document.activeElement !== input) input.value = myReflectAnswer;
+}
+
+async function editReflectQuestion() {
+  const text = prompt(isEN() ? 'The weekly question:' : 'سؤال هذا الأسبوع:', reflectQuestion);
+  if (text === null || !text.trim()) return;
+  try {
+    await setDoc(doc(db, 'meta', 'reflectQuestion'), { text: text.trim(), updated: Date.now() });
+    showToast(isEN() ? 'Question updated 🤍' : 'تحدّث السؤال 🤍');
+  } catch {
+    showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
+  }
+}
+
 function renderMission() {
   const box = document.getElementById('mission-box');
   if (!box) return;
@@ -972,6 +1040,7 @@ document.getElementById('nick-form').addEventListener('submit', async e => {
   await refreshDayBoundary();
   loadMyDaysLocal();
   await loadMyCustomHabits();
+  await loadMyReflectAnswer();
   initGate();
 });
 
@@ -2198,6 +2267,7 @@ function updateAdminUi() {
   renderWhy(); /* لإظهار/إخفاء بطاقات المشرفة فقط (مثل ميزات الأمهات) بعد تسجيل الدخول أو الخروج */
   renderMyProgress();
   renderCustomHabits();
+  renderReflectTab();
   if (isAdmin) renderPosts();
 }
 
@@ -2208,6 +2278,7 @@ const MOM_FEATURES_PUBLIC = false;
 /* تقدمي الشخصي (أسبوع/شهر بكل مهمة) والعادات الخاصة — لصفحة المشرفة فقط حتى تُعتمد */
 const PROGRESS_VIEW_PUBLIC = false;
 const CUSTOM_HABITS_PUBLIC = false;
+const REFLECT_PUBLIC = false;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
@@ -2311,6 +2382,27 @@ async function renderAdminDash() {
     const archBox = document.getElementById('mission-archive');
     if (archBox) archBox.textContent = 'تعذر تحميل الأرشيف';
   }
+
+  /* إجابات التدبرات والتأملات لهذا الأسبوع */
+  const reflectEl = document.createElement('div');
+  reflectEl.innerHTML = `<div class="card-title" style="font-size:1rem; margin-top:22px;">📝 إجابات هذا الأسبوع — «${esc(reflectQuestion)}»</div>
+    <div id="reflect-answers" class="card-desc">جارٍ التحميل…</div>`;
+  el.appendChild(reflectEl);
+  try {
+    const wk = thisWeekKey();
+    const snap = await getDocs(query(collection(db, 'reflections'), where('week', '==', wk)));
+    const rows = snap.docs.map(d => d.data()).filter(r => r.text);
+    const box = document.getElementById('reflect-answers');
+    box.innerHTML = rows.length === 0
+      ? 'ما في إجابات بعد هذا الأسبوع'
+      : rows.map(r => `<div class="mail-row" style="direction:rtl; flex-direction:column; align-items:flex-start; gap:2px;">
+          <strong style="color:var(--deep)">${esc(r.nick)}</strong>
+          <span>${esc(r.text)}</span>
+        </div>`).join('');
+  } catch {
+    const box = document.getElementById('reflect-answers');
+    if (box) box.textContent = 'تعذر تحميل الإجابات';
+  }
 }
 
 /* ── نسخة احتياطية كاملة (JSON) — للمشرفة فقط ────────────── */
@@ -2352,7 +2444,7 @@ async function exportBackup() {
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
-const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'features', 'admin'];
+const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'features', 'reflect', 'admin'];
 
 /* طبّقي اللغة أولًا حتى ينسخ تبويب القواعد النسخة الصحيحة */
 applyEnglish();
