@@ -236,6 +236,11 @@
     }
     .habit-focus-btn.on { opacity: 1; color: #CFA94A; }
     .habit-focus-btn:hover { opacity: 1; }
+    .collapsed-toggle {
+      background: none; border: none; font-family: inherit; font-weight: 800;
+      font-size: .82rem; color: rgba(74,57,45,.6); cursor: pointer; padding: 4px 0;
+    }
+    .collapsed-toggle:hover { color: var(--deep); }
 
     .today-progress {
       margin-top: 16px; display: flex; align-items: center; gap: 12px;
@@ -779,6 +784,12 @@
         <div class="today-bar"><div class="today-bar-fill" id="today-bar-fill"></div></div>
         <div class="today-count" id="today-count"></div>
       </div>
+      <div id="habits-collapsed-wrap" hidden style="margin-top:16px; border-top:1.5px dashed var(--line); padding-top:14px;">
+        <button type="button" class="collapsed-toggle" id="habits-collapsed-toggle">
+          <span id="habits-collapsed-label">▾ مهمات أخرى</span>
+        </button>
+        <div class="habits-grid" id="habits-collapsed-grid" hidden style="margin-top:10px;"></div>
+      </div>
     </section>
 
     <section class="card" id="custom-habits-section" hidden>
@@ -943,6 +954,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=71"></script>
+<script type="module" src="app.js?v=72"></script>
 </body>
 </html>

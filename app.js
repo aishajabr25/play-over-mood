@@ -1631,6 +1631,12 @@ async function renderWhiteDaysBox() {
 }
 setInterval(renderWhiteDaysBox, 60000);
 
+let habitsCollapsedOpen = false;
+document.getElementById('habits-collapsed-toggle')?.addEventListener('click', () => {
+  habitsCollapsedOpen = !habitsCollapsedOpen;
+  renderHabits();
+});
+
 function renderHabits() {
   const grid = document.getElementById('habits-grid');
   if (!grid) return;
@@ -1664,16 +1670,34 @@ function renderHabits() {
   }
 
   const t = myToday();
+  const collapsedHabits = [];
   GROUPS.forEach(g => {
     const groupHabits = (GROUP_ITEMS[g.id] || []).map(id => HABITS.find(h => h.id === id))
       .filter(Boolean).filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin);
-    if (groupHabits.length === 0) return;
+    const shownHabits = groupHabits.filter(h => isFocused(h.id));
+    groupHabits.filter(h => !isFocused(h.id)).forEach(h => collapsedHabits.push(h));
+    if (shownHabits.length === 0) return;
     const header = document.createElement('div');
     header.className = 'quest-group';
     header.innerHTML = `<span class="quest-group-title">${g.emoji} ${isEN() ? g.en : g.ar}</span><span class="quest-group-line"></span>`;
     grid.appendChild(header);
-    groupHabits.forEach(h => grid.appendChild(buildHabitCard(h, t)));
+    shownHabits.forEach(h => grid.appendChild(buildHabitCard(h, t)));
   });
+
+  const collapsedWrap = document.getElementById('habits-collapsed-wrap');
+  const collapsedGrid = document.getElementById('habits-collapsed-grid');
+  const collapsedLabel = document.getElementById('habits-collapsed-label');
+  if (collapsedWrap && collapsedGrid && collapsedLabel) {
+    collapsedWrap.hidden = collapsedHabits.length === 0;
+    if (collapsedHabits.length > 0) {
+      collapsedGrid.innerHTML = '';
+      collapsedHabits.forEach(h => collapsedGrid.appendChild(buildHabitCard(h, t)));
+      collapsedGrid.hidden = !habitsCollapsedOpen;
+      collapsedLabel.textContent = habitsCollapsedOpen
+        ? (isEN() ? `▴ Hide (${collapsedHabits.length})` : `▴ إخفاء (${collapsedHabits.length})`)
+        : (isEN() ? `▾ Other quests (${collapsedHabits.length})` : `▾ مهمات أخرى (${collapsedHabits.length})`);
+    }
+  }
 
   const done = HABITS.filter(h => t[h.id]).length;
   document.getElementById('today-bar-fill').style.width = `${(done / HABITS.length) * 100}%`;
@@ -1780,7 +1804,7 @@ function buildHabitCard(h, t) {
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
-      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" title="${focused ? (isEN() ? 'Shown in your analysis — click to hide' : 'ضمن تحليلك — اضغطي لإخفائها') : (isEN() ? 'Hidden from your analysis — click to show' : 'مخفية من تحليلك — اضغطي لإظهارها')}">${focused ? '★' : '☆'}</button>` : ''}
+      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" title="${focused ? (isEN() ? 'On your board — click to move to Other quests' : 'ضمن لوحتك — اضغطي لنقلها إلى مهمات أخرى') : (isEN() ? 'In Other quests — click to bring back' : 'ضمن مهمات أخرى — اضغطي لإرجاعها')}">${focused ? '★' : '☆'}</button>` : ''}
       <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${h.emoji}</div>`;
     el.addEventListener('click', () => toggleHabit(h));
