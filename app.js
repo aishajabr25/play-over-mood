@@ -1473,8 +1473,15 @@ async function renderTimelyBox() {
 
   const inWindow = now >= windowStart && now < windowEnd;
   const show = isAdmin || inWindow;
-  box.hidden = !show;
-  if (!show) return;
+  if (!show) { box.hidden = true; collapsedExtraIds.delete(kahf.id); syncCollapsedSection(); return; }
+  if (!isFocused(kahf.id)) {
+    box.hidden = true;
+    collapsedExtraIds.add(kahf.id);
+    syncCollapsedSection();
+    return;
+  }
+  collapsedExtraIds.delete(kahf.id);
+  box.hidden = false;
 
   const msLeft = Math.max(0, windowEnd - now);
   const hLeft = Math.floor(msLeft / 3600000);
@@ -1505,6 +1512,7 @@ async function renderTimelyBox() {
         <div class="habit-check-ar">${isEN() ? kahf.en : kahf.ar}</div>
         <div class="habit-check-en">${isEN() ? kahf.ar : kahf.en}</div>
       </div>
+      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn on" title="${isEN() ? 'On your board — click to move to Other quests' : 'ضمن لوحتك — اضغطي لنقلها إلى مهمات أخرى'}">★</button>` : ''}
       <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${kahf.emoji}</div>
     </div>`;
@@ -1512,6 +1520,11 @@ async function renderTimelyBox() {
   document.querySelector('#timely-check .habit-share-btn').addEventListener('click', e => {
     e.stopPropagation();
     shareQuestSticker(kahf, done);
+  });
+  document.querySelector('#timely-check .habit-focus-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleFocus(kahf.id);
+    renderTimelyBox();
   });
 }
 setInterval(renderTimelyBox, 60000);
@@ -1532,6 +1545,7 @@ function whiteDaysCheckRow(h, done) {
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
+      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn on" data-focus-id="${h.id}" title="${isEN() ? 'On your board — click to move to Other quests' : 'ضمن لوحتك — اضغطي لنقلها إلى مهمات أخرى'}">★</button>` : ''}
       <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${h.emoji}</div>
     </div>`;
@@ -1542,10 +1556,11 @@ async function renderWhiteDaysBox() {
   if (!box) return;
   const wd = HABITS.find(h => h.id === 'whitedays');
   const sh = HABITS.find(h => h.id === 'suhoor');
-  if (!wd || !sh || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
+  const clearExtras = () => { collapsedExtraIds.delete('whitedays'); collapsedExtraIds.delete('suhoor'); syncCollapsedSection(); };
+  if (!wd || !sh || (preLaunch() && !isAdmin)) { box.hidden = true; clearExtras(); return; }
 
   const coords = await getGeo();
-  if (!coords) { box.hidden = !isAdmin; if (!isAdmin) return; }
+  if (!coords) { box.hidden = !isAdmin; if (!isAdmin) { clearExtras(); return; } }
 
   const now = new Date();
   const hijriDay = coords ? await getHijriDay(now, coords) : null;
@@ -1553,13 +1568,14 @@ async function renderWhiteDaysBox() {
   const isEve = hijriDay === 12; /* اليوم السابق — تذكير فقط، بدون تفعيل */
   const show = isAdmin || isWhiteDay || isEve;
   box.hidden = !show;
-  if (!show) return;
+  if (!show) { clearExtras(); return; }
 
   const dLabel = hijriDay ?? '؟';
   const tag = `<span class="timely-tag">${isEN() ? '🌕 White Days' : '🌕 الأيام البيض'}</span>`;
 
   if (isEve && !isWhiteDay) {
     /* تذكير اليوم ١٢: بدون تفعيل، فقط عدّاد حتى الفجر القادم */
+    clearExtras();
     let countdownTxt = isEN() ? 'Preview (admin) — location unavailable' : 'معاينة (مشرفة) — بدون تحديد موقع';
     if (coords) {
       const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1609,32 +1625,77 @@ async function renderWhiteDaysBox() {
 
   const doneWd = !!myToday()[wd.id];
   const doneSh = !!myToday()[sh.id];
+  const wdFocused = isFocused(wd.id);
+  const shFocused = isFocused(sh.id);
+  if (wdFocused) collapsedExtraIds.delete(wd.id); else collapsedExtraIds.add(wd.id);
+  if (shFocused) collapsedExtraIds.delete(sh.id); else collapsedExtraIds.add(sh.id);
+  syncCollapsedSection();
+
   box.innerHTML = `
     <div class="timely-head">${tag}</div>
     ${noteTxt ? `<div style="font-size:.72rem; color:rgba(74,57,45,.55); margin-bottom:8px;">${noteTxt}</div>` : ''}
     <div class="timely-quote">${isEN() ? whyOf(wd).quote : wd.quote}</div>
-    <div class="timely-head" style="margin:0 0 4px;"><span class="timely-countdown">${fastTxt}</span></div>
-    ${whiteDaysCheckRow({ ...wd, ar: titleAr, en: titleEn }, doneWd)}
-    <div class="timely-head" style="margin:14px 0 4px;"><span class="timely-countdown">${suhoorTxt}</span></div>
-    ${whiteDaysCheckRow({ ...sh, ar: suhoorTitleAr, en: suhoorTitleEn }, doneSh)}
+    ${wdFocused ? `
+      <div class="timely-head" style="margin:0 0 4px;"><span class="timely-countdown">${fastTxt}</span></div>
+      ${whiteDaysCheckRow({ ...wd, ar: titleAr, en: titleEn }, doneWd)}` : ''}
+    ${shFocused ? `
+      <div class="timely-head" style="margin:14px 0 4px;"><span class="timely-countdown">${suhoorTxt}</span></div>
+      ${whiteDaysCheckRow({ ...sh, ar: suhoorTitleAr, en: suhoorTitleEn }, doneSh)}` : ''}
   `;
-  document.getElementById(`check-${wd.id}`).addEventListener('click', () => toggleHabit(wd));
-  document.getElementById(`check-${sh.id}`).addEventListener('click', () => toggleHabit(sh));
-  document.querySelector(`#check-${wd.id} .habit-share-btn`).addEventListener('click', e => {
-    e.stopPropagation();
-    shareQuestSticker({ ...wd, ar: titleAr, en: titleEn }, doneWd);
-  });
-  document.querySelector(`#check-${sh.id} .habit-share-btn`).addEventListener('click', e => {
-    e.stopPropagation();
-    shareQuestSticker({ ...sh, ar: suhoorTitleAr, en: suhoorTitleEn }, doneSh);
-  });
+  if (wdFocused) {
+    document.getElementById(`check-${wd.id}`).addEventListener('click', () => toggleHabit(wd));
+    document.querySelector(`#check-${wd.id} .habit-share-btn`).addEventListener('click', e => {
+      e.stopPropagation();
+      shareQuestSticker({ ...wd, ar: titleAr, en: titleEn }, doneWd);
+    });
+    document.querySelector(`#check-${wd.id} .habit-focus-btn`)?.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFocus(wd.id);
+      renderWhiteDaysBox();
+    });
+  }
+  if (shFocused) {
+    document.getElementById(`check-${sh.id}`).addEventListener('click', () => toggleHabit(sh));
+    document.querySelector(`#check-${sh.id} .habit-share-btn`).addEventListener('click', e => {
+      e.stopPropagation();
+      shareQuestSticker({ ...sh, ar: suhoorTitleAr, en: suhoorTitleEn }, doneSh);
+    });
+    document.querySelector(`#check-${sh.id} .habit-focus-btn`)?.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFocus(sh.id);
+      renderWhiteDaysBox();
+    });
+  }
 }
 setInterval(renderWhiteDaysBox, 60000);
 
+/* قسم "مهمات أخرى" — مصدره اثنان: مهمات المجموعات الرئيسية (تُحسب في كل renderHabits)
+   ومهمات مؤقتة (الكهف/الأيام البيض/السحور) تُسجَّل من صناديقها الخاصة عند ظهورها فعليًا */
 let habitsCollapsedOpen = false;
+let collapsedGroupHabits = [];
+let collapsedExtraIds = new Set();
+
+function syncCollapsedSection() {
+  const wrap = document.getElementById('habits-collapsed-wrap');
+  const grid = document.getElementById('habits-collapsed-grid');
+  const label = document.getElementById('habits-collapsed-label');
+  if (!wrap || !grid || !label) return;
+  const extraHabits = [...collapsedExtraIds].map(id => HABITS.find(h => h.id === id)).filter(Boolean);
+  const items = [...collapsedGroupHabits, ...extraHabits];
+  wrap.hidden = items.length === 0;
+  if (items.length === 0) return;
+  const t = myToday();
+  grid.innerHTML = '';
+  items.forEach(h => grid.appendChild(buildHabitCard(h, t)));
+  grid.hidden = !habitsCollapsedOpen;
+  label.textContent = habitsCollapsedOpen
+    ? (isEN() ? `▴ Hide (${items.length})` : `▴ إخفاء (${items.length})`)
+    : (isEN() ? `▾ Other quests (${items.length})` : `▾ مهمات أخرى (${items.length})`);
+}
+
 document.getElementById('habits-collapsed-toggle')?.addEventListener('click', () => {
   habitsCollapsedOpen = !habitsCollapsedOpen;
-  renderHabits();
+  syncCollapsedSection();
 });
 
 function renderHabits() {
@@ -1684,20 +1745,8 @@ function renderHabits() {
     shownHabits.forEach(h => grid.appendChild(buildHabitCard(h, t)));
   });
 
-  const collapsedWrap = document.getElementById('habits-collapsed-wrap');
-  const collapsedGrid = document.getElementById('habits-collapsed-grid');
-  const collapsedLabel = document.getElementById('habits-collapsed-label');
-  if (collapsedWrap && collapsedGrid && collapsedLabel) {
-    collapsedWrap.hidden = collapsedHabits.length === 0;
-    if (collapsedHabits.length > 0) {
-      collapsedGrid.innerHTML = '';
-      collapsedHabits.forEach(h => collapsedGrid.appendChild(buildHabitCard(h, t)));
-      collapsedGrid.hidden = !habitsCollapsedOpen;
-      collapsedLabel.textContent = habitsCollapsedOpen
-        ? (isEN() ? `▴ Hide (${collapsedHabits.length})` : `▴ إخفاء (${collapsedHabits.length})`)
-        : (isEN() ? `▾ Other quests (${collapsedHabits.length})` : `▾ مهمات أخرى (${collapsedHabits.length})`);
-    }
-  }
+  collapsedGroupHabits = collapsedHabits;
+  syncCollapsedSection();
 
   const done = HABITS.filter(h => t[h.id]).length;
   document.getElementById('today-bar-fill').style.width = `${(done / HABITS.length) * 100}%`;
