@@ -449,6 +449,26 @@ let isAdmin   = false;
 let nickname  = localStorage.getItem('pom_nick') || null;
 let myDays    = {};     // مرآة محلية لأيامي: date -> {habits, points, custom}
 let myCustomHabits = []; // عاداتي الخاصة: [{id, ar, world}, ...] — شخصية، لا تدخل اللوحة العامة
+
+/* المهمات التي اخترت إخفاءها عن تحليلي الشخصي (★ في لوحة المهمات) — تفضيل جهاز، لا يغيّر اللوحة نفسها */
+let focusExcluded = null;
+let focusLsKeyCached = null;
+function focusLsKey() { return `pom_focus_excluded_${me?.uid || 'anon'}`; }
+function loadFocusIfNeeded() {
+  const k = focusLsKey();
+  if (focusExcluded && focusLsKeyCached === k) return;
+  focusLsKeyCached = k;
+  try { focusExcluded = new Set(JSON.parse(localStorage.getItem(k)) || []); }
+  catch { focusExcluded = new Set(); }
+}
+function isFocused(id) { loadFocusIfNeeded(); return !focusExcluded.has(id); }
+function toggleFocus(id) {
+  loadFocusIfNeeded();
+  if (focusExcluded.has(id)) focusExcluded.delete(id); else focusExcluded.add(id);
+  localStorage.setItem(focusLsKey(), JSON.stringify([...focusExcluded]));
+  renderHabits();
+  renderMyProgress();
+}
 let lbRows    = [];     // أفضل ٣٠ لاعبة هذا الأسبوع
 let statsWeeks = {};    // week -> {dayCounts, habitCounts}
 let statsFetchedAt = 0;
@@ -1199,20 +1219,24 @@ function renderCustomHabits() {
 
   const list = document.getElementById('custom-habits-list');
   const todayCustom = (myDays[myDayKey()] || {}).custom || {};
-  list.innerHTML = myCustomHabits.map(c => `
+  list.innerHTML = myCustomHabits.map(c => {
+    const focused = isFocused(c.id);
+    return `
     <div class="habit-check${todayCustom[c.id] ? ' done' : ''}" data-cid="${c.id}" style="border-inline-start-color:${WORLDS[c.world]?.color || '#755F4D'}">
       <div class="habit-box">✓</div>
       <div class="habit-check-info">
         <div class="habit-check-ar">${esc(c.ar)}</div>
         <div class="habit-check-en">${isEN() ? WORLDS[c.world]?.en : WORLDS[c.world]?.ar}</div>
       </div>
+      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" data-act="focuscustom" data-cid="${c.id}" title="${focused ? (isEN() ? 'Shown in your analysis' : 'ضمن تحليلك') : (isEN() ? 'Hidden from your analysis' : 'مخفية من تحليلك')}">${focused ? '★' : '☆'}</button>` : ''}
       <button class="post-delete" data-act="delcustom" data-cid="${c.id}" style="margin-inline-start:6px;">${isEN() ? 'remove' : 'حذف'}</button>
       <div class="habit-emoji">🧩</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   list.querySelectorAll('.habit-check').forEach(el => {
     el.addEventListener('click', e => {
-      if (e.target.closest('[data-act="delcustom"]')) return;
+      if (e.target.closest('[data-act="delcustom"]') || e.target.closest('[data-act="focuscustom"]')) return;
       toggleCustomHabit(el.dataset.cid);
     });
   });
@@ -1220,6 +1244,12 @@ function renderCustomHabits() {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       deleteCustomHabit(btn.dataset.cid);
+    });
+  });
+  list.querySelectorAll('[data-act="focuscustom"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFocus(btn.dataset.cid);
     });
   });
 }
@@ -1741,6 +1771,7 @@ function buildHabitCard(h, t) {
     const badge = h.legendary
       ? (isEN() ? `⭐ Legendary ×${habitPoints(h)}` : `⭐ أسطورية ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}`)
       : '';
+    const focused = isFocused(h.id);
     el.innerHTML = `
       ${badge ? `<span class="legendary-badge">${badge}</span>` : ''}
       <div class="habit-box">✓</div>
@@ -1748,12 +1779,17 @@ function buildHabitCard(h, t) {
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
+      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" title="${focused ? (isEN() ? 'Shown in your analysis — click to hide' : 'ضمن تحليلك — اضغطي لإخفائها') : (isEN() ? 'Hidden from your analysis — click to show' : 'مخفية من تحليلك — اضغطي لإظهارها')}">${focused ? '★' : '☆'}</button>` : ''}
       <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${h.emoji}</div>`;
     el.addEventListener('click', () => toggleHabit(h));
     el.querySelector('.habit-share-btn').addEventListener('click', e => {
       e.stopPropagation();
       shareQuestSticker(h, done);
+    });
+    el.querySelector('.habit-focus-btn')?.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFocus(h.id);
     });
     return el;
 }
@@ -1931,8 +1967,8 @@ async function renderPersonalWeekGrid() {
   await ensureDaysLoaded(wkStart);
 
   const rows = [
-    ...HABITS.filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin).map(h => ({ id: h.id, ar: h.ar, en: h.en, emoji: h.emoji, color: habitColor(h), custom: false })),
-    ...myCustomHabits.map(c => ({ id: c.id, ar: c.ar, en: c.ar, emoji: '🧩', color: WORLDS[c.world]?.color || '#755F4D', custom: true })),
+    ...HABITS.filter(h => (!h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin) && isFocused(h.id)).map(h => ({ id: h.id, ar: h.ar, en: h.en, emoji: h.emoji, color: habitColor(h), custom: false })),
+    ...myCustomHabits.filter(c => isFocused(c.id)).map(c => ({ id: c.id, ar: c.ar, en: c.ar, emoji: '🧩', color: WORLDS[c.world]?.color || '#755F4D', custom: true })),
   ];
 
   let html = `<table class="week-table"><thead><tr><th></th>
@@ -2025,14 +2061,14 @@ function renderMyProgress() {
     const items = (GROUP_ITEMS[g.id] || [])
       .map(id => HABITS.find(h => h.id === id))
       .filter(Boolean)
-      .filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin);
+      .filter(h => (!h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin) && isFocused(h.id));
     if (items.length === 0) return;
     html += `<div class="progress-group-title">${g.emoji} ${isEN() ? g.en : g.ar}</div>`;
     items.forEach(h => { html += row(h.emoji, isEN() ? h.en : h.ar, h.id, false); });
   });
 
   if (CUSTOM_HABITS_PUBLIC || isAdmin) {
-    const customs = myCustomHabits || [];
+    const customs = (myCustomHabits || []).filter(c => isFocused(c.id));
     if (customs.length > 0) {
       html += `<div class="progress-group-title">🧩 ${isEN() ? 'My Own Habits' : 'عاداتي الخاصة'}</div>`;
       customs.forEach(c => { html += row('🧩', c.ar, c.id, true); });
@@ -2482,7 +2518,10 @@ async function renderWeekStats(wk) {
   block.innerHTML = '<div class="card-desc">جارٍ تحميل أرقام هذا الأسبوع…</div>';
 
   const countOf = path => getDocs(collection(db, path)).then(s => s.size).catch(() => '؟');
-  const [playersC, agg] = await Promise.all([countOf(`weeks/${wk}/players`), fetchStatsForWeek(wk, true)]);
+  const top30Of = wkKey => getDocs(query(collection(db, `weeks/${wkKey}/players`), orderBy('points', 'desc'), limit(30)))
+    .then(s => s.docs.map(d => ({ uid: d.id, ...d.data() })))
+    .catch(() => []);
+  const [playersC, agg, top30] = await Promise.all([countOf(`weeks/${wk}/players`), fetchStatsForWeek(wk, true), top30Of(wk)]);
   const weekTotal = Object.values(agg.dayCounts || {}).reduce((s, v) => s + Math.max(0, v), 0);
   const isCurrent = wk === thisWeekKey();
   const dayCount = Math.max(1, Object.keys(agg.dayCounts || {}).length);
@@ -2496,6 +2535,28 @@ async function renderWeekStats(wk) {
         ? `<div class="stat-box"><div class="stat-num">${Math.max(0, agg.dayCounts?.[myDayKey()] || 0)}</div><div class="stat-lbl">مهمات أُنجزت اليوم</div></div>`
         : `<div class="stat-box"><div class="stat-num">${avgPerDay}</div><div class="stat-lbl">متوسط يوميًا</div></div>`}
     </div>`;
+
+  /* لوحة الصدارة — أفضل ٣٠ لهذا الأسبوع بعينه */
+  const lbRowsWk = top30.filter(r => r.nick !== ADMIN_NAME);
+  const lbMax = Math.max(1, lbRowsWk[0]?.points || 0);
+  html += `
+    <div class="card-title" style="font-size:1rem">لوحة الصدارة — ${isCurrent ? 'هذا الأسبوع' : 'ذلك الأسبوع'}</div>
+    <div class="card-desc">أفضل ٣٠ لاعبة</div>
+    <div id="admin-week-lb" style="margin-bottom:18px">`;
+  if (lbRowsWk.length === 0) {
+    html += `<div class="prelaunch-note">اللوحة فارغة لهذا الأسبوع</div>`;
+  } else {
+    lbRowsWk.forEach((r, i) => {
+      html += `
+        <div class="lb-row">
+          <div class="lb-rank">${i + 1}</div>
+          <div class="lb-name">${esc(r.nick || '')}</div>
+          <div class="lb-bar-wrap"><div class="lb-bar" style="width:${((r.points || 0) / lbMax) * 100}%"></div></div>
+          <div class="lb-pts">${r.points || 0} نقطة</div>
+        </div>`;
+    });
+  }
+  html += `</div>`;
 
   /* بطاقة المعدلات — متوسط الأداء اليومي لكل مهمة (مثل daily_tracker) */
   const perQuestDailyAvg = HABITS.map(h => ({

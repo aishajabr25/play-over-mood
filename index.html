@@ -230,6 +230,12 @@
       cursor: pointer; padding: 4px; flex-shrink: 0; line-height: 1;
     }
     .habit-share-btn:hover { opacity: 1; }
+    .habit-focus-btn {
+      background: none; border: none; font-size: 1.05rem; opacity: .4;
+      cursor: pointer; padding: 4px; flex-shrink: 0; line-height: 1; color: var(--deep);
+    }
+    .habit-focus-btn.on { opacity: 1; color: #CFA94A; }
+    .habit-focus-btn:hover { opacity: 1; }
 
     .today-progress {
       margin-top: 16px; display: flex; align-items: center; gap: 12px;
@@ -836,7 +842,7 @@
     <section class="card" id="my-progress-section" hidden>
       <span class="card-label label-green">📈 تقدمك الشخصي · Your Progress</span>
       <div class="card-title">لوحتك الأسبوعية</div>
-      <div class="card-desc">للمراجعة فقط — لا يمكن تعديل الأيام السابقة</div>
+      <div class="card-desc">للمراجعة فقط — لا يمكن تعديل الأيام السابقة · اضغطي ⭐ بجانب أي مهمة في لوحة المهمات لإظهارها أو إخفائها هنا</div>
       <div class="week-nav" id="progress-week-nav" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
         <button type="button" class="week-nav-btn" id="progress-week-prev" aria-label="الأسبوع السابق">‹</button>
         <div class="week-month-label" id="progress-week-label"></div>
@@ -937,6 +943,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=69"></script>
+<script type="module" src="app.js?v=70"></script>
 </body>
 </html>
