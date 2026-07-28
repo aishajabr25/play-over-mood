@@ -2495,9 +2495,9 @@ function updateAdminUi() {
 const SHOW_WHY_PUBLIC = true;
 /* ميزات الأمهات — لصفحة المشرفة فقط حتى تراجعها وتعتمدها */
 const MOM_FEATURES_PUBLIC = false;
-/* تقدمي الشخصي (أسبوع/شهر بكل مهمة) والعادات الخاصة — لصفحة المشرفة فقط حتى تُعتمد */
-const PROGRESS_VIEW_PUBLIC = false;
-const CUSTOM_HABITS_PUBLIC = false;
+/* تقدمي الشخصي (أسبوع/شهر بكل مهمة) والعادات الخاصة — اعتُمدت للجميع ٢٠٢٦-٠٧-٢٨ */
+const PROGRESS_VIEW_PUBLIC = true;
+const CUSTOM_HABITS_PUBLIC = true;
 const REFLECT_PUBLIC = true;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
