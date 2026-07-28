@@ -398,7 +398,7 @@ function applyEnglish() {
 
   set('#tab-reflect .card-label', '📝 Reflections · التدبرات والتأملات');
   set('#reflect-edit-btn', '✏️ edit question');
-  set('#tab-reflect .card-desc', 'Your answer is private — only the host sees it for review, and you can update it anytime this week');
+  set('#tab-reflect .card-desc', 'Everyone can see your answers — share your reflections with the community, and update yours anytime this week');
   const reflectInput = document.getElementById('reflect-input');
   if (reflectInput) reflectInput.placeholder = 'Write your answer here…';
   set('#reflect-form button[type=submit]', 'Save my answer');
@@ -466,6 +466,7 @@ const DEFAULT_REFLECT_Q = 'ماذا تعلمتِ هذا الأسبوع؟';
 let reflectQuestion = DEFAULT_REFLECT_Q;
 let myReflectAnswer = '';
 let myReflectLoaded = false;
+let reflectAnswersCache = [];
 
 function myDayKey() { return dateKey(effectiveNow()); }
 function myToday() { return (myDays[myDayKey()] || {}).habits || {}; }
@@ -652,6 +653,15 @@ function startListeners() {
   }, () => {});
 
   onSnapshot(
+    query(collection(db, 'reflections'), where('week', '==', thisWeekKey())),
+    snap => {
+      reflectAnswersCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.text);
+      renderReflectAnswers();
+    },
+    () => {}
+  );
+
+  onSnapshot(
     query(collection(db, 'features'), orderBy('time', 'desc'), limit(50)),
     snap => {
       featuresCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -790,11 +800,66 @@ function renderReflectTab() {
   if (input && myReflectLoaded && document.activeElement !== input) input.value = myReflectAnswer;
 }
 
+function renderReflectAnswers() {
+  const list = document.getElementById('reflect-answers-list');
+  if (!list) return;
+  const sorted = [...reflectAnswersCache].sort((a, b) => (b.time || 0) - (a.time || 0));
+  list.innerHTML = sorted.map(r => {
+    const canDelete = isAdmin || (me && r.uid === me.uid);
+    return `
+      <div class="post-item">
+        <div class="post-head">
+          <span class="post-author">${esc(r.nick)}</span>
+          ${canDelete ? `<button class="post-delete" data-act="delref" data-id="${r.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
+        </div>
+        <div class="post-body">${esc(r.text)}</div>
+      </div>`;
+  }).join('') || `<div class="mission-empty">${isEN() ? 'No answers yet — be the first 🤍' : 'ما في إجابات بعد — كوني أول من يشارك 🤍'}</div>`;
+
+  list.querySelectorAll('[data-act="delref"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      reflectAnswersCache = reflectAnswersCache.filter(r => r.id !== id);
+      renderReflectAnswers();
+      try { await deleteDoc(doc(db, 'reflections', id)); }
+      catch { showToast('تعذر الحذف'); }
+    });
+  });
+}
+
+function reflectQuestionModal() {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">📝 ${isEN() ? 'This week’s question' : 'سؤال هذا الأسبوع'}</div>
+        <textarea id="reflect-q-input" maxlength="200" style="min-height:70px;" placeholder="${isEN() ? 'Write the question…' : 'اكتبي السؤال هنا…'}"></textarea>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Save' : 'حفظ'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const ta = overlay.querySelector('#reflect-q-input');
+    ta.value = reflectQuestion;
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close(ta.value.trim()));
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) close(ta.value.trim());
+      if (e.key === 'Escape') close(null);
+    });
+    document.body.appendChild(overlay);
+    ta.focus();
+  });
+}
+
 async function editReflectQuestion() {
-  const text = prompt(isEN() ? 'The weekly question:' : 'سؤال هذا الأسبوع:', reflectQuestion);
-  if (text === null || !text.trim()) return;
+  const text = await reflectQuestionModal();
+  if (!text) return;
   try {
-    await setDoc(doc(db, 'meta', 'reflectQuestion'), { text: text.trim(), updated: Date.now() });
+    await setDoc(doc(db, 'meta', 'reflectQuestion'), { text, updated: Date.now() });
     showToast(isEN() ? 'Question updated 🤍' : 'تحدّث السؤال 🤍');
   } catch {
     showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
