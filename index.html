@@ -351,6 +351,13 @@
       margin: 16px 0 4px; text-transform: uppercase; letter-spacing: .04em;
     }
     .progress-group-title:first-child { margin-top: 0; }
+    .day-strip { display: flex; gap: 4px; direction: ltr; }
+    .day-dot {
+      width: 14px; height: 14px; border-radius: 5px;
+      background: rgba(74,57,45,.08); border: 1px solid rgba(74,57,45,.12);
+      flex-shrink: 0;
+    }
+    .day-dot.done { background: var(--secondary); border-color: rgba(160,190,154,.9); }
 
     /* ── Q&A wall ────────────────────────────────────────── */
     .post-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
@@ -437,6 +444,37 @@
     }
     .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--deep); line-height: 1.2; }
     .stat-lbl { font-size: .7rem; color: rgba(74,57,45,.6); }
+
+    /* ── تحليل متقدم (لوحة المشرفة) ──────────────────────── */
+    .week-table-wrap { overflow-x: auto; margin-bottom: 8px; }
+    .week-table { width: 100%; border-collapse: collapse; }
+    .week-table th, .week-table td {
+      border: 1px solid var(--line); padding: 7px 5px; text-align: center; vertical-align: middle;
+    }
+    .week-table thead th {
+      background: var(--green-light); font-size: .68rem; font-weight: 700; color: var(--deep); white-space: nowrap;
+    }
+    .week-table thead th small { display: block; font-size: .58rem; font-weight: 400; color: rgba(74,57,45,.45); }
+    .week-table td.week-question {
+      text-align: right; font-size: .76rem; font-weight: 700; color: var(--text);
+      min-width: 140px; max-width: 200px; padding: 8px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .week-cell-val {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 24px; height: 22px; padding: 0 5px; border-radius: 7px;
+      color: #fff; font-weight: 800; font-size: .78rem;
+    }
+    .avg-total-box {
+      text-align: center; font-size: 2.2rem; font-weight: 800; color: var(--deep);
+      letter-spacing: -.03em; line-height: 1.1; padding: 4px 0 14px;
+    }
+    .avg-total-box small { display: block; font-size: .72rem; font-weight: 600; color: rgba(74,57,45,.5); margin-top: 4px; }
+    .avg-legend-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+    .avg-legend-name { font-size: .8rem; font-weight: 600; color: var(--text); flex: 1; min-width: 0; }
+    .avg-legend-track { flex: 2; height: 8px; border-radius: 999px; background: rgba(74,57,45,.08); overflow: hidden; }
+    .avg-legend-fill { height: 100%; border-radius: 999px; }
+    .avg-legend-score { font-size: .78rem; font-weight: 800; color: var(--deep); width: 30px; text-align: left; direction: ltr; flex-shrink: 0; }
+    .trend-chart-wrap { position: relative; width: 100%; height: 260px; }
     .mail-row {
       font-size: .78rem; padding: 6px 0;
       border-bottom: 1px dashed rgba(74,57,45,.12);
@@ -875,6 +913,7 @@
 <div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script type="module" src="app.js?v=67"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script type="module" src="app.js?v=68"></script>
 </body>
 </html>

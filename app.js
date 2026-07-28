@@ -1263,13 +1263,16 @@ async function toggleHabit(h) {
         { merge: true }).catch(() => {});
       /* ٣) عدّادات المجتمع (موزعة على شظايا لتجنب التزاحم) */
       const shard = Math.floor(Math.random() * STATS_SHARDS);
+      const cellKey = `${date}_${h.id}`;
       setDoc(doc(db, `stats/${week}/shards`, String(shard)),
-        { dayCounts: { [date]: increment(delta) }, habitCounts: { [h.id]: increment(delta) } },
+        { dayCounts: { [date]: increment(delta) }, habitCounts: { [h.id]: increment(delta) },
+          cellCounts: { [cellKey]: increment(delta) } },
         { merge: true }).catch(() => {});
       /* حدّثي النسخة المحلية للعدادات فورًا */
-      const agg = (statsWeeks[week] = statsWeeks[week] || { dayCounts: {}, habitCounts: {} });
+      const agg = (statsWeeks[week] = statsWeeks[week] || { dayCounts: {}, habitCounts: {}, cellCounts: {} });
       agg.dayCounts[date]   = (agg.dayCounts[date]   || 0) + delta;
       agg.habitCounts[h.id] = (agg.habitCounts[h.id] || 0) + delta;
+      agg.cellCounts[cellKey] = (agg.cellCounts[cellKey] || 0) + delta;
     }
   } catch {
     showToast('تعذر الحفظ — تحققي من الاتصال بالإنترنت');
@@ -1914,15 +1917,32 @@ function renderMyProgress() {
     return { weekN, monthN };
   }
 
+  function dayStrip(id, isCustom) {
+    const days = [];
+    for (let i = 13; i >= 0; i--) days.push(daysAgo(i));
+    const dots = days.map(d => {
+      const key = dateKey(d);
+      const dayDoc = myDays[key];
+      const bag = isCustom ? dayDoc?.custom : dayDoc?.habits;
+      const done = !!(bag && bag[id]);
+      const label = d.toLocaleDateString(isEN() ? 'en' : 'ar', { day: 'numeric', month: 'short' });
+      return `<span class="day-dot${done ? ' done' : ''}" title="${label}"></span>`;
+    }).join('');
+    return `<div class="day-strip">${dots}</div>`;
+  }
+
   function row(emoji, name, id, isCustom) {
     const { weekN, monthN } = countsFor(id, isCustom);
     return `
-      <div class="progress-row">
-        <div class="progress-name">${emoji} ${name}</div>
-        <div class="progress-nums">
-          <span class="progress-pill">${isEN() ? `Week: ${weekN}` : `الأسبوع: ${weekN}`}</span>
-          <span class="progress-pill">${isEN() ? `Month: ${monthN}` : `الشهر: ${monthN}`}</span>
+      <div class="progress-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="progress-name">${emoji} ${name}</div>
+          <div class="progress-nums">
+            <span class="progress-pill">${isEN() ? `Week: ${weekN}` : `الأسبوع: ${weekN}`}</span>
+            <span class="progress-pill">${isEN() ? `Month: ${monthN}` : `الشهر: ${monthN}`}</span>
+          </div>
         </div>
+        ${dayStrip(id, isCustom)}
       </div>`;
   }
 
@@ -2370,14 +2390,15 @@ async function fetchStatsForWeek(wk, force) {
   if (!force && statsWeeks[wk]) return statsWeeks[wk];
   try {
     const snap = await getDocs(collection(db, `stats/${wk}/shards`));
-    const agg = { dayCounts: {}, habitCounts: {} };
+    const agg = { dayCounts: {}, habitCounts: {}, cellCounts: {} };
     snap.forEach(s => {
       const d = s.data();
       Object.entries(d.dayCounts || {}).forEach(([k, v]) => { agg.dayCounts[k] = (agg.dayCounts[k] || 0) + v; });
       Object.entries(d.habitCounts || {}).forEach(([k, v]) => { agg.habitCounts[k] = (agg.habitCounts[k] || 0) + v; });
+      Object.entries(d.cellCounts || {}).forEach(([k, v]) => { agg.cellCounts[k] = (agg.cellCounts[k] || 0) + v; });
     });
     statsWeeks[wk] = agg;
-  } catch { statsWeeks[wk] = { dayCounts: {}, habitCounts: {} }; }
+  } catch { statsWeeks[wk] = { dayCounts: {}, habitCounts: {}, cellCounts: {} }; }
   return statsWeeks[wk];
 }
 
@@ -2400,19 +2421,49 @@ async function renderWeekStats(wk) {
       ${isCurrent
         ? `<div class="stat-box"><div class="stat-num">${Math.max(0, agg.dayCounts?.[myDayKey()] || 0)}</div><div class="stat-lbl">مهمات أُنجزت اليوم</div></div>`
         : `<div class="stat-box"><div class="stat-num">${avgPerDay}</div><div class="stat-lbl">متوسط يوميًا</div></div>`}
-    </div>
-    <div class="card-title" style="font-size:1rem">كل مهمة — ${isCurrent ? 'هذا الأسبوع' : 'ذلك الأسبوع'}</div>
-    <div class="hbar-list">`;
-  const maxHabit = Math.max(1, ...HABITS.map(h => Math.max(0, agg.habitCounts?.[h.id] || 0)));
-  HABITS.forEach(h => {
-    const n = Math.max(0, agg.habitCounts?.[h.id] || 0);
+    </div>`;
+
+  /* بطاقة المعدلات — متوسط الأداء اليومي لكل مهمة (مثل daily_tracker) */
+  const perQuestDailyAvg = HABITS.map(h => ({
+    h, avg: (Math.max(0, agg.habitCounts?.[h.id] || 0)) / dayCount,
+  }));
+  const overallAvg = perQuestDailyAvg.reduce((s, x) => s + x.avg, 0) / Math.max(1, HABITS.length);
+  const maxAvg = Math.max(1, ...perQuestDailyAvg.map(x => x.avg));
+  html += `
+    <div class="card-title" style="font-size:1rem">المعدلات — ${isCurrent ? 'هذا الأسبوع' : 'ذلك الأسبوع'}</div>
+    <div class="card-desc">متوسط عدد المرات يوميًا لكل مهمة</div>
+    <div class="avg-total-box">${overallAvg.toFixed(1)}<small>المتوسط العام لكل مهمة يوميًا</small></div>
+    <div style="margin-bottom:18px">`;
+  perQuestDailyAvg.forEach(({ h, avg }) => {
     html += `
-      <div class="hbar-item">
-        <div class="hbar-top"><span class="hbar-name">${h.emoji} ${h.ar}</span><span class="hbar-pct">${n}</span></div>
-        <div class="hbar-track"><div class="hbar-fill" style="width:${(n / maxHabit) * 100}%; background:${habitColor(h)}"></div></div>
+      <div class="avg-legend-row">
+        <span class="avg-legend-name">${h.emoji} ${h.ar}</span>
+        <span class="avg-legend-track"><span class="avg-legend-fill" style="width:${(avg / maxAvg) * 100}%; background:${habitColor(h)}"></span></span>
+        <span class="avg-legend-score">${avg.toFixed(1)}</span>
       </div>`;
   });
   html += `</div>`;
+
+  /* اللوحة الأسبوعية — كل مهمة × كل يوم (تبدأ من تاريخ إضافة هذه الميزة) */
+  const weekDays = [];
+  const wkStartDate = new Date(wk + 'T12:00:00');
+  for (let i = 0; i < 7; i++) { const d = new Date(wkStartDate); d.setDate(d.getDate() + i); weekDays.push(d); }
+  html += `
+    <div class="card-title" style="font-size:1rem">اللوحة الأسبوعية — ${isCurrent ? 'هذا الأسبوع' : 'ذلك الأسبوع'}</div>
+    <div class="card-desc">كل مهمة وعدد مرات إنجازها كل يوم من المجتمع — تبدأ البيانات من ٢٧ يوليو ٢٠٢٦</div>
+    <div class="week-table-wrap"><table class="week-table"><thead><tr><th></th>
+      ${weekDays.map(d => `<th>${DAY_LETTERS[d.getDay()]}<small>${pad(d.getDate())}/${pad(d.getMonth() + 1)}</small></th>`).join('')}
+    </tr></thead><tbody>`;
+  HABITS.forEach(h => {
+    html += `<tr><td class="week-question">${h.emoji} ${h.ar}</td>`;
+    weekDays.forEach(d => {
+      const n = Math.max(0, agg.cellCounts?.[`${dateKey(d)}_${h.id}`] || 0);
+      html += `<td>${n > 0 ? `<span class="week-cell-val" style="background:${habitColor(h)}">${n}</span>` : ''}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>`;
+
   block.innerHTML = html;
 }
 
