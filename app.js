@@ -2608,8 +2608,8 @@ const MOM_FEATURES_PUBLIC = false;
 const PROGRESS_VIEW_PUBLIC = true;
 const CUSTOM_HABITS_PUBLIC = true;
 const REFLECT_PUBLIC = true;
-/* السماح بتسجيل مهمات أمس (نسيت تسجّل قبل بداية يوم جديد) — لصفحة المشرفة فقط حتى تُعتمد */
-const YESTERDAY_GRACE_PUBLIC = false;
+/* السماح بتسجيل مهمات أمس (نسيت تسجّل قبل بداية يوم جديد) — اعتُمدت للجميع ٢٠٢٦-٠٨-٠١ */
+const YESTERDAY_GRACE_PUBLIC = true;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
