@@ -806,8 +806,13 @@
     <!-- Today's log -->
     <section class="card">
       <span class="card-label">① مهمات اليوم · Today's Quests</span>
-      <div class="card-title">أي مهمات أنجزتِ اليوم؟</div>
+      <div class="card-title" id="quests-card-title">أي مهمات أنجزتِ اليوم؟</div>
       <div class="card-desc">اضغطي على كل مهمة أتممتِها — كل مهمة = نقطة، والمهمة الأسطورية ⭐ = نقطتان</div>
+      <div class="week-nav" id="quests-day-nav" style="display:none; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <button type="button" class="week-nav-btn" id="quests-day-prev" aria-label="أمس">‹</button>
+        <div class="week-month-label" id="quests-day-label">اليوم</div>
+        <button type="button" class="week-nav-btn" id="quests-day-next" aria-label="اليوم">›</button>
+      </div>
       <div class="worlds-legend" id="worlds-legend"></div>
       <div class="habits-grid" id="habits-grid"></div>
       <div class="today-progress">
@@ -996,6 +1001,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=79"></script>
+<script type="module" src="app.js?v=80"></script>
 </body>
 </html>

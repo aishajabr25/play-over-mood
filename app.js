@@ -492,11 +492,21 @@ let reflectAnswersCache = [];
 
 function myDayKey() { return dateKey(effectiveNow()); }
 function myToday() { return (myDays[myDayKey()] || {}).habits || {}; }
+
+/* نافذة سماح ليوم أمس فقط — لمن نسيت تسجّل قبل بداية يوم جديد (فجرًا) ── */
+let questsViewOffset = 0; /* ٠ = اليوم، -١ = أمس فقط */
+function activeViewDate() {
+  const d = effectiveNow();
+  d.setDate(d.getDate() + questsViewOffset);
+  return d;
+}
+function activeDayKey() { return dateKey(activeViewDate()); }
+function activeWeekKey() { return dateKey(weekStart(activeViewDate())); }
 function dayPoints(habits) {
   return HABITS.reduce((s, h) => s + (habits[h.id] ? habitPoints(h) : 0), 0);
 }
-function myWeekPoints() {
-  const wk = thisWeekKey();
+function myWeekPoints(wk) {
+  wk = wk || thisWeekKey();
   return Object.entries(myDays)
     .filter(([date]) => dateKey(weekStart(new Date(date + 'T12:00:00'))) === wk)
     .reduce((s, [, d]) => s + (d.points || 0), 0);
@@ -1168,7 +1178,7 @@ async function deleteCustomHabit(id) {
 }
 async function toggleCustomHabit(id) {
   if (!me || !nickname) return;
-  const date = myDayKey();
+  const date = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey();
   const day = (myDays[date] = myDays[date] || { habits: {}, points: 0, custom: {} });
   day.custom = day.custom || {};
   day.custom[id] = !day.custom[id];
@@ -1224,7 +1234,7 @@ function renderCustomHabits() {
   if (!show) return;
 
   const list = document.getElementById('custom-habits-list');
-  const todayCustom = (myDays[myDayKey()] || {}).custom || {};
+  const todayCustom = (myDays[(YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey()] || {}).custom || {};
   list.innerHTML = myCustomHabits.map(c => {
     const focused = isFocused(c.id);
     return `
@@ -1267,8 +1277,8 @@ async function toggleHabit(h) {
     return;
   }
 
-  const date = myDayKey();
-  const week = thisWeekKey();
+  const date = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey();
+  const week = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeWeekKey() : thisWeekKey();
   const day = (myDays[date] = myDays[date] || { habits: {}, points: 0 });
   day.habits[h.id] = !day.habits[h.id];
   const delta = day.habits[h.id] ? 1 : -1;
@@ -1295,7 +1305,7 @@ async function toggleHabit(h) {
     if (!isAdmin) {
       /* ٢) ملخص أسبوعي للوحة المتصدرات */
       setDoc(doc(db, `weeks/${week}/players`, me.uid),
-        { nick: nickname, points: myWeekPoints(), updated: Date.now() },
+        { nick: nickname, points: myWeekPoints(week), updated: Date.now() },
         { merge: true }).catch(() => {});
       /* ٣) عدّادات المجتمع (موزعة على شظايا لتجنب التزاحم) */
       const shard = Math.floor(Math.random() * STATS_SHARDS);
@@ -1709,6 +1719,17 @@ document.getElementById('habits-collapsed-toggle')?.addEventListener('click', ()
   syncCollapsedSection();
 });
 
+document.getElementById('quests-day-prev')?.addEventListener('click', () => {
+  if (questsViewOffset <= -1) return;
+  questsViewOffset = -1;
+  renderHabits();
+});
+document.getElementById('quests-day-next')?.addEventListener('click', () => {
+  if (questsViewOffset >= 0) return;
+  questsViewOffset = 0;
+  renderHabits();
+});
+
 function renderHabits() {
   const grid = document.getElementById('habits-grid');
   if (!grid) return;
@@ -1721,6 +1742,27 @@ function renderHabits() {
   document.getElementById('today-date').textContent =
     effectiveNow().toLocaleDateString(isEN() ? 'en' : 'ar', { weekday: 'long', day: 'numeric', month: 'long' });
   updateMyPointsChip();
+
+  const graceOn = YESTERDAY_GRACE_PUBLIC || isAdmin;
+  if (!graceOn) questsViewOffset = 0;
+  const dayNav = document.getElementById('quests-day-nav');
+  if (dayNav) {
+    dayNav.style.display = graceOn ? 'flex' : 'none';
+    if (graceOn) {
+      const prevBtn = document.getElementById('quests-day-prev');
+      const nextBtn = document.getElementById('quests-day-next');
+      const label = document.getElementById('quests-day-label');
+      const canGoBack = questsViewOffset === 0 && dateKey(daysAgo(1)) >= dateKey(START_DATE);
+      if (prevBtn) prevBtn.disabled = questsViewOffset <= -1 || !canGoBack;
+      if (nextBtn) nextBtn.disabled = questsViewOffset >= 0;
+      if (label) {
+        label.textContent = questsViewOffset === 0
+          ? (isEN() ? 'Today' : 'اليوم')
+          : (isEN() ? `Yesterday · ${activeViewDate().toLocaleDateString('en', { day: 'numeric', month: 'short' })}`
+                    : `أمس · ${activeViewDate().toLocaleDateString('ar', { day: 'numeric', month: 'short' })}`);
+      }
+    }
+  }
 
   if (preLaunch() && !isAdmin) {
     const days = Math.ceil((START_DATE - new Date()) / 86400000);
@@ -1741,7 +1783,14 @@ function renderHabits() {
     return;
   }
 
-  const t = myToday();
+  const titleEl = document.getElementById('quests-card-title');
+  if (titleEl) {
+    titleEl.textContent = (graceOn && questsViewOffset === -1)
+      ? (isEN() ? 'Which quests did you complete yesterday?' : 'أي مهمات أنجزتِ أمس؟')
+      : (isEN() ? 'Which quests did you complete today?' : 'أي مهمات أنجزتِ اليوم؟');
+  }
+
+  const t = graceOn ? ((myDays[activeDayKey()] || {}).habits || {}) : myToday();
   const collapsedHabits = [];
   GROUPS.forEach(g => {
     const groupHabits = (GROUP_ITEMS[g.id] || []).map(id => HABITS.find(h => h.id === id))
@@ -2559,6 +2608,8 @@ const MOM_FEATURES_PUBLIC = false;
 const PROGRESS_VIEW_PUBLIC = true;
 const CUSTOM_HABITS_PUBLIC = true;
 const REFLECT_PUBLIC = true;
+/* السماح بتسجيل مهمات أمس (نسيت تسجّل قبل بداية يوم جديد) — لصفحة المشرفة فقط حتى تُعتمد */
+const YESTERDAY_GRACE_PUBLIC = false;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
