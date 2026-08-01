@@ -666,14 +666,44 @@
     #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* ── Footer ──────────────────────────────────────────── */
-    .site-footer {
-      padding: 16px 32px; background: var(--text);
-      display: flex; align-items: center; justify-content: center; gap: 20px;
+    .site-footer { margin-top: 40px; background: var(--text); }
+    .footer-main {
+      width: min(1020px, calc(100% - 32px)); margin: 0 auto;
+      padding: 48px 0 32px;
+      display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap;
     }
-    .footer-brand { font-size: 1.3rem; font-weight: 800; color: rgba(255,255,255,.75); }
-    .footer-divider { width: 1px; height: 20px; background: rgba(255,255,255,.18); }
-    .footer-ig { color: rgba(255,255,255,.6); text-decoration: none; font-size: .82rem; font-weight: 500; direction: ltr; unicode-bidi: embed; }
-    .footer-ig:hover { color: rgba(255,255,255,.95); }
+    .footer-brand {
+      font-family: "Rubik", sans-serif; font-size: 2rem; font-weight: 800;
+      color: #fff; letter-spacing: .01em; direction: rtl; line-height: 1;
+      text-shadow: 2px 2px 0 rgba(0,0,0,.15);
+    }
+    .footer-tagline {
+      color: rgba(255,255,255,.65); font-size: .92rem; font-weight: 400;
+      max-width: 420px; margin: 14px 0 22px; line-height: 1.9;
+    }
+    .footer-socials-label {
+      color: rgba(255,255,255,.8); font-size: .85rem; font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .footer-socials { display: flex; gap: 10px; }
+    .footer-social-btn {
+      width: 38px; height: 38px; border-radius: 11px;
+      background: rgba(255,255,255,.1);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .footer-social-btn:hover { background: rgba(255,255,255,.18); }
+    .footer-social-btn svg { width: 18px; height: 18px; }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding: 18px 0; text-align: center;
+    }
+    .footer-bottom p { margin: 0; color: rgba(255,255,255,.55); font-size: .82rem; }
+    @media (max-width: 640px) {
+      .footer-main { flex-direction: column; text-align: center; align-items: center; }
+      .footer-tagline { margin-inline: auto; }
+      .footer-socials { justify-content: center; }
+    }
 
     @media (max-width: 700px) {
       .habits-grid, .why-grid, .charts-grid { grid-template-columns: 1fr; }
@@ -939,14 +969,26 @@
   </div>
 </main>
 
-<footer class="site-footer" style="flex-direction:column; gap:12px;">
-  <p id="about-box" style="max-width:560px; text-align:center; font-size:.82rem; line-height:1.9; color:rgba(255,255,255,.75); margin:0;">
-    أنا عَئْوش؛ 🤍 مهندسة برمجيات وأستاذة معتمدة. أقرأ في علم النفس (مع إني أفضل فقه النفس حالياً) وأطبّق ما أتعلّمه، وأبحث في صلته بالإسلام. أحب أتعلّم وأساعد الناس، وأحب الألعاب — مش الإلكترونية… المنافسة 🤙🏻 بدأت هاللعبة لنفسي، وبعدين قلت: ليش ما أشاركها مع العالم؟
-  </p>
-  <div style="display:flex; align-items:center; gap:20px;">
-    <span class="footer-brand">عَئْوش؛</span>
-    <div class="footer-divider"></div>
-    <a href="https://www.instagram.com/aishajabr_/" target="_blank" rel="noopener" class="footer-ig">@aishajabr_</a>
+<footer class="site-footer">
+  <div class="footer-main">
+    <div>
+      <span class="footer-brand">عَئْوش؛</span>
+      <p class="footer-tagline" id="about-box">
+        أنا عَئْوش؛ 🤍 مهندسة برمجيات وأستاذة معتمدة. أقرأ في علم النفس (مع إني أفضل فقه النفس حالياً) وأطبّق ما أتعلّمه، وأبحث في صلته بالإسلام. أحب أتعلّم وأساعد الناس، وأحب الألعاب — مش الإلكترونية… المنافسة 🤙🏻 بدأت هاللعبة لنفسي، وبعدين قلت: ليش ما أشاركها مع العالم؟
+      </p>
+      <div class="footer-socials-label" id="footer-socials-label">تابعوني</div>
+      <div class="footer-socials">
+        <a class="footer-social-btn" href="https://www.instagram.com/aishajabr_/" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="#fff" stroke="none"/></svg>
+        </a>
+        <a class="footer-social-btn" href="https://www.linkedin.com/in/aisha-jabr/" target="_blank" rel="noopener" aria-label="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M4.98 3.5C4.98 4.88 3.9 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8h4V23h-4V8zm7.2 0h3.84v2.05h.05c.53-1 1.85-2.05 3.8-2.05 4.06 0 4.81 2.67 4.81 6.14V23h-4v-6.9c0-1.64-.03-3.76-2.29-3.76-2.29 0-2.64 1.79-2.64 3.64V23h-4V8z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p id="footer-copyright">جميع الحقوق محفوظة © ٢٠٢٦ عائشة جبر</p>
   </div>
 </footer>
 
@@ -954,6 +996,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=75"></script>
+<script type="module" src="app.js?v=76"></script>
 </body>
 </html>
