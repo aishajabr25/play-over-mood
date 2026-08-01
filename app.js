@@ -1070,11 +1070,12 @@ async function fetchStats(force) {
   await Promise.all(weeks.map(async wk => {
     try {
       const snap = await getDocs(collection(db, `stats/${wk}/shards`));
-      const agg = { dayCounts: {}, habitCounts: {} };
+      const agg = { dayCounts: {}, habitCounts: {}, cellCounts: {} };
       snap.forEach(s => {
         const d = s.data();
         Object.entries(d.dayCounts || {}).forEach(([k, v]) => { agg.dayCounts[k] = (agg.dayCounts[k] || 0) + v; });
         Object.entries(d.habitCounts || {}).forEach(([k, v]) => { agg.habitCounts[k] = (agg.habitCounts[k] || 0) + v; });
+        Object.entries(d.cellCounts || {}).forEach(([k, v]) => { agg.cellCounts[k] = (agg.cellCounts[k] || 0) + v; });
       });
       statsWeeks[wk] = agg;
     } catch { /* قد لا توجد بعد */ }
@@ -1304,7 +1305,10 @@ async function toggleHabit(h) {
           cellCounts: { [cellKey]: increment(delta) } },
         { merge: true }).catch(() => {});
       /* حدّثي النسخة المحلية للعدادات فورًا */
-      const agg = (statsWeeks[week] = statsWeeks[week] || { dayCounts: {}, habitCounts: {}, cellCounts: {} });
+      const agg = (statsWeeks[week] = statsWeeks[week] || {});
+      agg.dayCounts   = agg.dayCounts   || {};
+      agg.habitCounts = agg.habitCounts || {};
+      agg.cellCounts  = agg.cellCounts  || {};
       agg.dayCounts[date]   = (agg.dayCounts[date]   || 0) + delta;
       agg.habitCounts[h.id] = (agg.habitCounts[h.id] || 0) + delta;
       agg.cellCounts[cellKey] = (agg.cellCounts[cellKey] || 0) + delta;
