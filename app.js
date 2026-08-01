@@ -1309,8 +1309,9 @@ async function toggleHabit(h) {
       agg.habitCounts[h.id] = (agg.habitCounts[h.id] || 0) + delta;
       agg.cellCounts[cellKey] = (agg.cellCounts[cellKey] || 0) + delta;
     }
-  } catch {
-    showToast('تعذر الحفظ — تحققي من الاتصال بالإنترنت');
+  } catch (err) {
+    console.error('toggleHabit save failed:', err.code, err.message);
+    showToast(`تعذر الحفظ على الخادم (${err.code || 'خطأ'}) — لكن تحديدك محفوظ على جهازك`);
   }
 }
 
