@@ -1310,8 +1310,10 @@ async function toggleHabit(h) {
       agg.cellCounts[cellKey] = (agg.cellCounts[cellKey] || 0) + delta;
     }
   } catch (err) {
-    console.error('toggleHabit save failed:', err.code, err.message);
-    showToast(`تعذر الحفظ على الخادم (${err.code || 'خطأ'}) — لكن تحديدك محفوظ على جهازك`);
+    console.error('toggleHabit save failed:', err);
+    const detail = err.code || err.name || 'unknown';
+    const msg = (err.message || '').slice(0, 80);
+    showToast(`تعذر الحفظ على الخادم (${detail}${msg ? ': ' + msg : ''}) — لكن تحديدك محفوظ على جهازك`);
   }
 }
 
