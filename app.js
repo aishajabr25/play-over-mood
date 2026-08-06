@@ -2602,8 +2602,8 @@ function updateAdminUi() {
 
 /* تبويب "لماذا؟" ظاهر للجميع بعد مراجعة الأحاديث */
 const SHOW_WHY_PUBLIC = true;
-/* ميزات الأمهات — لصفحة المشرفة فقط حتى تراجعها وتعتمدها */
-const MOM_FEATURES_PUBLIC = false;
+/* ميزات الأمهات — اعتُمدت للجميع ٢٠٢٦-٠٨-٠٦ */
+const MOM_FEATURES_PUBLIC = true;
 /* تقدمي الشخصي (أسبوع/شهر بكل مهمة) والعادات الخاصة — اعتُمدت للجميع ٢٠٢٦-٠٧-٢٨ */
 const PROGRESS_VIEW_PUBLIC = true;
 const CUSTOM_HABITS_PUBLIC = true;
