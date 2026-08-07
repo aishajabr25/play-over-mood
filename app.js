@@ -433,6 +433,11 @@ function effectiveNow() {
 }
 function thisWeekKey() { return dateKey(weekStart(effectiveNow())); }
 function prevWeekKey() { const d = weekStart(effectiveNow()); d.setDate(d.getDate() - 7); return dateKey(d); }
+function weekNumberOf(wk) {
+  const start = weekStart(START_DATE);
+  const wkDate = new Date(wk + 'T12:00:00');
+  return Math.round((wkDate - start) / (7 * 86400000)) + 1;
+}
 const esc = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
@@ -687,7 +692,7 @@ function startListeners() {
   }, () => {});
 
   onSnapshot(
-    query(collection(db, 'reflections'), where('week', '==', thisWeekKey())),
+    collection(db, 'reflections'),
     snap => {
       reflectAnswersCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.text);
       renderReflectAnswers();
@@ -838,17 +843,27 @@ function renderReflectTab() {
 function renderReflectAnswers() {
   const list = document.getElementById('reflect-answers-list');
   if (!list) return;
-  const sorted = [...reflectAnswersCache].sort((a, b) => (b.time || 0) - (a.time || 0));
-  list.innerHTML = sorted.map(r => {
-    const canDelete = isAdmin || (me && r.uid === me.uid);
-    return `
-      <div class="post-item">
-        <div class="post-head">
-          <span class="post-author">${esc(r.nick)}</span>
-          ${canDelete ? `<button class="post-delete" data-act="delref" data-id="${r.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
-        </div>
-        <div class="post-body">${esc(r.text)}</div>
-      </div>`;
+
+  const weeks = [...new Set(reflectAnswersCache.map(r => r.week))].sort((a, b) => b.localeCompare(a));
+
+  list.innerHTML = weeks.map(wk => {
+    const n = weekNumberOf(wk);
+    const weekLabel = isEN() ? `Week ${n}` : `الأسبوع ${AR_NUMS[n] || n}`;
+    const rows = reflectAnswersCache
+      .filter(r => r.week === wk)
+      .sort((a, b) => (b.time || 0) - (a.time || 0))
+      .map(r => {
+        const canDelete = isAdmin || (me && r.uid === me.uid);
+        return `
+          <div class="post-item">
+            <div class="post-head">
+              <span class="post-author">${esc(r.nick)}</span>
+              ${canDelete ? `<button class="post-delete" data-act="delref" data-id="${r.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
+            </div>
+            <div class="post-body">${esc(r.text)}</div>
+          </div>`;
+      }).join('');
+    return `<div class="progress-group-title">📝 ${weekLabel}</div>${rows}`;
   }).join('') || `<div class="mission-empty">${isEN() ? 'No answers yet — be the first 🤍' : 'ما في إجابات بعد — كوني أول من يشارك 🤍'}</div>`;
 
   list.querySelectorAll('[data-act="delref"]').forEach(btn => {
