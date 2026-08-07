@@ -403,7 +403,7 @@ function applyEnglish() {
   if (reflectInput) reflectInput.placeholder = 'Write your answer here…';
   set('#reflect-form button[type=submit]', 'Save my answer');
 
-  set('#about-box', 'I’m 3aosh 🤍 A software engineer and certified teacher. I read psychology (though these days I prefer fiqh al-nafs — the Islamic understanding of the self), apply what I learn, and explore its connection to Islam. I love learning, helping people, and games — not the electronic kind… competition 🤙🏻 I started this game for myself, then thought: why not share it with the world?');
+  set('#about-box', 'I’m 3aosh 🤍 A software engineer and certified teacher. I read psychology (though these days I prefer fiqh al-nafs — the Islamic understanding of the self), apply what I learn, and explore its connection to Islam. I love learning, helping people, and games — both kinds, electronic and real-life competition 🤙🏻 I started this game for myself, then thought: why not share it with the world?');
   set('#footer-socials-label', 'My Socials');
   set('#footer-copyright', 'Copyright © 2026 Aisha Jabr. All Rights Reserved.');
   set('.hello-name', 'Hi, <span id="hello-nick"></span> 🌼 <span id="today-date"></span>');
