@@ -271,6 +271,10 @@ const GROUP_ITEMS = {
   night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'athkarsleep', 'sleep', 'tahajjud'],
 };
 
+/* تصنيفات حائط الأسئلة — قائمة أولية، عدّليها متى ما حبيتِ */
+const WALL_TAGS = ['عادات', 'صلاة', 'دعم نفسي', 'اقتراح', 'سؤال عام'];
+const WALL_TAGS_EN = ['Habits', 'Prayer', 'Support', 'Suggestion', 'General'];
+
 /* ── اللغة الإنجليزية (وضع كامل لغير الناطقات بالعربية) ──── */
 let lang = localStorage.getItem('pom_lang') || 'ar';
 const isEN = () => lang === 'en';
@@ -384,6 +388,9 @@ function applyEnglish() {
   const postInput = document.getElementById('post-input');
   if (postInput) postInput.placeholder = 'Write your question or thought…';
   set('#post-form button', 'Post');
+  const wallSearchInput = document.getElementById('wall-search-input');
+  if (wallSearchInput) wallSearchInput.placeholder = 'Search the wall…';
+  setAll('#wall-tag-select option', ['All categories', ...WALL_TAGS_EN]);
 
   set('#tab-rules .card-label', 'How We Play · قواعد اللعبة');
   set('#tab-rules .card-title', 'How do we play here?');
@@ -481,12 +488,15 @@ let statsWeeks = {};    // week -> {dayCounts, habitCounts}
 let statsFetchedAt = 0;
 let participantsCount = null;
 let participantsFetchedAt = 0;
-const WALL_PAGE = 20;
-let postsCache = [];   /* أحدث ٢٠ منشورًا — تحديث فوري */
+const WALL_PAGE = 15;
 let featuresCache = []; /* طلبات الميزات */
-let olderPosts  = [];  /* منشورات أقدم حُمّلت بالضغط على "تحميل المزيد" */
-let wallHasMore = true;
+let wallPageIndex = 0;      /* الصفحة المعروضة حاليًا في الحائط، تبدأ من ٠ */
+let wallPages = [];         /* wallPages[i] = منشورات تلك الصفحة */
+let wallHasMore = true;     /* هل يُحتمل وجود صفحة بعد آخر صفحة حُمّلت؟ */
 let wallLoading = false;
+let wallSearchCache = null; /* كل المنشورات — تُحمَّل مرة واحدة عند أول بحث/تصفية */
+let wallSearchQuery = '';
+let wallSearchTag = '';
 let listenersStarted = false;
 let mission = null; /* { text, link, image, updated } */
 const DEFAULT_REFLECT_Q = 'ماذا تعلمتِ هذا الأسبوع؟';
@@ -675,8 +685,8 @@ function startListeners() {
   onSnapshot(
     query(collection(db, 'posts'), orderBy('time', 'desc'), limit(WALL_PAGE)),
     snap => {
-      postsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderPosts();
+      wallPages[0] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (wallPageIndex === 0) renderPosts();
     },
     () => {}
   );
@@ -741,6 +751,7 @@ function renderFeatures() {
         <span class="post-author">${esc(f.author)}</span>
         <span class="status-badge ${st.cls}">${isEN() ? st.en : st.ar}</span>
         <span class="post-time">${timeAgo(f.time)}</span>
+        ${isAdmin ? `<button class="post-delete" data-act="freply" data-id="${f.id}">${f.reply ? (isEN() ? '✏️ edit reply' : '✏️ تعديل الرد') : (isEN() ? '↩ reply' : '↩ رد')}</button>` : ''}
         ${canDelete ? `<button class="post-delete" data-act="fdel" data-id="${f.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
       </div>
       <div class="post-body">${esc(f.text)}</div>
@@ -748,7 +759,15 @@ function renderFeatures() {
         <select class="status-select" data-id="${f.id}" style="margin-top:8px; display:block;">
           ${Object.entries(STATUS).map(([k, v]) =>
             `<option value="${k}" ${f.status === k || (!f.status && k === 'new') ? 'selected' : ''}>${isEN() ? v.en : v.ar}</option>`).join('')}
-        </select>` : ''}`;
+        </select>` : ''}
+      ${f.reply ? `
+        <div class="post-reply">
+          <div class="post-head">
+            <span class="post-author">${esc(f.reply.author)}</span>
+            <span class="post-badge">${isEN() ? 'Host' : 'المشرفة'}</span>
+          </div>
+          ${esc(f.reply.text)}
+        </div>` : ''}`;
     list.appendChild(el);
   });
 
@@ -773,6 +792,51 @@ function renderFeatures() {
       catch { showToast('تعذر الحذف'); }
     });
   });
+
+  list.querySelectorAll('[data-act="freply"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const f = featuresCache.find(x => x.id === id);
+      const text = await featureReplyModal(f?.reply?.text || '');
+      if (text === null) return;
+      const reply = text ? { author: ADMIN_NAME, text } : null;
+      const i = featuresCache.findIndex(x => x.id === id);
+      if (i !== -1) featuresCache[i] = { ...featuresCache[i], reply };
+      renderFeatures();
+      try {
+        await updateDoc(doc(db, 'features', id), { reply });
+        showToast(reply ? (isEN() ? 'Reply saved 🤍' : 'حُفظ الرد 🤍') : (isEN() ? 'Reply removed' : 'أُزيل الرد'));
+      } catch { showToast('تعذر الحفظ'); }
+    });
+  });
+}
+
+function featureReplyModal(existingText) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">↩ ${isEN() ? 'Reply to this suggestion' : 'ردّي على هذا الاقتراح'}</div>
+        <textarea id="feature-reply-input" maxlength="400" style="min-height:90px;" placeholder="${isEN() ? 'Explain your decision or add a note…' : 'اشرحي قرارك أو أضيفي ملاحظة…'}"></textarea>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Save' : 'حفظ'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const ta = overlay.querySelector('#feature-reply-input');
+    ta.value = existingText;
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close(ta.value.trim()));
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) close(ta.value.trim());
+      if (e.key === 'Escape') close(null);
+    });
+    document.body.appendChild(overlay);
+    ta.focus();
+  });
 }
 
 document.getElementById('feature-form').addEventListener('submit', async e => {
@@ -783,7 +847,7 @@ document.getElementById('feature-form').addEventListener('submit', async e => {
   try {
     await addDoc(collection(db, 'features'), {
       uid: me.uid, author: isAdmin ? ADMIN_NAME : nickname,
-      text, time: Date.now(), status: 'new',
+      text, time: Date.now(), status: 'new', reply: null,
     });
     input.value = '';
     showToast(isEN() ? 'Suggestion sent 🤍' : 'أُرسل اقتراحك 🤍');
@@ -2148,6 +2212,14 @@ document.getElementById('progress-week-next')?.addEventListener('click', () => {
   renderPersonalWeekGrid();
 });
 
+document.getElementById('progress-subtabs')?.addEventListener('click', e => {
+  const btn = e.target.closest('.subtab-btn');
+  if (!btn) return;
+  document.querySelectorAll('#progress-subtabs .subtab-btn').forEach(b => b.classList.toggle('active', b === btn));
+  document.getElementById('progress-subtab-week').hidden = btn.dataset.subtab !== 'week';
+  document.getElementById('progress-subtab-list').hidden = btn.dataset.subtab !== 'list';
+});
+
 /* ── تقدمي الشخصي: كم مرة أنجزت كل مهمة هذا الأسبوع/الشهر ── */
 function renderMyProgress() {
   const section = document.getElementById('my-progress-section');
@@ -2409,49 +2481,136 @@ function replyModal(postText, initial) {
   });
 }
 
-async function loadOlderPosts() {
-  if (wallLoading || !wallHasMore) return;
+async function loadWallPage(pageIndex) {
+  if (wallLoading) return;
+  if (wallPages[pageIndex]) { wallPageIndex = pageIndex; renderPosts(); return; }
   wallLoading = true;
-  const btn = document.getElementById('load-more-posts');
-  if (btn) btn.textContent = isEN() ? 'Loading…' : 'جارٍ التحميل…';
-
-  const combined = [...postsCache, ...olderPosts].sort((a, b) => b.time - a.time);
-  const last = combined[combined.length - 1];
+  renderPosts();
   try {
-    const snap = await getDocs(query(
-      collection(db, 'posts'), orderBy('time', 'desc'),
-      startAfter(last ? last.time : Date.now()), limit(WALL_PAGE),
-    ));
-    const fresh = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const existingIds = new Set(combined.map(p => p.id));
-    olderPosts = [...olderPosts, ...fresh.filter(p => !existingIds.has(p.id))];
-    if (fresh.length < WALL_PAGE) wallHasMore = false;
+    let q;
+    if (pageIndex === 0) {
+      q = query(collection(db, 'posts'), orderBy('time', 'desc'), limit(WALL_PAGE));
+    } else {
+      const prevPage = wallPages[pageIndex - 1] || [];
+      const cursor = prevPage[prevPage.length - 1];
+      q = query(collection(db, 'posts'), orderBy('time', 'desc'),
+        startAfter(cursor ? cursor.time : Date.now()), limit(WALL_PAGE));
+    }
+    const snap = await getDocs(q);
+    wallPages[pageIndex] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    wallHasMore = snap.docs.length === WALL_PAGE;
+    wallPageIndex = pageIndex;
   } catch {
-    showToast(isEN() ? 'Could not load more' : 'تعذر تحميل المزيد');
+    showToast(isEN() ? 'Could not load posts' : 'تعذر تحميل المنشورات');
   }
   wallLoading = false;
   renderPosts();
 }
 
+async function ensureWallSearchCache() {
+  if (wallSearchCache) return;
+  wallLoading = true;
+  renderPosts();
+  try {
+    const snap = await getDocs(query(collection(db, 'posts'), orderBy('time', 'desc')));
+    wallSearchCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    wallSearchCache = [];
+    showToast(isEN() ? 'Could not search' : 'تعذر البحث');
+  }
+  wallLoading = false;
+  renderPosts();
+}
+
+function wallFilterActive() { return !!(wallSearchQuery.trim() || wallSearchTag); }
+
+function tagPickerModal(currentTags) {
+  return new Promise(resolve => {
+    const tags = isEN() ? WALL_TAGS_EN : WALL_TAGS;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">🏷️ ${isEN() ? 'Tag this post' : 'صنّفي هذا المنشور'}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;">
+          ${tags.map((t, i) => `
+            <label style="display:flex; align-items:center; gap:6px; background:var(--bg); border:1.5px solid var(--line); border-radius:999px; padding:6px 12px; cursor:pointer; font-size:.82rem;">
+              <input type="checkbox" value="${esc(WALL_TAGS[i])}" ${currentTags.includes(WALL_TAGS[i]) ? 'checked' : ''} />
+              ${esc(t)}
+            </label>`).join('')}
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Save' : 'حفظ'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => {
+      const picked = [...overlay.querySelectorAll('input[type=checkbox]:checked')].map(el => el.value);
+      close(picked);
+    });
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    document.body.appendChild(overlay);
+  });
+}
+
 function renderPosts() {
   const list = document.getElementById('posts-list');
+  const pagerEl = document.getElementById('wall-pager');
   if (!list) return;
   list.innerHTML = '';
-  const merged = [...postsCache, ...olderPosts];
-  const uniq = [...new Map(merged.map(p => [p.id, p])).values()];
-  const sorted = uniq.sort((a, b) => (b.pinned === true) - (a.pinned === true) || b.time - a.time);
+
+  if (wallLoading && !wallFilterActive() && !wallPages[wallPageIndex]) {
+    list.innerHTML = `<div class="mission-empty">${isEN() ? 'Loading…' : 'جارٍ التحميل…'}</div>`;
+    if (pagerEl) pagerEl.innerHTML = '';
+    return;
+  }
+
+  let sorted, showPager;
+  if (wallFilterActive()) {
+    showPager = false;
+    if (!wallSearchCache) {
+      list.innerHTML = `<div class="mission-empty">${isEN() ? 'Loading…' : 'جارٍ التحميل…'}</div>`;
+      if (pagerEl) pagerEl.innerHTML = '';
+      return;
+    }
+    const q = wallSearchQuery.trim().toLowerCase();
+    sorted = wallSearchCache.filter(p => {
+      const matchesQuery = !q || (p.text || '').toLowerCase().includes(q) || (p.author || '').toLowerCase().includes(q);
+      const matchesTag = !wallSearchTag || (p.tags || []).includes(wallSearchTag);
+      return matchesQuery && matchesTag;
+    }).sort((a, b) => (b.pinned === true) - (a.pinned === true) || b.time - a.time);
+  } else {
+    showPager = true;
+    const page = wallPages[wallPageIndex] || [];
+    sorted = [...page].sort((a, b) => (b.pinned === true) - (a.pinned === true) || b.time - a.time);
+  }
+
+  if (sorted.length === 0) {
+    list.innerHTML = `<div class="mission-empty">${wallFilterActive()
+      ? (isEN() ? 'No matching posts' : 'لا يوجد منشورات مطابقة')
+      : (isEN() ? 'No posts yet — be the first 🤍' : 'ما في منشورات بعد — كوني أول من يشارك 🤍')}</div>`;
+  }
 
   sorted.forEach(p => {
     const el = document.createElement('div');
     el.className = 'post-item' + (p.pinned ? ' pinned' : '');
     const canDelete = isAdmin || (me && p.uid === me.uid);
+    const tags = p.tags || [];
+    const tagLabels = tags.map(t => {
+      const i = WALL_TAGS.indexOf(t);
+      return i === -1 ? t : (isEN() ? WALL_TAGS_EN[i] : WALL_TAGS[i]);
+    });
     el.innerHTML = `
       <div class="post-head">
         <span class="post-author">${esc(p.author)}</span>
         ${p.admin ? `<span class="post-badge">${isEN() ? 'Host' : 'المشرفة'}</span>` : ''}
         ${p.pinned ? `<span class="post-badge" style="background:var(--accent);color:var(--text)">${isEN() ? '📌 Pinned' : '📌 مثبّت'}</span>` : ''}
+        ${tagLabels.map(t => `<span class="status-badge status-planned">${esc(t)}</span>`).join('')}
         <span class="post-time">${timeAgo(p.time)}</span>
-        ${isAdmin ? `<button class="post-delete" data-act="reply" data-id="${p.id}">${p.reply ? (isEN() ? '✏️ edit reply' : '✏️ تعديل الرد') : (isEN() ? '↩ reply' : '↩ رد')}</button>
+        ${isAdmin ? `<button class="post-delete" data-act="tag" data-id="${p.id}">🏷️ ${isEN() ? 'tag' : 'تصنيف'}</button>
+                     <button class="post-delete" data-act="reply" data-id="${p.id}">${p.reply ? (isEN() ? '✏️ edit reply' : '✏️ تعديل الرد') : (isEN() ? '↩ reply' : '↩ رد')}</button>
                      <button class="post-delete" data-act="pin" data-id="${p.id}">${p.pinned ? (isEN() ? 'unpin' : 'إلغاء التثبيت') : (isEN() ? '📌 pin' : '📌 تثبيت')}</button>` : ''}
         ${canDelete ? `<button class="post-delete" data-act="del" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
       </div>
@@ -2468,16 +2627,24 @@ function renderPosts() {
     list.appendChild(el);
   });
 
-  /* تحديث فوري محلي — يشمل المنشورات القديمة غير المشمولة بالبث الحي */
+  /* تحديث فوري محلي — يشمل كل الصفحات المحمّلة وكاش البحث */
+  function findLocal(id) {
+    for (const page of wallPages) { const f = page?.find(x => x.id === id); if (f) return f; }
+    return wallSearchCache?.find(x => x.id === id);
+  }
   function patchLocal(id, patch) {
-    [postsCache, olderPosts].forEach(arr => {
-      const i = arr.findIndex(x => x.id === id);
-      if (i !== -1) arr[i] = { ...arr[i], ...patch };
+    wallPages.forEach(page => {
+      const i = page?.findIndex(x => x.id === id);
+      if (i > -1) page[i] = { ...page[i], ...patch };
     });
+    if (wallSearchCache) {
+      const i = wallSearchCache.findIndex(x => x.id === id);
+      if (i > -1) wallSearchCache[i] = { ...wallSearchCache[i], ...patch };
+    }
   }
   function removeLocal(id) {
-    postsCache = postsCache.filter(x => x.id !== id);
-    olderPosts = olderPosts.filter(x => x.id !== id);
+    wallPages = wallPages.map(page => page?.filter(x => x.id !== id));
+    if (wallSearchCache) wallSearchCache = wallSearchCache.filter(x => x.id !== id);
   }
 
   list.querySelectorAll('.post-delete').forEach(btn => {
@@ -2491,13 +2658,20 @@ function renderPosts() {
           await deleteDoc(doc(db, 'posts', id));
           showToast('تم حذف المنشور');
         } else if (act === 'pin') {
-          const p = [...postsCache, ...olderPosts].find(x => x.id === id);
+          const p = findLocal(id);
           const newPinned = !p.pinned;
           patchLocal(id, { pinned: newPinned });
           renderPosts();
           await updateDoc(doc(db, 'posts', id), { pinned: newPinned });
+        } else if (act === 'tag') {
+          const p = findLocal(id);
+          const picked = await tagPickerModal(p?.tags || []);
+          if (picked === null) return;
+          patchLocal(id, { tags: picked });
+          renderPosts();
+          await updateDoc(doc(db, 'posts', id), { tags: picked });
         } else if (act === 'reply') {
-          const p = [...postsCache, ...olderPosts].find(x => x.id === id);
+          const p = findLocal(id);
           const existing = p && p.reply ? p.reply : null;
           const result = await replyModal(p ? p.text : '', existing);
           if (result === null) return; /* إلغاء */
@@ -2544,20 +2718,23 @@ function renderPosts() {
     });
   });
 
-  if (wallHasMore) {
-    const moreBtn = document.createElement('button');
-    moreBtn.id = 'load-more-posts';
-    moreBtn.className = 'btn btn-soft btn-small';
-    moreBtn.style.cssText = 'display:block; margin:14px auto 0;';
-    moreBtn.textContent = isEN() ? 'Load older posts' : 'تحميل منشورات أقدم';
-    moreBtn.addEventListener('click', loadOlderPosts);
-    list.appendChild(moreBtn);
-  } else if (sorted.length > WALL_PAGE) {
-    const endNote = document.createElement('div');
-    endNote.className = 'mission-empty';
-    endNote.style.cssText = 'text-align:center; margin-top:10px;';
-    endNote.textContent = isEN() ? 'That’s all the posts 🤍' : 'وصلتِ لأقدم المنشورات 🤍';
-    list.appendChild(endNote);
+  if (pagerEl) {
+    if (showPager) {
+      pagerEl.innerHTML = `
+        <div class="week-nav" style="display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
+          <button type="button" class="week-nav-btn" id="wall-page-prev" aria-label="${isEN() ? 'Newer' : 'أحدث'}" ${wallPageIndex === 0 ? 'disabled' : ''}>‹</button>
+          <div class="week-month-label">${isEN() ? `Page ${wallPageIndex + 1}` : `صفحة ${AR_NUMS[wallPageIndex + 1] || wallPageIndex + 1}`}</div>
+          <button type="button" class="week-nav-btn" id="wall-page-next" aria-label="${isEN() ? 'Older' : 'أقدم'}" ${!wallHasMore ? 'disabled' : ''}>›</button>
+        </div>`;
+      document.getElementById('wall-page-prev')?.addEventListener('click', () => {
+        if (wallPageIndex > 0) loadWallPage(wallPageIndex - 1);
+      });
+      document.getElementById('wall-page-next')?.addEventListener('click', () => {
+        if (wallHasMore) loadWallPage(wallPageIndex + 1);
+      });
+    } else {
+      pagerEl.innerHTML = '';
+    }
   }
 }
 
@@ -2570,7 +2747,7 @@ document.getElementById('post-form').addEventListener('submit', async e => {
     await addDoc(collection(db, 'posts'), {
       uid: me.uid,
       author: isAdmin ? ADMIN_NAME : nickname,
-      admin: isAdmin, pinned: false,
+      admin: isAdmin, pinned: false, tags: [],
       text, time: Date.now(), reply: null,
     });
     input.value = '';
@@ -2578,6 +2755,19 @@ document.getElementById('post-form').addEventListener('submit', async e => {
   } catch {
     showToast('تعذر النشر — تحققي من الاتصال');
   }
+});
+
+let wallSearchDebounce;
+document.getElementById('wall-search-input')?.addEventListener('input', e => {
+  wallSearchQuery = e.target.value;
+  clearTimeout(wallSearchDebounce);
+  wallSearchDebounce = setTimeout(() => {
+    if (wallFilterActive()) ensureWallSearchCache(); else renderPosts();
+  }, 250);
+});
+document.getElementById('wall-tag-select')?.addEventListener('change', e => {
+  wallSearchTag = e.target.value;
+  if (wallFilterActive()) ensureWallSearchCache(); else renderPosts();
 });
 
 /* ── Admin sign-in (زر صغير في الفوتر) ───────────────────── */
