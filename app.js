@@ -377,6 +377,9 @@ function applyEnglish() {
   setAll('#tab-growth .card-desc', ['The board resets every Tuesday — a fresh chance every week for every newcomer', 'Last 14 days']);
   setAll('#tab-growth .chart-title', ['Community growth 🌍', 'Your growth 💕', 'Each quest 📊']);
   setAll('#tab-growth .chart-sub', ['Total quests completed daily by everyone', 'Your daily total', 'Per-quest completion this week']);
+  setAll('#progress-subtabs .subtab-btn', ['Weekly grid', 'Every quest', 'One quest at a time']);
+  set('#progress-subtab-single .card-title', 'One quest at a time');
+  set('#progress-subtab-single .card-desc', 'Pick a quest to see its record across several weeks');
 
   set('#tab-why .card-label', '② The Why · لماذا هذه المهمات؟');
   set('#tab-why .card-title', 'Intention and science, together');
@@ -2212,12 +2215,98 @@ document.getElementById('progress-week-next')?.addEventListener('click', () => {
   renderPersonalWeekGrid();
 });
 
+/* ── كل مهمة لوحدها — تقويم أسابيع متعددة لمهمة واحدة تختارينها ── */
+const SINGLE_WEEKS = 6; /* عدد الأسابيع المعروضة دفعة واحدة */
+let singleQuestId = null;
+let singlePageOffset = 0; /* ٠ = آخر ٦ أسابيع، سالب = صفحات أقدم */
+
+function singleQuestOptions() {
+  return [
+    ...HABITS.filter(h => (!h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin) && isFocused(h.id))
+      .map(h => ({ id: h.id, ar: h.ar, en: h.en, emoji: h.emoji, color: habitColor(h), custom: false })),
+    ...myCustomHabits.filter(c => isFocused(c.id))
+      .map(c => ({ id: c.id, ar: c.ar, en: c.ar, emoji: '🧩', color: WORLDS[c.world]?.color || '#755F4D', custom: true })),
+  ];
+}
+
+async function renderSingleQuestCalendar() {
+  const select = document.getElementById('progress-single-select');
+  const gridEl = document.getElementById('progress-single-grid');
+  const labelEl = document.getElementById('progress-single-label');
+  if (!select || !gridEl || !labelEl) return;
+
+  const options = singleQuestOptions();
+  if (options.length === 0) {
+    select.innerHTML = '';
+    gridEl.innerHTML = `<div class="card-desc">${isEN() ? 'No quests to show — star a quest first ⭐' : 'لا يوجد مهمات لعرضها — ثبّتي ⭐ على مهمة أولًا'}</div>`;
+    return;
+  }
+  if (!singleQuestId || !options.find(o => o.id === singleQuestId)) singleQuestId = options[0].id;
+  select.innerHTML = options.map(o =>
+    `<option value="${o.id}" ${o.id === singleQuestId ? 'selected' : ''}>${o.emoji} ${esc(isEN() ? o.en : o.ar)}</option>`).join('');
+  const chosen = options.find(o => o.id === singleQuestId);
+
+  const latestWeekStart = weekStart(effectiveNow());
+  const pageEndOffset = singlePageOffset * SINGLE_WEEKS;
+  const weekStarts = [];
+  for (let i = SINGLE_WEEKS - 1; i >= 0; i--) {
+    const d = new Date(latestWeekStart);
+    d.setDate(d.getDate() + (pageEndOffset - i) * 7);
+    weekStarts.push(d);
+  }
+  const oldest = weekStarts[0], newest = weekStarts[weekStarts.length - 1];
+  labelEl.textContent = `${oldest.toLocaleDateString(isEN() ? 'en' : 'ar', { day: 'numeric', month: 'short' })} – ${newest.toLocaleDateString(isEN() ? 'en' : 'ar', { day: 'numeric', month: 'short' })}`;
+  const nextBtn = document.getElementById('progress-single-next');
+  const prevBtn = document.getElementById('progress-single-prev');
+  if (nextBtn) nextBtn.disabled = singlePageOffset >= 0;
+  if (prevBtn) prevBtn.disabled = oldest <= weekStart(START_DATE);
+
+  gridEl.innerHTML = `<div class="card-desc">${isEN() ? 'Loading…' : 'جارٍ التحميل…'}</div>`;
+  await Promise.all(weekStarts.map(ws => ensureDaysLoaded(ws)));
+
+  let html = `<table class="week-table"><thead><tr><th></th>
+    ${Array.from({ length: 7 }, (_, i) => DAY_LETTERS[(2 + i) % 7]).map(l => `<th>${l}</th>`).join('')}
+  </tr></thead><tbody>`;
+  weekStarts.forEach(ws => {
+    const end = new Date(ws); end.setDate(end.getDate() + 6);
+    const rangeLabel = `${pad(ws.getDate())}/${pad(ws.getMonth() + 1)} – ${pad(end.getDate())}/${pad(end.getMonth() + 1)}`;
+    html += `<tr><td class="week-question">${rangeLabel}</td>`;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(ws); d.setDate(d.getDate() + i);
+      if (d < START_DATE || d > effectiveNow()) { html += `<td></td>`; continue; }
+      const dayDoc = myDays[dateKey(d)];
+      const bag = chosen.custom ? dayDoc?.custom : dayDoc?.habits;
+      const done = !!(bag && bag[chosen.id]);
+      html += `<td>${done ? `<span class="week-check-mark" style="background:${chosen.color}">✓</span>` : ''}</td>`;
+    }
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  gridEl.innerHTML = `<div class="week-table-wrap">${html}</div>`;
+}
+
+document.getElementById('progress-single-select')?.addEventListener('change', e => {
+  singleQuestId = e.target.value;
+  renderSingleQuestCalendar();
+});
+document.getElementById('progress-single-prev')?.addEventListener('click', () => {
+  singlePageOffset--;
+  renderSingleQuestCalendar();
+});
+document.getElementById('progress-single-next')?.addEventListener('click', () => {
+  if (singlePageOffset >= 0) return;
+  singlePageOffset++;
+  renderSingleQuestCalendar();
+});
+
 document.getElementById('progress-subtabs')?.addEventListener('click', e => {
   const btn = e.target.closest('.subtab-btn');
   if (!btn) return;
   document.querySelectorAll('#progress-subtabs .subtab-btn').forEach(b => b.classList.toggle('active', b === btn));
   document.getElementById('progress-subtab-week').hidden = btn.dataset.subtab !== 'week';
   document.getElementById('progress-subtab-list').hidden = btn.dataset.subtab !== 'list';
+  document.getElementById('progress-subtab-single').hidden = btn.dataset.subtab !== 'single';
+  if (btn.dataset.subtab === 'single') renderSingleQuestCalendar();
 });
 
 /* ── تقدمي الشخصي: كم مرة أنجزت كل مهمة هذا الأسبوع/الشهر ── */
@@ -2229,6 +2318,7 @@ function renderMyProgress() {
   if (!show) return;
 
   renderPersonalWeekGrid();
+  if (!document.getElementById('progress-subtab-single')?.hidden) renderSingleQuestCalendar();
 
   const list = document.getElementById('my-progress-list');
   if (!list) return;
