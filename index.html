@@ -645,6 +645,17 @@
       font-size: .72rem; font-weight: 800;
     }
     .announcement-text { font-size: .9rem; line-height: 1.8; margin-top: 10px; white-space: pre-wrap; }
+    .announcement-reactions { display: flex; gap: 8px; margin-top: 14px; }
+    .reaction-btn {
+      display: flex; align-items: center; gap: 6px;
+      border: 1.5px solid var(--line); background: var(--white);
+      border-radius: 999px; padding: 6px 14px; cursor: pointer;
+      font-size: .85rem; font-family: inherit; color: var(--text);
+      transition: background .15s, border-color .15s;
+    }
+    .reaction-btn span { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .reaction-btn:hover { background: var(--blue-light); }
+    .reaction-btn.active { background: var(--blue-main); border-color: transparent; }
 
     /* ── Mission of the week ─────────────────────────────── */
     #mission-box:not([hidden]) {
@@ -1085,6 +1096,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=87"></script>
+<script type="module" src="app.js?v=88"></script>
 </body>
 </html>

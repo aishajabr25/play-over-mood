@@ -503,6 +503,8 @@ let wallSearchTag = '';
 let listenersStarted = false;
 let mission = null; /* { text, link, image, updated } */
 let announcement = null; /* { text, updated } — إعلان أعلى مهمة الأسبوع */
+let announcementReactionDocs = []; /* ردود فعل الإعلان الحالي (تحديث حي) */
+let announcementReactionsUnsub = null;
 const DEFAULT_REFLECT_Q = 'ماذا تعلمتِ هذا الأسبوع؟';
 let reflectQuestion = DEFAULT_REFLECT_Q;
 let myReflectAnswer = '';
@@ -702,6 +704,7 @@ function startListeners() {
 
   onSnapshot(doc(db, 'meta', 'announcement'), snap => {
     announcement = snap.exists() ? snap.data() : null;
+    subscribeAnnouncementReactions();
     renderAnnouncement();
   }, () => {});
 
@@ -990,6 +993,38 @@ async function editReflectQuestion() {
 }
 
 /* ── إعلان أعلى مهمة الأسبوع — تكتبه المشرفة، يظهر للجميع ── */
+function announcementId() { return announcement?.updated ? String(announcement.updated) : null; }
+
+function subscribeAnnouncementReactions() {
+  if (announcementReactionsUnsub) { announcementReactionsUnsub(); announcementReactionsUnsub = null; }
+  announcementReactionDocs = [];
+  const annId = announcementId();
+  if (!annId) { renderAnnouncement(); return; }
+  announcementReactionsUnsub = onSnapshot(
+    query(collection(db, 'announcementReactions'), where('annId', '==', annId)),
+    snap => {
+      announcementReactionDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAnnouncement();
+    },
+    () => {}
+  );
+}
+
+async function toggleAnnouncementReaction(field, value) {
+  const annId = announcementId();
+  if (!me || !annId) return;
+  const docId = `${annId}_${me.uid}`;
+  const mine = announcementReactionDocs.find(d => d.id === docId) || {};
+  const next = field === 'heart' ? !mine.heart : (mine.vote === value ? null : value);
+  const patch = field === 'heart' ? { heart: next } : { vote: next };
+  try {
+    await setDoc(doc(db, 'announcementReactions', docId),
+      { uid: me.uid, annId, ...patch, updated: Date.now() }, { merge: true });
+  } catch {
+    showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
+  }
+}
+
 function renderAnnouncement() {
   const box = document.getElementById('announcement-box');
   if (!box) return;
@@ -1000,16 +1035,38 @@ function renderAnnouncement() {
   const editBtn = isAdmin
     ? `<button class="mission-edit-btn" id="announcement-edit-btn">${hasContent ? '✏️' : (isEN() ? '+ Add' : '+ إضافة')}</button>`
     : '';
+
+  let reactionsHtml = '';
+  if (hasContent) {
+    const docId = me ? `${announcementId()}_${me.uid}` : null;
+    const mine = docId ? announcementReactionDocs.find(d => d.id === docId) : null;
+    const heartCount = announcementReactionDocs.filter(d => d.heart).length;
+    const upCount = announcementReactionDocs.filter(d => d.vote === 'up').length;
+    const downCount = announcementReactionDocs.filter(d => d.vote === 'down').length;
+    reactionsHtml = `
+      <div class="announcement-reactions">
+        <button class="reaction-btn${mine?.heart ? ' active' : ''}" data-reaction="heart">❤️ <span>${heartCount}</span></button>
+        <button class="reaction-btn${mine?.vote === 'up' ? ' active' : ''}" data-reaction="up">👍 <span>${upCount}</span></button>
+        <button class="reaction-btn${mine?.vote === 'down' ? ' active' : ''}" data-reaction="down">👎 <span>${downCount}</span></button>
+      </div>`;
+  }
+
   box.innerHTML = `
     <div class="mission-head">
       <span class="announcement-tag">${isEN() ? '📣 Announcement' : '📣 إعلان'}</span>
       ${editBtn}
     </div>
     ${hasContent
-      ? `<div class="announcement-text">${esc(announcement.text)}</div>`
+      ? `<div class="announcement-text">${esc(announcement.text)}</div>${reactionsHtml}`
       : (isAdmin ? `<div class="mission-empty">${isEN() ? 'Nothing yet — tap + Add to write one.' : 'ما في شي بعد — اضغطي + إضافة لكتابة إعلان.'}</div>` : '')}`;
 
   document.getElementById('announcement-edit-btn')?.addEventListener('click', openAnnouncementEditor);
+  box.querySelectorAll('.reaction-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const r = btn.dataset.reaction;
+      toggleAnnouncementReaction(r === 'heart' ? 'heart' : 'vote', r === 'heart' ? true : r);
+    });
+  });
 }
 
 function announcementModal(initial) {
