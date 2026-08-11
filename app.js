@@ -502,6 +502,7 @@ let wallSearchQuery = '';
 let wallSearchTag = '';
 let listenersStarted = false;
 let mission = null; /* { text, link, image, updated } */
+let announcement = null; /* { text, updated } — إعلان أعلى مهمة الأسبوع */
 const DEFAULT_REFLECT_Q = 'ماذا تعلمتِ هذا الأسبوع؟';
 let reflectQuestion = DEFAULT_REFLECT_Q;
 let myReflectAnswer = '';
@@ -697,6 +698,11 @@ function startListeners() {
   onSnapshot(doc(db, 'meta', 'mission'), snap => {
     mission = snap.exists() ? snap.data() : null;
     renderMission();
+  }, () => {});
+
+  onSnapshot(doc(db, 'meta', 'announcement'), snap => {
+    announcement = snap.exists() ? snap.data() : null;
+    renderAnnouncement();
   }, () => {});
 
   onSnapshot(doc(db, 'meta', 'reflectQuestion'), snap => {
@@ -983,6 +989,66 @@ async function editReflectQuestion() {
   }
 }
 
+/* ── إعلان أعلى مهمة الأسبوع — تكتبه المشرفة، يظهر للجميع ── */
+function renderAnnouncement() {
+  const box = document.getElementById('announcement-box');
+  if (!box) return;
+  const hasContent = !!(announcement && announcement.text);
+  box.hidden = !hasContent && !isAdmin;
+  if (box.hidden) return;
+
+  const editBtn = isAdmin
+    ? `<button class="mission-edit-btn" id="announcement-edit-btn">${hasContent ? '✏️' : (isEN() ? '+ Add' : '+ إضافة')}</button>`
+    : '';
+  box.innerHTML = `
+    <div class="mission-head">
+      <span class="announcement-tag">${isEN() ? '📣 Announcement' : '📣 إعلان'}</span>
+      ${editBtn}
+    </div>
+    ${hasContent
+      ? `<div class="announcement-text">${esc(announcement.text)}</div>`
+      : (isAdmin ? `<div class="mission-empty">${isEN() ? 'Nothing yet — tap + Add to write one.' : 'ما في شي بعد — اضغطي + إضافة لكتابة إعلان.'}</div>` : '')}`;
+
+  document.getElementById('announcement-edit-btn')?.addEventListener('click', openAnnouncementEditor);
+}
+
+function announcementModal(initial) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">📣 ${isEN() ? 'Announcement' : 'إعلان'}</div>
+        <textarea maxlength="500" style="min-height:90px;" placeholder="${isEN() ? 'Write your announcement…' : 'اكتبي الإعلان هنا…'}"></textarea>
+        <div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:8px;">${isEN() ? 'Tip: clear the text and save to remove the announcement.' : 'ملاحظة: امسحي النص واحفظي لإزالة الإعلان نهائيًا.'}</div>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Publish' : 'نشر'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const ta = overlay.querySelector('textarea');
+    ta.value = initial?.text || '';
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close(ta.value.trim()));
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    document.body.appendChild(overlay);
+    ta.focus();
+  });
+}
+
+async function openAnnouncementEditor() {
+  if (!isAdmin) return;
+  const text = await announcementModal(announcement);
+  if (text === null) return;
+  try {
+    await setDoc(doc(db, 'meta', 'announcement'), { text, updated: Date.now() });
+    showToast(text ? (isEN() ? 'Published 🤍' : 'نُشر الإعلان 🤍') : (isEN() ? 'Removed' : 'أُزيل الإعلان'));
+  } catch {
+    showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
+  }
+}
+
 function renderMission() {
   const box = document.getElementById('mission-box');
   if (!box) return;
@@ -1198,6 +1264,7 @@ function initGate() {
     renderCharts();
     renderPosts();
     renderMission();
+    renderAnnouncement();
   } else {
     gate.hidden = false; app.hidden = true;
   }
