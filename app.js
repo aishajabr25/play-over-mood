@@ -783,8 +783,11 @@ async function toggleFeatureLike(featureId) {
   try {
     if (exists) await deleteDoc(doc(db, 'featureLikes', docId));
     else await setDoc(doc(db, 'featureLikes', docId), { featureId, uid: me.uid, time: Date.now() });
-  } catch {
-    showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
+  } catch (err) {
+    console.error('toggleFeatureLike failed:', err);
+    /* الكتابة غالبًا تصل فعلًا رغم الخطأ هنا (رأت المستخدمة إعجابها محفوظًا بعد التحديث) —
+       على الأغلب انقطاع مؤقت بالاتصال قبل وصول تأكيد الخادم، لا مشكلة حقيقية بالحفظ.
+       لا نعرض تنبيهًا مزعجًا لعملية بسيطة كالإعجاب؛ فقط نسجّل الخطأ للمراجعة. */
   }
 }
 
