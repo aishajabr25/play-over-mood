@@ -3313,8 +3313,8 @@ const CUSTOM_HABITS_PUBLIC = true;
 const REFLECT_PUBLIC = true;
 /* السماح بتسجيل مهمات أمس (نسيت تسجّل قبل بداية يوم جديد) — اعتُمدت للجميع ٢٠٢٦-٠٨-٠١ */
 const YESTERDAY_GRACE_PUBLIC = true;
-/* صور المهمات — لصفحة المشرفة فقط حتى تجرّبها وتعتمدها */
-const PHOTOS_PUBLIC = false;
+/* حائط الصور — اعتُمدت للجميع ٢٠٢٦-٠٨-١٣ */
+const PHOTOS_PUBLIC = true;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
