@@ -419,6 +419,7 @@ function applyEnglish() {
   const procrastinationInput = document.getElementById('procrastination-input');
   if (procrastinationInput) procrastinationInput.placeholder = 'e.g. Organize my closet…';
   set('#procrastination-form button[type=submit]', 'Add');
+  setAll('#procrastination-status-filter option', ['All statuses', 'Planning', 'Preparing', 'Executing', 'Done']);
 
   set('#tab-reflect .card-label', '📝 Reflections · التدبرات والتأملات');
   set('#reflect-edit-btn', '✏️ edit question');
@@ -1422,6 +1423,7 @@ const PROCRASTINATION_STATUS = {
   done:      { ar: 'خلصتها',     en: 'Done',      cls: 'status-done' },
 };
 let procrastinationItems = [];
+let procrastinationStatusFilter = '';
 
 async function loadMyProcrastination() {
   try {
@@ -1463,12 +1465,23 @@ function renderProcrastination() {
     ptsEl.textContent = isEN() ? `Your personal points from finishing these: ${pts} 🤍` : `نقاطك الشخصية من إنجازها: ${pts} 🤍`;
   }
 
+  const filterEl = document.getElementById('procrastination-status-filter');
+  if (filterEl && filterEl.value !== procrastinationStatusFilter) filterEl.value = procrastinationStatusFilter;
+
+  const shown = procrastinationStatusFilter
+    ? procrastinationItems.filter(p => p.status === procrastinationStatusFilter)
+    : procrastinationItems;
+
   if (procrastinationItems.length === 0) {
     list.innerHTML = `<div class="mission-empty">${isEN() ? 'Nothing on your list yet 🤍' : 'ما في شي بقائمتك بعد 🤍'}</div>`;
     return;
   }
+  if (shown.length === 0) {
+    list.innerHTML = `<div class="mission-empty">${isEN() ? 'Nothing with this status' : 'ما في شي بهالحالة'}</div>`;
+    return;
+  }
 
-  list.innerHTML = procrastinationItems.map(p => {
+  list.innerHTML = shown.map(p => {
     const st = PROCRASTINATION_STATUS[p.status] || PROCRASTINATION_STATUS.planning;
     return `
       <div class="post-item">
@@ -1477,7 +1490,7 @@ function renderProcrastination() {
           <button class="post-delete" data-act="pdel" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>
         </div>
         <div class="post-body">${esc(p.text)}</div>
-        <select class="status-select" data-id="${p.id}" style="margin-top:8px; display:block;">
+        <select class="status-select ${st.cls}" data-id="${p.id}" style="margin-top:8px; display:block; font-weight:800;">
           ${Object.entries(PROCRASTINATION_STATUS).map(([k, v]) =>
             `<option value="${k}" ${p.status === k ? 'selected' : ''}>${isEN() ? v.en : v.ar}</option>`).join('')}
         </select>
@@ -1499,6 +1512,11 @@ document.getElementById('procrastination-form')?.addEventListener('submit', e =>
   if (!text || !me || !nickname) return;
   addProcrastinationItem(text);
   input.value = '';
+});
+
+document.getElementById('procrastination-status-filter')?.addEventListener('change', e => {
+  procrastinationStatusFilter = e.target.value;
+  renderProcrastination();
 });
 
 function customHabitModal() {
