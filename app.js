@@ -252,7 +252,7 @@ const HABITS = [
     science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
   },
   {
-    id: 'salawat', ar: 'الصلاة على النبي ﷺ', en: 'Sending blessings upon the Prophet ﷺ', emoji: '🕊️', worlds: ['spiritual'],
+    id: 'salawat', ar: 'الصلاة على النبي ﷺ', en: 'Sending blessings upon the Prophet ﷺ', emoji: '🕊️', worlds: ['spiritual'], legendary: true, pts: 3,
     quote: '«أكثروا عليَّ من الصلاة يوم الجمعة وليلة الجمعة، فإن صلاتكم معروضة عليَّ»',
     source: '(يُنصح بمراجعة اللفظ والتخريج)',
     science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
@@ -1885,8 +1885,12 @@ function fmtHM(ms) {
 }
 
 function whiteDaysCheckRow(h, done) {
+  const badge = h.legendary
+    ? (isEN() ? `⭐ Legendary ×${habitPoints(h)}` : `⭐ أسطورية ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}`)
+    : '';
   return `
-    <div class="habit-check${done ? ' done' : ''}" id="check-${h.id}" style="border-inline-start-color:${habitColor(h)}">
+    <div class="habit-check${done ? ' done' : ''}${h.legendary ? ' legendary' : ''}" id="check-${h.id}" style="border-inline-start-color:${habitColor(h)}">
+      ${badge ? `<span class="legendary-badge">${badge}</span>` : ''}
       <div class="habit-box">✓</div>
       <div class="habit-check-info">
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
