@@ -373,7 +373,7 @@ function applyEnglish() {
   set('#nick-form div', 'Totally optional — only for news of future rounds 🤍 Never shown to anyone, and it does not save your progress: progress is saved automatically on this device, and to carry it across devices link your Google account inside the game.');
   set('#nick-form button[type=submit]', 'Start Playing');
 
-  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '💡 Ideas', '🐢 Procrastination', '📝 Reflections', '📈 My Board']);
+  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📷 Quest Photos', '📜 Rules', '💡 Ideas', '🐢 Procrastination', '📝 Reflections', '📈 My Board']);
 
   set('#tab-quests .card-label', '① Today’s Quests · مهمات اليوم');
   set('#tab-quests .card-title', 'Which quests did you complete today?');
@@ -401,6 +401,13 @@ function applyEnglish() {
   const wallSearchInput = document.getElementById('wall-search-input');
   if (wallSearchInput) wallSearchInput.placeholder = 'Search the wall…';
   setAll('#wall-tag-select option', ['All categories', ...WALL_TAGS_EN]);
+
+  set('#tab-photos .card-label', '📷 Quest Photos · صور المهمات');
+  set('#tab-photos .card-title', 'Share a photo from your quest');
+  set('#tab-photos .card-desc', 'Everyone can see these — upload a general photo here, or use the 📷 button on any quest in the board to link it directly');
+  const photoCaptionInput = document.getElementById('photo-caption-input');
+  if (photoCaptionInput) photoCaptionInput.placeholder = 'Caption (optional)…';
+  set('#photo-form button[type=submit]', 'Post photo');
 
   set('#tab-rules .card-label', 'How We Play · قواعد اللعبة');
   set('#tab-rules .card-title', 'How do we play here?');
@@ -515,6 +522,7 @@ let wallLoading = false;
 let wallSearchCache = null; /* كل المنشورات — تُحمَّل مرة واحدة عند أول بحث/تصفية */
 let wallSearchQuery = '';
 let wallSearchTag = '';
+let photosCache = []; /* صور المهمات — أحدث ٣٠، تحديث حي */
 let listenersStarted = false;
 let mission = null; /* { text, link, image, updated } */
 let announcement = null; /* { text, updated } — إعلان أعلى مهمة الأسبوع */
@@ -708,6 +716,15 @@ function startListeners() {
     snap => {
       wallPages[0] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (wallPageIndex === 0) renderPosts();
+    },
+    () => {}
+  );
+
+  onSnapshot(
+    query(collection(db, 'photos'), orderBy('time', 'desc'), limit(30)),
+    snap => {
+      photosCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderPhotos();
     },
     () => {}
   );
@@ -2262,12 +2279,17 @@ function buildHabitCard(h, t) {
         <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
       </div>
       ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" title="${focused ? (isEN() ? 'On your board — click to move to Other quests' : 'ضمن لوحتك — اضغطي لنقلها إلى مهمات أخرى') : (isEN() ? 'In Other quests — click to bring back' : 'ضمن مهمات أخرى — اضغطي لإرجاعها')}">${focused ? '★' : '☆'}</button>` : ''}
+      ${(PHOTOS_PUBLIC || isAdmin) ? `<button class="habit-photo-btn" title="${isEN() ? 'Upload a photo for this quest' : 'رفع صورة لهذه المهمة'}">📷</button>` : ''}
       <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
       <div class="habit-emoji">${h.emoji}</div>`;
     el.addEventListener('click', () => toggleHabit(h));
     el.querySelector('.habit-share-btn').addEventListener('click', e => {
       e.stopPropagation();
       shareQuestSticker(h, done);
+    });
+    el.querySelector('.habit-photo-btn')?.addEventListener('click', e => {
+      e.stopPropagation();
+      openPhotoUploadForQuest(h);
     });
     el.querySelector('.habit-focus-btn')?.addEventListener('click', e => {
       e.stopPropagation();
@@ -3126,6 +3148,126 @@ document.getElementById('wall-tag-select')?.addEventListener('change', e => {
   if (wallFilterActive()) ensureWallSearchCache(); else renderPosts();
 });
 
+/* ── صور المهمات — حائط صور فقط، بدون إعجابات (قرارها) ──── */
+async function uploadPhoto(file, caption, questInfo) {
+  if (!me || !nickname || !file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast(isEN() ? 'Please choose an image file' : 'الرجاء اختيار ملف صورة');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast(isEN() ? 'Image too large (max 5MB)' : 'الصورة كبيرة جدًا (الحد الأقصى ٥ ميجا)');
+    return;
+  }
+  showToast(isEN() ? 'Uploading…' : 'جارٍ الرفع…');
+  try {
+    const ext = (file.type.split('/')[1] || 'jpg').split(';')[0];
+    const path = `photos/${me.uid}_${Date.now()}.${ext}`;
+    const ref = storageRef(storage, path);
+    await uploadBytes(ref, file, { contentType: file.type });
+    const imageUrl = await getDownloadURL(ref);
+    await addDoc(collection(db, 'photos'), {
+      uid: me.uid, author: isAdmin ? ADMIN_NAME : nickname,
+      imageUrl, caption: caption || '',
+      questId: questInfo?.id || null, questAr: questInfo?.ar || null,
+      questEn: questInfo?.en || null, questEmoji: questInfo?.emoji || null,
+      time: Date.now(),
+    });
+    showToast(isEN() ? 'Posted 🤍' : 'نُشرت الصورة 🤍');
+  } catch (err) {
+    console.error('uploadPhoto failed:', err);
+    showToast(isEN() ? 'Could not upload — check Storage is enabled' : 'تعذّر الرفع — تحققي من تفعيل Storage');
+  }
+}
+
+function renderPhotos() {
+  const list = document.getElementById('photos-list');
+  if (!list) return;
+  if (photosCache.length === 0) {
+    list.innerHTML = `<div class="mission-empty">${isEN() ? 'No photos yet — be the first 🤍' : 'ما في صور بعد — كوني أول من يشارك 🤍'}</div>`;
+    return;
+  }
+  list.innerHTML = photosCache.map(p => {
+    const canDelete = isAdmin || (me && p.uid === me.uid);
+    const questLabel = isEN() ? (p.questEn || p.questAr) : (p.questAr || p.questEn);
+    const questTag = p.questId
+      ? `<span class="photo-quest-tag">${p.questEmoji || ''} ${esc(questLabel || '')}</span>`
+      : '';
+    return `
+      <div class="photo-card">
+        <img src="${esc(p.imageUrl)}" alt="" loading="lazy" />
+        <div class="photo-card-body">
+          ${questTag}
+          ${p.caption ? `<div class="photo-caption">${esc(p.caption)}</div>` : ''}
+          <div class="post-head" style="margin-bottom:0;">
+            <span class="post-author">${esc(p.author)}</span>
+            <span class="post-time">${timeAgo(p.time)}</span>
+            ${canDelete ? `<button class="post-delete" data-act="pdelphoto" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-act="pdelphoto"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const p = photosCache.find(x => x.id === id);
+      photosCache = photosCache.filter(x => x.id !== id);
+      renderPhotos();
+      try {
+        await deleteDoc(doc(db, 'photos', id));
+        if (p?.imageUrl) deleteObject(storageRef(storage, p.imageUrl)).catch(() => {});
+      } catch { showToast(isEN() ? 'Could not delete' : 'تعذر الحذف'); }
+    });
+  });
+}
+
+document.getElementById('photo-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const fileInput = document.getElementById('photo-file-input');
+  const captionInput = document.getElementById('photo-caption-input');
+  const file = fileInput.files[0];
+  if (!file) { showToast(isEN() ? 'Choose a photo first' : 'اختاري صورة أولًا'); return; }
+  await uploadPhoto(file, captionInput.value.trim(), null);
+  fileInput.value = '';
+  captionInput.value = '';
+});
+
+function photoUploadModal(questInfo) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">📷 ${isEN() ? `Photo for “${questInfo.en}”` : `صورة لمهمة «${questInfo.ar}»`}</div>
+        <input type="file" id="modal-photo-file" accept="image/*" style="margin-top:8px; width:100%;" />
+        <textarea id="modal-photo-caption" maxlength="200" style="margin-top:10px; min-height:60px;" placeholder="${isEN() ? 'Caption (optional)…' : 'تعليق (اختياري)…'}"></textarea>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Post' : 'نشر'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const fileInput = overlay.querySelector('#modal-photo-file');
+    const capInput = overlay.querySelector('#modal-photo-caption');
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => {
+      const file = fileInput.files[0];
+      if (!file) { showToast(isEN() ? 'Choose a photo first' : 'اختاري صورة أولًا'); return; }
+      close({ file, caption: capInput.value.trim() });
+    });
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    document.body.appendChild(overlay);
+  });
+}
+
+async function openPhotoUploadForQuest(h) {
+  if (!me || !nickname) return;
+  const result = await photoUploadModal(h);
+  if (!result) return;
+  await uploadPhoto(result.file, result.caption, { id: h.id, ar: h.ar, en: h.en, emoji: h.emoji });
+}
+
 /* ── Admin sign-in (زر صغير في الفوتر) ───────────────────── */
 function updateAdminUi() {
   let btn = document.getElementById('admin-btn');
@@ -3171,9 +3313,13 @@ const CUSTOM_HABITS_PUBLIC = true;
 const REFLECT_PUBLIC = true;
 /* السماح بتسجيل مهمات أمس (نسيت تسجّل قبل بداية يوم جديد) — اعتُمدت للجميع ٢٠٢٦-٠٨-٠١ */
 const YESTERDAY_GRACE_PUBLIC = true;
+/* صور المهمات — لصفحة المشرفة فقط حتى تجرّبها وتعتمدها */
+const PHOTOS_PUBLIC = false;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
+  const photosBtn = document.querySelector('.tab-btn[data-tab="photos"]');
+  if (photosBtn) photosBtn.hidden = !(PHOTOS_PUBLIC || isAdmin);
 }
 
 /* ── لوحة المشرفة (تظهر لها فقط) ─────────────────────────── */
@@ -3448,7 +3594,7 @@ async function exportBackup() {
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
-const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'features', 'procrastination', 'reflect', 'admin'];
+const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'photos', 'rules', 'features', 'procrastination', 'reflect', 'admin'];
 
 /* طبّقي اللغة أولًا حتى ينسخ تبويب القواعد النسخة الصحيحة */
 applyEnglish();
