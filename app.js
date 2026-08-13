@@ -373,7 +373,7 @@ function applyEnglish() {
   set('#nick-form div', 'Totally optional — only for news of future rounds 🤍 Never shown to anyone, and it does not save your progress: progress is saved automatically on this device, and to carry it across devices link your Google account inside the game.');
   set('#nick-form button[type=submit]', 'Start Playing');
 
-  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📷 Quest Photos', '📜 Rules', '💡 Ideas', '🐢 Procrastination', '📝 Reflections', '📈 My Board']);
+  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📷 Photo Wall', '📜 Rules', '💡 Ideas', '🐢 Procrastination', '📝 Reflections', '📈 My Board']);
 
   set('#tab-quests .card-label', '① Today’s Quests · مهمات اليوم');
   set('#tab-quests .card-title', 'Which quests did you complete today?');
@@ -402,7 +402,7 @@ function applyEnglish() {
   if (wallSearchInput) wallSearchInput.placeholder = 'Search the wall…';
   setAll('#wall-tag-select option', ['All categories', ...WALL_TAGS_EN]);
 
-  set('#tab-photos .card-label', '📷 Quest Photos · صور المهمات');
+  set('#tab-photos .card-label', '📷 Photo Wall · حائط الصور');
   set('#tab-photos .card-title', 'Share a photo from your quest');
   set('#tab-photos .card-desc', 'Everyone can see these — upload a general photo here, or use the 📷 button on any quest in the board to link it directly');
   const photoCaptionInput = document.getElementById('photo-caption-input');
