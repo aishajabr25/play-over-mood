@@ -251,6 +251,12 @@ const HABITS = [
     source: 'رواه الحاكم والبيهقي وصححه الألباني في صحيح الجامع (يُنصح بمراجعة اللفظ والتخريج)',
     science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
   },
+  {
+    id: 'salawat', ar: 'الصلاة على النبي ﷺ', en: 'Sending blessings upon the Prophet ﷺ', emoji: '🕊️', worlds: ['spiritual'],
+    quote: '«أكثروا عليَّ من الصلاة يوم الجمعة وليلة الجمعة، فإن صلاتكم معروضة عليَّ»',
+    source: '(يُنصح بمراجعة اللفظ والتخريج)',
+    science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
+  },
 ];
 
 function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.worlds[0]].color; }
@@ -309,6 +315,7 @@ const EN_WHY = {
   whitedays:  { quote: '“The Messenger of Allah ﷺ commanded us to fast three days of the month: the 13th, 14th, and 15th.”', source: 'Narrated by Abu Dharr — Nasa’i, authenticated by al-Albani (wording/chain worth double-checking)', science: 'A major review in The New England Journal of Medicine (de Cabo & Mattson 2019) covering dozens of studies on intermittent fasting found improvements in insulin sensitivity, blood pressure, and inflammation markers — the White Days are a naturally recurring monthly pattern of exactly this kind of fasting.' },
   suhoor:     { quote: '“Eat suhoor, for in suhoor there is blessing.”', source: 'Agreed upon (wording/chain worth double-checking)', science: 'A pre-dawn meal keeps blood sugar more stable through the long fasting hours compared to fasting without it — consistent with broader research on meal timing and energy regulation during intermittent fasting (de Cabo & Mattson 2019).' },
   kahf:       { quote: '“Whoever reads Surat Al-Kahf on Friday will be illuminated with light between the two Fridays.”', source: 'Al-Hakim & al-Bayhaqi, authenticated by al-Albani in Sahih al-Jami (wording/chain worth double-checking)', science: 'Broad systematic reviews (including Koenig’s work at Duke) find that regular, recurring weekly religious rituals are associated with lower anxiety and greater sense of meaning and psychological stability.' },
+  salawat:    { quote: '“Send abundant blessings upon me on Friday and the night of Friday, for your blessings are presented to me.”', source: '(wording/chain worth double-checking)', science: 'Broad systematic reviews (including Koenig’s work at Duke) find that regular, recurring weekly religious rituals are associated with lower anxiety and greater sense of meaning and psychological stability.' },
 };
 
 function whyOf(h) {
@@ -366,7 +373,7 @@ function applyEnglish() {
   set('#nick-form div', 'Totally optional — only for news of future rounds 🤍 Never shown to anyone, and it does not save your progress: progress is saved automatically on this device, and to carry it across devices link your Google account inside the game.');
   set('#nick-form button[type=submit]', 'Start Playing');
 
-  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '💡 Ideas', '📝 Reflections', '📈 My Board']);
+  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📜 Rules', '💡 Ideas', '🐢 Procrastination', '📝 Reflections', '📈 My Board']);
 
   set('#tab-quests .card-label', '① Today’s Quests · مهمات اليوم');
   set('#tab-quests .card-title', 'Which quests did you complete today?');
@@ -405,6 +412,13 @@ function applyEnglish() {
   const featureInput = document.getElementById('feature-input');
   if (featureInput) featureInput.placeholder = 'Write your suggestion here…';
   set('#feature-form button[type=submit]', 'Send suggestion');
+
+  set('#tab-procrastination .card-label', '🐢 Procrastination · المماطلة');
+  set('#tab-procrastination .card-title', 'What are you putting off?');
+  set('#tab-procrastination .card-desc', 'Your private list — nobody else can see it. Track its stages, and earn a personal point when you finally finish it 🤍');
+  const procrastinationInput = document.getElementById('procrastination-input');
+  if (procrastinationInput) procrastinationInput.placeholder = 'e.g. Organize my closet…';
+  set('#procrastination-form button[type=submit]', 'Add');
 
   set('#tab-reflect .card-label', '📝 Reflections · التدبرات والتأملات');
   set('#reflect-edit-btn', '✏️ edit question');
@@ -601,7 +615,7 @@ onAuthStateChanged(auth, async user => {
     await fetchMyDaysFromServer();
   }
   loadMissionProgressLocal();
-  if (nickname) { await loadMyCustomHabits(); await loadMyReflectAnswer(); }
+  if (nickname) { await loadMyCustomHabits(); await loadMyReflectAnswer(); await loadMyProcrastination(); }
 
   updateAdminUi();
   updateSyncUi();
@@ -1348,6 +1362,7 @@ document.getElementById('nick-form').addEventListener('submit', async e => {
   loadMyDaysLocal();
   await loadMyCustomHabits();
   await loadMyReflectAnswer();
+  await loadMyProcrastination();
   initGate();
 });
 
@@ -1398,6 +1413,93 @@ async function toggleCustomHabit(id) {
     showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
   }
 }
+
+/* ── المماطلة — قائمة شخصية بالكامل، لا يراها أحد غيرك ────── */
+const PROCRASTINATION_STATUS = {
+  planning:  { ar: 'بخطّط لها',  en: 'Planning',  cls: 'status-new' },
+  preparing: { ar: 'بجهّز لها',  en: 'Preparing', cls: 'status-progress' },
+  executing: { ar: 'بنفّذها',    en: 'Executing', cls: 'status-planned' },
+  done:      { ar: 'خلصتها',     en: 'Done',      cls: 'status-done' },
+};
+let procrastinationItems = [];
+
+async function loadMyProcrastination() {
+  try {
+    const snap = await getDoc(doc(db, 'procrastinations', me.uid));
+    procrastinationItems = (snap.exists() && snap.data().items) || [];
+  } catch { procrastinationItems = []; }
+  renderProcrastination();
+}
+async function saveProcrastinationRemote() {
+  try { await setDoc(doc(db, 'procrastinations', me.uid), { items: procrastinationItems, updated: Date.now() }); }
+  catch { showToast(isEN() ? 'Could not save' : 'تعذر الحفظ'); }
+}
+async function addProcrastinationItem(text) {
+  procrastinationItems.push({ id: `p${Date.now()}`, text, status: 'planning', awarded: false });
+  renderProcrastination();
+  await saveProcrastinationRemote();
+}
+async function deleteProcrastinationItem(id) {
+  procrastinationItems = procrastinationItems.filter(p => p.id !== id);
+  renderProcrastination();
+  await saveProcrastinationRemote();
+}
+async function setProcrastinationStatus(id, status) {
+  const item = procrastinationItems.find(p => p.id === id);
+  if (!item) return;
+  item.status = status;
+  if (status === 'done' && !item.awarded) item.awarded = true;
+  renderProcrastination();
+  await saveProcrastinationRemote();
+}
+
+function renderProcrastination() {
+  const list = document.getElementById('procrastination-list');
+  const ptsEl = document.getElementById('procrastination-points');
+  if (!list) return;
+
+  if (ptsEl) {
+    const pts = procrastinationItems.filter(p => p.awarded).length;
+    ptsEl.textContent = isEN() ? `Your personal points from finishing these: ${pts} 🤍` : `نقاطك الشخصية من إنجازها: ${pts} 🤍`;
+  }
+
+  if (procrastinationItems.length === 0) {
+    list.innerHTML = `<div class="mission-empty">${isEN() ? 'Nothing on your list yet 🤍' : 'ما في شي بقائمتك بعد 🤍'}</div>`;
+    return;
+  }
+
+  list.innerHTML = procrastinationItems.map(p => {
+    const st = PROCRASTINATION_STATUS[p.status] || PROCRASTINATION_STATUS.planning;
+    return `
+      <div class="post-item">
+        <div class="post-head">
+          <span class="status-badge ${st.cls}">${isEN() ? st.en : st.ar}</span>
+          <button class="post-delete" data-act="pdel" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>
+        </div>
+        <div class="post-body">${esc(p.text)}</div>
+        <select class="status-select" data-id="${p.id}" style="margin-top:8px; display:block;">
+          ${Object.entries(PROCRASTINATION_STATUS).map(([k, v]) =>
+            `<option value="${k}" ${p.status === k ? 'selected' : ''}>${isEN() ? v.en : v.ar}</option>`).join('')}
+        </select>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.status-select').forEach(sel => {
+    sel.addEventListener('change', () => setProcrastinationStatus(sel.dataset.id, sel.value));
+  });
+  list.querySelectorAll('[data-act="pdel"]').forEach(btn => {
+    btn.addEventListener('click', () => deleteProcrastinationItem(btn.dataset.id));
+  });
+}
+
+document.getElementById('procrastination-form')?.addEventListener('submit', e => {
+  e.preventDefault();
+  const input = document.getElementById('procrastination-input');
+  const text = input.value.trim();
+  if (!text || !me || !nickname) return;
+  addProcrastinationItem(text);
+  input.value = '';
+});
 
 function customHabitModal() {
   return new Promise(resolve => {
@@ -1670,7 +1772,8 @@ async function renderTimelyBox() {
   const box = document.getElementById('timely-box');
   if (!box) return;
   const kahf = HABITS.find(h => h.id === 'kahf');
-  if (!kahf || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
+  const salawat = HABITS.find(h => h.id === 'salawat');
+  if (!kahf || !salawat || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
 
   const now = new Date();
   const dow = now.getDay(); /* ٠=أحد … ٤=خميس، ٥=جمعة */
@@ -1700,14 +1803,20 @@ async function renderTimelyBox() {
 
   const inWindow = now >= windowStart && now < windowEnd;
   const show = isAdmin || inWindow;
-  if (!show) { box.hidden = true; collapsedExtraIds.delete(kahf.id); syncCollapsedSection(); return; }
-  if (!isFocused(kahf.id)) {
+  if (!show) {
     box.hidden = true;
-    collapsedExtraIds.add(kahf.id);
+    collapsedExtraIds.delete(kahf.id); collapsedExtraIds.delete(salawat.id);
     syncCollapsedSection();
     return;
   }
-  collapsedExtraIds.delete(kahf.id);
+
+  const kahfFocused = isFocused(kahf.id);
+  const salawatFocused = isFocused(salawat.id);
+  if (kahfFocused) collapsedExtraIds.delete(kahf.id); else collapsedExtraIds.add(kahf.id);
+  if (salawatFocused) collapsedExtraIds.delete(salawat.id); else collapsedExtraIds.add(salawat.id);
+  syncCollapsedSection();
+
+  if (!kahfFocused && !salawatFocused) { box.hidden = true; return; }
   box.hidden = false;
 
   const msLeft = Math.max(0, windowEnd - now);
@@ -1726,33 +1835,44 @@ async function renderTimelyBox() {
       : `⏳ باقي ${hLeft} س ${mLeft} د على المغرب`;
   }
 
-  const done = !!myToday()[kahf.id];
+  const doneKahf = !!myToday()[kahf.id];
+  const doneSalawat = !!myToday()[salawat.id];
   box.innerHTML = `
     <div class="timely-head">
       <span class="timely-tag">${isEN() ? '🕋 Timely Mission' : '🕋 مهمة مؤقتة'}</span>
       <span class="timely-countdown">${countdownTxt}</span>
     </div>
-    <div class="timely-quote">${isEN() ? '“Whoever reads Surat Al-Kahf on Friday will be illuminated with light between the two Fridays.”' : '«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين»'}</div>
-    <div class="habit-check${done ? ' done' : ''}" id="timely-check" style="border-inline-start-color:${habitColor(kahf)}">
-      <div class="habit-box">✓</div>
-      <div class="habit-check-info">
-        <div class="habit-check-ar">${isEN() ? kahf.en : kahf.ar}</div>
-        <div class="habit-check-en">${isEN() ? kahf.ar : kahf.en}</div>
-      </div>
-      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn on" title="${isEN() ? 'On your board — click to move to Other quests' : 'ضمن لوحتك — اضغطي لنقلها إلى مهمات أخرى'}">★</button>` : ''}
-      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
-      <div class="habit-emoji">${kahf.emoji}</div>
-    </div>`;
-  document.getElementById('timely-check').addEventListener('click', () => toggleHabit(kahf));
-  document.querySelector('#timely-check .habit-share-btn').addEventListener('click', e => {
-    e.stopPropagation();
-    shareQuestSticker(kahf, done);
-  });
-  document.querySelector('#timely-check .habit-focus-btn')?.addEventListener('click', e => {
-    e.stopPropagation();
-    toggleFocus(kahf.id);
-    renderTimelyBox();
-  });
+    ${kahfFocused ? `
+      <div class="timely-quote">${isEN() ? whyOf(kahf).quote : kahf.quote}</div>
+      ${whiteDaysCheckRow(kahf, doneKahf)}` : ''}
+    ${salawatFocused ? `
+      <div class="timely-quote"${kahfFocused ? ' style="margin-top:14px;"' : ''}>${isEN() ? whyOf(salawat).quote : salawat.quote}</div>
+      ${whiteDaysCheckRow(salawat, doneSalawat)}` : ''}`;
+
+  if (kahfFocused) {
+    document.getElementById(`check-${kahf.id}`).addEventListener('click', () => toggleHabit(kahf));
+    document.querySelector(`#check-${kahf.id} .habit-share-btn`).addEventListener('click', e => {
+      e.stopPropagation();
+      shareQuestSticker(kahf, doneKahf);
+    });
+    document.querySelector(`#check-${kahf.id} .habit-focus-btn`)?.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFocus(kahf.id);
+      renderTimelyBox();
+    });
+  }
+  if (salawatFocused) {
+    document.getElementById(`check-${salawat.id}`).addEventListener('click', () => toggleHabit(salawat));
+    document.querySelector(`#check-${salawat.id} .habit-share-btn`).addEventListener('click', e => {
+      e.stopPropagation();
+      shareQuestSticker(salawat, doneSalawat);
+    });
+    document.querySelector(`#check-${salawat.id} .habit-focus-btn`)?.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFocus(salawat.id);
+      renderTimelyBox();
+    });
+  }
 }
 setInterval(renderTimelyBox, 60000);
 
@@ -3306,7 +3426,7 @@ async function exportBackup() {
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
-const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'features', 'reflect', 'admin'];
+const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'rules', 'features', 'procrastination', 'reflect', 'admin'];
 
 /* طبّقي اللغة أولًا حتى ينسخ تبويب القواعد النسخة الصحيحة */
 applyEnglish();
