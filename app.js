@@ -515,6 +515,7 @@ let participantsCount = null;
 let participantsFetchedAt = 0;
 const WALL_PAGE = 15;
 let featuresCache = []; /* طلبات الميزات */
+let featureLikeDocs = []; /* إعجابات الاقتراحات — تحديث حي، غير مرتبطة بأسبوع */
 let wallPageIndex = 0;      /* الصفحة المعروضة حاليًا في الحائط، تبدأ من ٠ */
 let wallPages = [];         /* wallPages[i] = منشورات تلك الصفحة */
 let wallHasMore = true;     /* هل يُحتمل وجود صفحة بعد آخر صفحة حُمّلت؟ */
@@ -763,7 +764,28 @@ function startListeners() {
     () => {}
   );
 
+  onSnapshot(
+    collection(db, 'featureLikes'),
+    snap => {
+      featureLikeDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderFeatures();
+    },
+    () => {}
+  );
+
   fetchStats();
+}
+
+async function toggleFeatureLike(featureId) {
+  if (!me) return;
+  const docId = `${featureId}_${me.uid}`;
+  const exists = featureLikeDocs.some(d => d.id === docId);
+  try {
+    if (exists) await deleteDoc(doc(db, 'featureLikes', docId));
+    else await setDoc(doc(db, 'featureLikes', docId), { featureId, uid: me.uid, time: Date.now() });
+  } catch {
+    showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
+  }
 }
 
 /* ── اقتراحاتكن — طلبات ميزات عامة تراها الجميع ──────────── */
@@ -788,6 +810,8 @@ function renderFeatures() {
   featuresCache.forEach(f => {
     const st = STATUS[f.status] || STATUS.new;
     const canDelete = isAdmin || (me && f.uid === me.uid);
+    const likeCount = featureLikeDocs.filter(d => d.featureId === f.id).length;
+    const myLike = me && featureLikeDocs.some(d => d.id === `${f.id}_${me.uid}`);
     const el = document.createElement('div');
     el.className = 'post-item';
     el.innerHTML = `
@@ -799,6 +823,9 @@ function renderFeatures() {
         ${canDelete ? `<button class="post-delete" data-act="fdel" data-id="${f.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
       </div>
       <div class="post-body">${esc(f.text)}</div>
+      <div class="announcement-reactions" style="margin-top:8px;">
+        <button class="reaction-btn${myLike ? ' active' : ''}" data-act="flike" data-id="${f.id}">❤️ <span>${likeCount}</span></button>
+      </div>
       ${isAdmin ? `
         <select class="status-select" data-id="${f.id}" style="margin-top:8px; display:block;">
           ${Object.entries(STATUS).map(([k, v]) =>
@@ -835,6 +862,10 @@ function renderFeatures() {
       try { await deleteDoc(doc(db, 'features', id)); }
       catch { showToast('تعذر الحذف'); }
     });
+  });
+
+  list.querySelectorAll('[data-act="flike"]').forEach(btn => {
+    btn.addEventListener('click', () => toggleFeatureLike(btn.dataset.id));
   });
 
   list.querySelectorAll('[data-act="freply"]').forEach(btn => {
