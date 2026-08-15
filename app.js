@@ -373,7 +373,7 @@ function applyEnglish() {
   set('#nick-form div', 'Totally optional — only for news of future rounds 🤍 Never shown to anyone, and it does not save your progress: progress is saved automatically on this device, and to carry it across devices link your Google account inside the game.');
   set('#nick-form button[type=submit]', 'Start Playing');
 
-  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '📖 The Why', '💬 The Wall', '📷 Photo Wall', '📜 Rules', '💡 Ideas', '🐢 Procrastination', '📝 Reflections', '📈 My Board']);
+  setAll('.tab-btn', ['🎮 Quests', '📊 Progress', '💬 The Wall', '📷 Photo Wall', '💡 Ideas', '🐢 Procrastination', '📝 Reflections', '📈 My Board', '📖 The Why', '📜 Rules']);
 
   set('#tab-quests .card-label', '① Today’s Quests · مهمات اليوم');
   set('#tab-quests .card-title', 'Which quests did you complete today?');

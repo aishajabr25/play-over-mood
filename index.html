@@ -83,6 +83,11 @@
     .card-label.label-yellow { background: var(--yellow-light); color: var(--deep); }
     .card-title { font-size: 1.2rem; font-weight: 800; color: var(--deep); margin-bottom: 3px; }
     .card-desc  { font-size: .8rem; color: rgba(74,57,45,.55); margin-bottom: 16px; }
+    .procrastination-callout {
+      font-size: 1.05rem; font-weight: 700; color: var(--deep); line-height: 1.9;
+      background: var(--blue-light); border: 1.5px solid var(--line);
+      border-radius: 16px; padding: 16px 18px; margin: -4px 0 18px;
+    }
 
     /* ── Nickname gate ───────────────────────────────────── */
     .nick-card { text-align: center; padding: 36px 24px; }
@@ -853,14 +858,14 @@
     <nav class="tabs-bar" aria-label="أقسام الصفحة">
       <button class="tab-btn active" data-tab="quests" type="button">🎮 المهمات</button>
       <button class="tab-btn" data-tab="growth" type="button">📊 التحليل</button>
-      <button class="tab-btn" data-tab="why" type="button">📖 لماذا؟</button>
       <button class="tab-btn" data-tab="wall" type="button">💬 الحائط</button>
       <button class="tab-btn" data-tab="photos" type="button">📷 حائط الصور</button>
-      <button class="tab-btn" data-tab="rules" type="button">📜 القواعد</button>
       <button class="tab-btn" data-tab="features" type="button">💡 اقتراحك</button>
       <button class="tab-btn" data-tab="procrastination" type="button">🐢 المماطلة</button>
       <button class="tab-btn" data-tab="reflect" id="tab-btn-reflect" type="button" hidden>📝 التدبرات والتأملات</button>
       <button class="tab-btn" data-tab="admin" id="tab-btn-admin" type="button" hidden>📈 لوحتي</button>
+      <button class="tab-btn" data-tab="why" type="button">📖 لماذا؟</button>
+      <button class="tab-btn" data-tab="rules" type="button">📜 القواعد</button>
     </nav>
 
     <!-- Welcome box -->
@@ -1080,7 +1085,8 @@
       <section class="card">
         <span class="card-label label-green">🐢 المماطلة · Procrastination</span>
         <div class="card-title">شو اللي بتماطلي فيه؟</div>
-        <div class="card-desc">قائمتك الخاصة — لا يراها أحد غيرك. اكتبي الشي وتابعي مراحله، ولما تخلّصيه بتكسبي نقطة شخصية 🤍<br><br>تخيلي لو أن هاي المهمة لعبة، شو الشي اللي ممكن تسويه عشان تكون المهمة أكثر متعة؟ تسويها بوقت ثاني؟ بمكان مختلف؟ تضيفي ألوان؟ صوت؟ تسويها مع أشخاص مختلفين؟<br>أذكرك إنه الشي الوحيد اللي تملكيه هو هاي اللحظة مش الماضي ولا المستقبل، هاي اللحظة 🎮</div>
+        <div class="card-desc">قائمتك الخاصة — لا يراها أحد غيرك. اكتبي الشي وتابعي مراحله، ولما تخلّصيه بتكسبي نقطة شخصية 🤍</div>
+        <div class="procrastination-callout">تخيلي لو أن هاي المهمة لعبة، شو الشي اللي ممكن تسويه عشان تكون المهمة أكثر متعة؟ تسويها بوقت ثاني؟ بمكان مختلف؟ تضيفي ألوان؟ صوت؟ تسويها مع أشخاص مختلفين؟<br><br>أذكرك إنه الشي الوحيد اللي تملكيه هو هاي اللحظة مش الماضي ولا المستقبل، هاي اللحظة 🎮</div>
         <form class="post-form" id="procrastination-form">
           <textarea id="procrastination-input" placeholder="مثال: أرتّب خزانتي…" maxlength="200"></textarea>
           <div class="post-form-row">
@@ -1158,6 +1164,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=96"></script>
+<script type="module" src="app.js?v=97"></script>
 </body>
 </html>
