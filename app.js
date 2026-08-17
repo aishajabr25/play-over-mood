@@ -285,6 +285,26 @@ const WALL_TAGS_EN = ['Habits', 'Prayer', 'Support', 'Suggestion', 'General'];
 let lang = localStorage.getItem('pom_lang') || 'ar';
 const isEN = () => lang === 'en';
 
+/* ── الوضع الليلي — اختيار صريح يُحفظ، وإلا نتبع تفضيل النظام ── */
+const savedTheme = localStorage.getItem('pom_theme');
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+function isDarkNow() {
+  return document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === 'dark'
+    : window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function applyThemeToggleUi() {
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = isDarkNow() ? '☀️' : '🌙';
+}
+document.getElementById('theme-toggle')?.addEventListener('click', () => {
+  const next = isDarkNow() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('pom_theme', next);
+  applyThemeToggleUi();
+});
+applyThemeToggleUi();
+
 const EN_WHY = {
   sleep:      { quote: '“The Messenger of Allah ﷺ disliked sleeping before Isha and talking after it.”', source: 'Agreed upon (Bukhari & Muslim)', science: 'Sleep is the quest that unlocks the rest: it regulates hunger hormones (leptin & ghrelin), cortisol and mood, and decides your energy for Fajr, movement and focus. That is why it is legendary — 2 points.' },
   tahajjud:   { quote: '“And in part of the night, pray tahajjud as an extra offering; it may be that your Lord will raise you to a praised station.”', source: 'Quran 17:79 · And ﷺ said: “The best prayer after the obligatory one is the night prayer” (Muslim)', science: 'Large systematic reviews (including Koenig’s work at Duke across hundreds of studies) consistently link regular religious practice with lower depression and anxiety and higher life satisfaction. The quiet solitude of night is the deepest form of that presence — the game’s highest quest: 5 points.' },
