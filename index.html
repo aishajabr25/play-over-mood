@@ -1077,6 +1077,16 @@
             <button type="submit" class="btn btn-deep btn-small">إرسال الاقتراح</button>
           </div>
         </form>
+        <div class="wall-filter-row" id="features-status-filter-row" hidden>
+          <select id="features-status-filter" class="status-select" style="margin-inline-start:0;">
+            <option value="">كل الحالات</option>
+            <option value="new">قيد المراجعة</option>
+            <option value="progress">قيد التنفيذ</option>
+            <option value="planned">لاحقًا</option>
+            <option value="done">تم التنفيذ</option>
+            <option value="declined">ملغاة</option>
+          </select>
+        </div>
         <div class="posts-list" id="features-list"></div>
       </section>
     </div><!-- /tab-features -->
@@ -1164,6 +1174,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=97"></script>
+<script type="module" src="app.js?v=98"></script>
 </body>
 </html>

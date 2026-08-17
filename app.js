@@ -419,6 +419,7 @@ function applyEnglish() {
   const featureInput = document.getElementById('feature-input');
   if (featureInput) featureInput.placeholder = 'Write your suggestion here…';
   set('#feature-form button[type=submit]', 'Send suggestion');
+  setAll('#features-status-filter option', ['All statuses', ...Object.values(STATUS).map(v => v.en)]);
 
   set('#tab-procrastination .card-label', '🐢 Procrastination · المماطلة');
   set('#tab-procrastination .card-title', 'What are you putting off?');
@@ -516,6 +517,7 @@ let participantsFetchedAt = 0;
 const WALL_PAGE = 15;
 let featuresCache = []; /* طلبات الميزات */
 let featureLikeDocs = []; /* إعجابات الاقتراحات — تحديث حي، غير مرتبطة بأسبوع */
+let featuresStatusFilter = ''; /* فلترة المشرفة فقط بحسب حالة الاقتراح */
 let wallPageIndex = 0;      /* الصفحة المعروضة حاليًا في الحائط، تبدأ من ٠ */
 let wallPages = [];         /* wallPages[i] = منشورات تلك الصفحة */
 let wallHasMore = true;     /* هل يُحتمل وجود صفحة بعد آخر صفحة حُمّلت؟ */
@@ -805,12 +807,25 @@ function renderFeatures() {
   if (!list) return;
   list.innerHTML = '';
 
+  const filterRow = document.getElementById('features-status-filter-row');
+  if (filterRow) filterRow.hidden = !isAdmin;
+  if (!isAdmin) featuresStatusFilter = '';
+
   if (featuresCache.length === 0) {
     list.innerHTML = `<div class="mission-empty">${isEN() ? 'No suggestions yet — be the first 🤍' : 'ما في اقتراحات بعد — كوني أول من يقترح 🤍'}</div>`;
     return;
   }
 
-  featuresCache.forEach(f => {
+  const shown = (isAdmin && featuresStatusFilter)
+    ? featuresCache.filter(f => (f.status || 'new') === featuresStatusFilter)
+    : featuresCache;
+
+  if (shown.length === 0) {
+    list.innerHTML = `<div class="mission-empty">${isEN() ? 'Nothing with this status' : 'ما في شي بهالحالة'}</div>`;
+    return;
+  }
+
+  shown.forEach(f => {
     const st = STATUS[f.status] || STATUS.new;
     const canDelete = isAdmin || (me && f.uid === me.uid);
     const likeCount = featureLikeDocs.filter(d => d.featureId === f.id).length;
@@ -1570,6 +1585,11 @@ document.getElementById('procrastination-status-filter')?.addEventListener('chan
   renderProcrastination();
 });
 
+document.getElementById('features-status-filter')?.addEventListener('change', e => {
+  featuresStatusFilter = e.target.value;
+  renderFeatures();
+});
+
 function customHabitModal() {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
@@ -1854,19 +1874,20 @@ async function renderTimelyBox() {
 
   if (coords && relevantDay) {
     if (dow === 4) {
-      const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+      const saturday = new Date(now); saturday.setDate(saturday.getDate() + 2);
       windowStart = await fetchMaghrib(now, coords);
-      windowEnd   = await fetchMaghrib(tomorrow, coords);
+      windowEnd   = await fetchFajr(saturday, coords);
     } else {
       const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+      const saturday  = new Date(now); saturday.setDate(saturday.getDate() + 1);
       windowStart = await fetchMaghrib(yesterday, coords);
-      windowEnd   = await fetchMaghrib(now, coords);
+      windowEnd   = await fetchFajr(saturday, coords);
     }
   }
   if (!windowStart || !windowEnd) {
     approx = true;
     windowStart = new Date(now); windowStart.setHours(0, 0, 0, 0);
-    windowEnd   = new Date(now); windowEnd.setHours(24, 0, 0, 0);
+    windowEnd   = new Date(now); windowEnd.setHours(0, 0, 0, 0); windowEnd.setDate(windowEnd.getDate() + (dow === 4 ? 2 : 1));
     if (dow !== 5 && !isAdmin) { box.hidden = true; return; }
   }
 
@@ -1893,15 +1914,15 @@ async function renderTimelyBox() {
   const mLeft = Math.floor((msLeft % 3600000) / 60000);
   let countdownTxt;
   if (!inWindow) {
-    countdownTxt = isEN() ? 'Preview (admin) — outside the window' : 'معاينة (مشرفة) — خارج نافذة المغرب';
+    countdownTxt = isEN() ? 'Preview (admin) — outside the window' : 'معاينة (مشرفة) — خارج النافذة';
   } else if (approx) {
     countdownTxt = isEN()
       ? `⏳ ~${hLeft}h ${mLeft}m left (approx., location unavailable)`
       : `⏳ تقريبًا ${hLeft} س ${mLeft} د (بدون تحديد موقعك)`;
   } else {
     countdownTxt = isEN()
-      ? `⏳ ${hLeft}h ${mLeft}m until Maghrib`
-      : `⏳ باقي ${hLeft} س ${mLeft} د على المغرب`;
+      ? `⏳ ${hLeft}h ${mLeft}m until Saturday Fajr`
+      : `⏳ باقي ${hLeft} س ${mLeft} د على فجر السبت`;
   }
 
   const doneKahf = !!myToday()[kahf.id];
