@@ -356,6 +356,7 @@ function applyEnglish() {
       <div class="rule-row"><span class="rule-emoji">🌼</span><span>The Arabic version is written in the feminine, the language of this space — men are fully welcome; same rules, same game.</span></div>
       <div class="rule-row"><span class="rule-emoji">🤎</span><span>We are a Muslim community and the content is built on that — if you follow another faith, you are most welcome: this is a safe, supportive space for everyone.</span></div>
       <div class="rule-row"><span class="rule-emoji">#️⃣</span><span>Share the game on Instagram or anywhere (every share counts — it doesn’t have to be perfect). Use our hashtags so we find each other: <bdi dir="ltr">#playovermood</bdi> &amp; <bdi dir="rtl">#نلعب_على_مزاجنا</bdi> 🤙🏻</span></div>`);
+  document.querySelectorAll('.game-rules').forEach(el => { el.style.textAlign = 'left'; });
   set('.why-letter summary', 'Why “Play Over Mood”? A letter from me (Aisha) 🤍');
   set('.letter-body', `
         <p>I used to be a very serious person (not in a normal way 😅). I didn’t know fun or play, and my life was exhausting me.</p>
@@ -424,6 +425,7 @@ function applyEnglish() {
   set('#tab-procrastination .card-label', '🐢 Procrastination · المماطلة');
   set('#tab-procrastination .card-title', 'What are you putting off?');
   set('#tab-procrastination .card-desc', 'Your private list — nobody else can see it. Track its stages, and earn a personal point when you finally finish it 🤍');
+  set('.procrastination-callout', 'Imagine this task were a game — what could you do to make it more fun? Do it at a different time? A different place? Add color? Sound? Do it with different people?<br><br>Remember: the only thing you truly have is this moment — not the past, not the future, this moment 🎮');
   const procrastinationInput = document.getElementById('procrastination-input');
   if (procrastinationInput) procrastinationInput.placeholder = 'e.g. Organize my closet…';
   set('#procrastination-form button[type=submit]', 'Add');
@@ -532,7 +534,9 @@ let announcement = null; /* { text, updated } — إعلان أعلى مهمة �
 let announcementReactionDocs = []; /* ردود فعل الإعلان الحالي (تحديث حي) */
 let announcementReactionsUnsub = null;
 const DEFAULT_REFLECT_Q = 'ماذا تعلمتِ هذا الأسبوع؟';
+const DEFAULT_REFLECT_Q_EN = 'What did you learn this week?';
 let reflectQuestion = DEFAULT_REFLECT_Q;
+let reflectQuestionEn = DEFAULT_REFLECT_Q_EN;
 let myReflectAnswer = '';
 let myReflectLoaded = false;
 let reflectAnswersCache = [];
@@ -745,6 +749,7 @@ function startListeners() {
 
   onSnapshot(doc(db, 'meta', 'reflectQuestion'), snap => {
     reflectQuestion = snap.exists() && snap.data().text ? snap.data().text : DEFAULT_REFLECT_Q;
+    reflectQuestionEn = snap.exists() && snap.data().textEn ? snap.data().textEn : DEFAULT_REFLECT_Q_EN;
     renderReflectTab();
   }, () => {});
 
@@ -1006,7 +1011,7 @@ function renderReflectTab() {
   if (dashBtn) dashBtn.hidden = !(REFLECT_PUBLIC || isAdmin);
 
   const qEl = document.getElementById('reflect-question');
-  if (qEl) qEl.textContent = reflectQuestion;
+  if (qEl) qEl.textContent = isEN() ? reflectQuestionEn : reflectQuestion;
   const editBtn = document.getElementById('reflect-edit-btn');
   if (editBtn) editBtn.hidden = !isAdmin;
   const input = document.getElementById('reflect-input');
@@ -1057,32 +1062,36 @@ function reflectQuestionModal() {
     overlay.innerHTML = `
       <div class="modal-card">
         <div class="modal-title">📝 ${isEN() ? 'This week’s question' : 'سؤال هذا الأسبوع'}</div>
-        <textarea id="reflect-q-input" maxlength="200" style="min-height:70px;" placeholder="${isEN() ? 'Write the question…' : 'اكتبي السؤال هنا…'}"></textarea>
+        <label class="modal-field-label">العربية</label>
+        <textarea id="reflect-q-input" maxlength="200" style="min-height:60px;" placeholder="اكتبي السؤال هنا…"></textarea>
+        <label class="modal-field-label">English</label>
+        <textarea id="reflect-q-input-en" maxlength="200" style="min-height:60px;" placeholder="Write the question in English…"></textarea>
         <div class="modal-actions">
           <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Save' : 'حفظ'}</button>
           <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
         </div>
       </div>`;
     const ta = overlay.querySelector('#reflect-q-input');
+    const taEn = overlay.querySelector('#reflect-q-input-en');
     ta.value = reflectQuestion;
+    taEn.value = reflectQuestionEn;
     const close = val => { overlay.remove(); resolve(val); };
-    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close(ta.value.trim()));
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () =>
+      close({ text: ta.value.trim(), textEn: taEn.value.trim() }));
     overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
-    ta.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) close(ta.value.trim());
-      if (e.key === 'Escape') close(null);
-    });
+    overlay.addEventListener('keydown', e => { if (e.key === 'Escape') close(null); });
     document.body.appendChild(overlay);
     ta.focus();
   });
 }
 
 async function editReflectQuestion() {
-  const text = await reflectQuestionModal();
-  if (!text) return;
+  const result = await reflectQuestionModal();
+  if (!result || !result.text) return;
   try {
-    await setDoc(doc(db, 'meta', 'reflectQuestion'), { text, updated: Date.now() });
+    await setDoc(doc(db, 'meta', 'reflectQuestion'),
+      { text: result.text, textEn: result.textEn || '', updated: Date.now() });
     showToast(isEN() ? 'Question updated 🤍' : 'تحدّث السؤال 🤍');
   } catch {
     showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
