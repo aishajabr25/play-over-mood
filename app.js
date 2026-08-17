@@ -816,9 +816,10 @@ function renderFeatures() {
     return;
   }
 
-  const shown = (isAdmin && featuresStatusFilter)
+  const shown = ((isAdmin && featuresStatusFilter)
     ? featuresCache.filter(f => (f.status || 'new') === featuresStatusFilter)
-    : featuresCache;
+    : featuresCache
+  ).slice().sort((a, b) => (b.pinned === true) - (a.pinned === true) || b.time - a.time);
 
   if (shown.length === 0) {
     list.innerHTML = `<div class="mission-empty">${isEN() ? 'Nothing with this status' : 'ما في شي بهالحالة'}</div>`;
@@ -831,12 +832,14 @@ function renderFeatures() {
     const likeCount = featureLikeDocs.filter(d => d.featureId === f.id).length;
     const myLike = me && featureLikeDocs.some(d => d.id === `${f.id}_${me.uid}`);
     const el = document.createElement('div');
-    el.className = 'post-item';
+    el.className = 'post-item' + (f.pinned ? ' pinned' : '');
     el.innerHTML = `
       <div class="post-head">
         <span class="post-author">${esc(f.author)}</span>
         <span class="status-badge ${st.cls}">${isEN() ? st.en : st.ar}</span>
+        ${f.pinned ? `<span class="post-badge" style="background:var(--accent);color:var(--text)">${isEN() ? '📌 Pinned' : '📌 مثبّت'}</span>` : ''}
         <span class="post-time">${timeAgo(f.time)}</span>
+        ${isAdmin ? `<button class="post-delete" data-act="fpin" data-id="${f.id}">${f.pinned ? (isEN() ? 'unpin' : 'إلغاء التثبيت') : (isEN() ? '📌 pin' : '📌 تثبيت')}</button>` : ''}
         ${isAdmin ? `<button class="post-delete" data-act="freply" data-id="${f.id}">${f.reply ? (isEN() ? '✏️ edit reply' : '✏️ تعديل الرد') : (isEN() ? '↩ reply' : '↩ رد')}</button>` : ''}
         ${canDelete ? `<button class="post-delete" data-act="fdel" data-id="${f.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
       </div>
@@ -884,6 +887,19 @@ function renderFeatures() {
 
   list.querySelectorAll('[data-act="flike"]').forEach(btn => {
     btn.addEventListener('click', () => toggleFeatureLike(btn.dataset.id));
+  });
+
+  list.querySelectorAll('[data-act="fpin"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const f = featuresCache.find(x => x.id === id);
+      const newPinned = !f?.pinned;
+      const i = featuresCache.findIndex(x => x.id === id);
+      if (i !== -1) featuresCache[i] = { ...featuresCache[i], pinned: newPinned };
+      renderFeatures();
+      try { await updateDoc(doc(db, 'features', id), { pinned: newPinned }); }
+      catch { showToast('تعذر التثبيت'); }
+    });
   });
 
   list.querySelectorAll('[data-act="freply"]').forEach(btn => {
