@@ -1203,7 +1203,7 @@ function announcementModal(initial) {
       <div class="modal-card">
         <div class="modal-title">📣 ${isEN() ? 'Announcement' : 'إعلان'}</div>
         <textarea maxlength="500" style="min-height:90px;" placeholder="${isEN() ? 'Write your announcement…' : 'اكتبي الإعلان هنا…'}"></textarea>
-        <div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:8px;">${isEN() ? 'Tip: clear the text and save to remove the announcement.' : 'ملاحظة: امسحي النص واحفظي لإزالة الإعلان نهائيًا.'}</div>
+        <div style="font-size:.68rem; color:rgba(var(--ink),.5); margin-top:8px;">${isEN() ? 'Tip: clear the text and save to remove the announcement.' : 'ملاحظة: امسحي النص واحفظي لإزالة الإعلان نهائيًا.'}</div>
         <div class="modal-actions">
           <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Publish' : 'نشر'}</button>
           <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
@@ -1322,9 +1322,9 @@ function missionModal(initial) {
         <input type="url" id="mission-link-input" placeholder="https://youtube.com/…" />
         <label class="modal-field-label">${isEN() ? 'Image URL (optional)' : 'رابط صورة (اختياري)'}</label>
         <input type="url" id="mission-image-input" placeholder="https://…" />
-        <label class="modal-field-label">${isEN() ? 'Checklist steps — one per line, up to 5 (optional)' : 'خطوات قابلة للتأشير — سطر لكل خطوة، حتى ٥ (اختياري)'}</label>
+        <label class="modal-field-label">${isEN() ? 'Checklist steps — one per line, up to 6 (optional)' : 'خطوات قابلة للتأشير — سطر لكل خطوة، حتى ٦ (اختياري)'}</label>
         <textarea id="mission-steps-input" maxlength="300" placeholder="${isEN() ? 'e.g.\nRead page 1-10\nWatch the video\n…' : 'مثال:\nاقرئي الصفحة ١-١٠\nشاهدي الفيديو\n…'}"></textarea>
-        <div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:8px;">${isEN() ? 'Tip: clear everything and save to remove the mission box.' : 'ملاحظة: امسحي كل الحقول واحفظي لإزالة الصندوق نهائيًا.'}</div>
+        <div style="font-size:.68rem; color:rgba(var(--ink),.5); margin-top:8px;">${isEN() ? 'Tip: clear everything and save to remove the mission box.' : 'ملاحظة: امسحي كل الحقول واحفظي لإزالة الصندوق نهائيًا.'}</div>
         <div class="modal-actions">
           <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Publish' : 'نشر'}</button>
           <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
@@ -1341,7 +1341,7 @@ function missionModal(initial) {
     const close = val => { overlay.remove(); resolve(val); };
     overlay.querySelector('[data-act="send"]').addEventListener('click', () => close({
       text: ta.value.trim(), link: linkI.value.trim(), image: imgI.value.trim(),
-      steps: stepsI.value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 5),
+      steps: stepsI.value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 6),
     }));
     overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
@@ -1648,7 +1648,7 @@ function customHabitModal() {
         <select id="custom-world-input" class="status-select" style="width:100%; margin-top:8px; margin-inline-start:0;">
           ${Object.entries(WORLDS).map(([k, w]) => `<option value="${k}">${isEN() ? w.en : w.ar}</option>`).join('')}
         </select>
-        <div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:8px;">${isEN()
+        <div style="font-size:.68rem; color:rgba(var(--ink),.5); margin-top:8px;">${isEN()
           ? 'Personal only — won’t appear on the shared leaderboard.'
           : 'شخصية بالكامل — لا تظهر في لوحة المتصدرات المشتركة.'}</div>
         <div class="modal-actions">
@@ -2119,7 +2119,7 @@ async function renderWhiteDaysBox() {
 
   box.innerHTML = `
     <div class="timely-head">${tag}</div>
-    ${noteTxt ? `<div style="font-size:.72rem; color:rgba(74,57,45,.55); margin-bottom:8px;">${noteTxt}</div>` : ''}
+    ${noteTxt ? `<div style="font-size:.72rem; color:rgba(var(--ink),.55); margin-bottom:8px;">${noteTxt}</div>` : ''}
     <div class="timely-quote">${isEN() ? whyOf(wd).quote : wd.quote}</div>
     ${wdFocused ? `
       <div class="timely-head" style="margin:0 0 4px;"><span class="timely-countdown">${fastTxt}</span></div>
@@ -2319,7 +2319,7 @@ async function shareQuestSticker(h, done) {
     <div class="modal-card" style="text-align:center;">
       <div class="modal-title">${isEN() ? '📤 Share your quest' : '📤 شاركي مهمتك'}</div>
       <img id="sticker-preview" style="max-width:100%; border-radius:16px; margin:10px 0; display:block;" />
-      <div style="font-size:.72rem; color:rgba(74,57,45,.55); margin-bottom:10px;">
+      <div style="font-size:.72rem; color:rgba(var(--ink),.55); margin-bottom:10px;">
         ${isEN() ? 'On iPhone: press and hold the image to save it if the button below doesn’t work.' : 'على الآيفون: اضغطي مطوّلًا على الصورة لحفظها إذا لم يعمل الزر بالأسفل.'}
       </div>
       <div class="modal-actions" style="justify-content:center;">
@@ -2854,7 +2854,7 @@ function replyModal(postText, initial) {
         <div class="voice-box">
           <div class="voice-row" id="voice-row"></div>
         </div>
-        ${editing ? `<div style="font-size:.68rem; color:rgba(74,57,45,.5); margin-top:6px;">${isEN() ? 'Tip: empty the text and voice note, then save to remove the reply.' : 'ملاحظة: امسحي النص والتسجيل الصوتي واحفظي لإزالة الرد نهائيًا.'}</div>` : ''}
+        ${editing ? `<div style="font-size:.68rem; color:rgba(var(--ink),.5); margin-top:6px;">${isEN() ? 'Tip: empty the text and voice note, then save to remove the reply.' : 'ملاحظة: امسحي النص والتسجيل الصوتي واحفظي لإزالة الرد نهائيًا.'}</div>` : ''}
         <div class="modal-actions">
           <button class="btn btn-deep btn-small" data-act="send">${editing
             ? (isEN() ? 'Save changes' : 'حفظ التعديل')
@@ -3621,7 +3621,7 @@ async function renderAdminDash() {
       archBox.innerHTML = rows.map(r => {
         const from = r.fromDate ? new Date(r.fromDate).toLocaleDateString('ar', { day: 'numeric', month: 'short' }) : '؟';
         const to = new Date(r.toDate).toLocaleDateString('ar', { day: 'numeric', month: 'short' });
-        const stepsLine = (r.steps || []).length ? `<br><span style="color:rgba(74,57,45,.5)">خطوات: ${r.steps.map(esc).join(' · ')}</span>` : '';
+        const stepsLine = (r.steps || []).length ? `<br><span style="color:rgba(var(--ink),.5)">خطوات: ${r.steps.map(esc).join(' · ')}</span>` : '';
         return `<div class="mail-row" style="direction:rtl; flex-direction:column; align-items:flex-start; gap:2px;">
           <strong style="color:var(--deep)">${from} → ${to}</strong>
           <span>${esc(r.text || '(بدون نص)')}</span>${stepsLine}
