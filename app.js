@@ -652,6 +652,7 @@ onAuthStateChanged(auth, async user => {
   }
   loadMissionProgressLocal();
   if (nickname) { await loadMyCustomHabits(); await loadMyReflectAnswer(); await loadMyProcrastination(); }
+  if (nickname && missionArchiveItems === null) loadMissionArchive();
 
   updateAdminUi();
   updateSyncUi();
@@ -1365,6 +1366,58 @@ async function archiveCurrentMission() {
   } catch { /* لا نمنع النشر الجديد إن فشلت الأرشفة */ }
 }
 
+/* ── الحلقات/المهمات السابقة — عرض عام لأرشيف missionHistory ── */
+let missionArchiveItems = null;
+let missionArchiveOpen = false;
+
+async function loadMissionArchive() {
+  try {
+    const snap = await getDocs(query(collection(db, 'missionHistory'), orderBy('toDate', 'desc'), limit(20)));
+    missionArchiveItems = snap.docs.map(d => d.data());
+  } catch { missionArchiveItems = []; }
+  renderMissionArchive();
+}
+
+function renderMissionArchive() {
+  const section = document.getElementById('mission-archive-section');
+  const toggle = document.getElementById('mission-archive-toggle');
+  const grid = document.getElementById('mission-archive-grid');
+  if (!section || !toggle || !grid) return;
+
+  if (!missionArchiveItems || missionArchiveItems.length === 0) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  toggle.textContent = missionArchiveOpen
+    ? (isEN() ? `▴ Hide (${missionArchiveItems.length})` : `▴ إخفاء (${missionArchiveItems.length})`)
+    : (isEN() ? `▾ Past episodes (${missionArchiveItems.length})` : `▾ الحلقات السابقة (${missionArchiveItems.length})`);
+  grid.hidden = !missionArchiveOpen;
+  if (!missionArchiveOpen) return;
+
+  grid.innerHTML = missionArchiveItems.map(r => {
+    const from = r.fromDate ? new Date(r.fromDate).toLocaleDateString(isEN() ? 'en' : 'ar', { day: 'numeric', month: 'short' }) : '؟';
+    const to = new Date(r.toDate).toLocaleDateString(isEN() ? 'en' : 'ar', { day: 'numeric', month: 'short' });
+    const yid = youtubeId(r.link);
+    let media = '';
+    if (yid) media = `<div class="archive-media"><iframe src="https://www.youtube.com/embed/${yid}" allowfullscreen title="mission archive media"></iframe></div>`;
+    else if (r.image) media = `<div class="archive-media"><img src="${esc(r.image)}" alt="" loading="lazy" /></div>`;
+    return `
+      <div class="mission-archive-card">
+        ${media}
+        <div class="mission-archive-body">
+          <span class="archive-dates">${from} – ${to}</span>
+          ${r.text ? `<span class="archive-text">${esc(r.text)}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+document.getElementById('mission-archive-toggle')?.addEventListener('click', () => {
+  missionArchiveOpen = !missionArchiveOpen;
+  renderMissionArchive();
+});
+
 async function openMissionEditor() {
   if (!isAdmin) return;
   const result = await missionModal(mission);
@@ -1475,6 +1528,7 @@ document.getElementById('nick-form').addEventListener('submit', async e => {
   await loadMyCustomHabits();
   await loadMyReflectAnswer();
   await loadMyProcrastination();
+  if (missionArchiveItems === null) loadMissionArchive();
   initGate();
 });
 

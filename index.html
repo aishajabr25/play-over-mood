@@ -458,6 +458,18 @@
     }
     .photo-caption { font-size: .82rem; line-height: 1.6; color: var(--text); }
 
+    .mission-archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 12px; }
+    .mission-archive-card {
+      background: var(--blue-light); border: 1px solid var(--line);
+      border-radius: 18px; overflow: hidden; display: flex; flex-direction: column;
+    }
+    .mission-archive-card .archive-media { width: 100%; aspect-ratio: 16/9; background: var(--white); }
+    .mission-archive-card .archive-media iframe,
+    .mission-archive-card .archive-media img { width: 100%; height: 100%; display: block; object-fit: cover; border: 0; }
+    .mission-archive-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .archive-dates { font-size: .68rem; font-weight: 800; color: var(--deep); }
+    .archive-text { font-size: .82rem; line-height: 1.6; color: var(--text); }
+
     .posts-list { display: flex; flex-direction: column; gap: 10px; }
     .post-item {
       background: var(--blue-light); border: 1px solid var(--line);
@@ -947,6 +959,11 @@
 
     <div id="mission-box" hidden></div>
 
+    <div id="mission-archive-section" hidden style="margin-bottom:16px;">
+      <button type="button" class="collapsed-toggle" id="mission-archive-toggle">▾ الحلقات السابقة</button>
+      <div class="mission-archive-grid" id="mission-archive-grid" hidden></div>
+    </div>
+
     <!-- Today's log -->
     <section class="card">
       <span class="card-label">① مهمات اليوم · Today's Quests</span>
@@ -1229,6 +1246,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=103"></script>
+<script type="module" src="app.js?v=104"></script>
 </body>
 </html>
