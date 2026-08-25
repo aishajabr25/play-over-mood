@@ -1951,7 +1951,7 @@ setInterval(refreshDayBoundary, 60000);
 function renderDayCountdown() {
   const el = document.getElementById('day-countdown');
   if (!el) return;
-  if (!nickname || isAdmin) { el.hidden = true; return; }
+  if (!nickname || isAdmin) { el.style.display = 'none'; return; }
 
   let msLeft, approx = false;
   if (nextFajrForCountdown) {
@@ -1965,7 +1965,7 @@ function renderDayCountdown() {
   const hLeft = Math.floor(msLeft / 3600000);
   const mLeft = Math.floor((msLeft % 3600000) / 60000);
 
-  el.hidden = false;
+  el.style.display = 'inline-flex';
   el.textContent = approx
     ? (isEN() ? `⏳ ~${hLeft}h ${mLeft}m until a new day (location unavailable)` : `⏳ تقريبًا ${hLeft} س ${mLeft} د حتى يوم جديد (بدون تحديد موقعك)`)
     : (isEN() ? `⏳ ${hLeft}h ${mLeft}m until Fajr — new day begins` : `⏳ باقي ${hLeft} س ${mLeft} د على الفجر — يبدأ يوم جديد`);
@@ -2242,7 +2242,7 @@ function syncCollapsedSection() {
   const t = myToday();
   grid.innerHTML = '';
   items.forEach(h => grid.appendChild(buildHabitCard(h, t)));
-  grid.hidden = !habitsCollapsedOpen;
+  grid.style.display = habitsCollapsedOpen ? 'grid' : 'none';
   label.textContent = habitsCollapsedOpen
     ? (isEN() ? `▴ Hide (${items.length})` : `▴ إخفاء (${items.length})`)
     : (isEN() ? `▾ Other quests (${items.length})` : `▾ مهمات أخرى (${items.length})`);
