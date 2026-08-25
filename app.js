@@ -1373,9 +1373,17 @@ let missionArchiveOpen = false;
 async function loadMissionArchive() {
   try {
     const snap = await getDocs(query(collection(db, 'missionHistory'), orderBy('toDate', 'desc'), limit(20)));
-    missionArchiveItems = snap.docs.map(d => d.data());
+    missionArchiveItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch { missionArchiveItems = []; }
   renderMissionArchive();
+}
+
+async function deleteMissionArchiveItem(id) {
+  if (!isAdmin) return;
+  missionArchiveItems = missionArchiveItems.filter(r => r.id !== id);
+  renderMissionArchive();
+  try { await deleteDoc(doc(db, 'missionHistory', id)); }
+  catch { showToast(isEN() ? 'Could not delete' : 'تعذر الحذف'); }
 }
 
 function renderMissionArchive() {
@@ -1392,7 +1400,7 @@ function renderMissionArchive() {
   toggle.textContent = missionArchiveOpen
     ? (isEN() ? `▴ Hide (${missionArchiveItems.length})` : `▴ إخفاء (${missionArchiveItems.length})`)
     : (isEN() ? `▾ Past episodes (${missionArchiveItems.length})` : `▾ الحلقات السابقة (${missionArchiveItems.length})`);
-  grid.hidden = !missionArchiveOpen;
+  grid.style.display = missionArchiveOpen ? 'grid' : 'none';
   if (!missionArchiveOpen) return;
 
   grid.innerHTML = missionArchiveItems.map(r => {
@@ -1406,11 +1414,18 @@ function renderMissionArchive() {
       <div class="mission-archive-card">
         ${media}
         <div class="mission-archive-body">
-          <span class="archive-dates">${from} – ${to}</span>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <span class="archive-dates">${from} – ${to}</span>
+            ${isAdmin ? `<button class="post-delete" data-act="delarchive" data-id="${r.id}">${isEN() ? 'delete' : 'حذف'}</button>` : ''}
+          </div>
           ${r.text ? `<span class="archive-text">${esc(r.text)}</span>` : ''}
         </div>
       </div>`;
   }).join('');
+
+  grid.querySelectorAll('[data-act="delarchive"]').forEach(btn => {
+    btn.addEventListener('click', () => deleteMissionArchiveItem(btn.dataset.id));
+  });
 }
 
 document.getElementById('mission-archive-toggle')?.addEventListener('click', () => {
