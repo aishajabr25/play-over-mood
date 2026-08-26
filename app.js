@@ -278,8 +278,8 @@ const GROUP_ITEMS = {
 };
 
 /* تصنيفات حائط الأسئلة — قائمة أولية، عدّليها متى ما حبيتِ */
-const WALL_TAGS = ['عادات', 'صلاة', 'دعم نفسي', 'اقتراح', 'سؤال عام'];
-const WALL_TAGS_EN = ['Habits', 'Prayer', 'Support', 'Suggestion', 'General'];
+const WALL_TAGS = ['عادات', 'صلاة', 'دعم نفسي', 'اقتراح', 'سؤال عام', 'تقنية'];
+const WALL_TAGS_EN = ['Habits', 'Prayer', 'Support', 'Suggestion', 'General', 'Technical'];
 
 /* ── اللغة الإنجليزية (وضع كامل لغير الناطقات بالعربية) ──── */
 let lang = localStorage.getItem('pom_lang') || 'ar';
