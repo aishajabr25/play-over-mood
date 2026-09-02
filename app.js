@@ -1578,6 +1578,17 @@ async function deleteCustomHabit(id) {
   renderMyProgress();
   await saveMyCustomHabitsRemote();
 }
+async function editCustomHabit(id) {
+  const c = myCustomHabits.find(x => x.id === id);
+  if (!c) return;
+  const result = await customHabitModal({ ar: c.ar, world: c.world });
+  if (!result) return;
+  c.ar = result.ar;
+  c.world = result.world;
+  renderCustomHabits();
+  renderMyProgress();
+  await saveMyCustomHabitsRemote();
+}
 async function toggleCustomHabit(id) {
   if (!me || !nickname) return;
   const date = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey();
@@ -1704,13 +1715,14 @@ document.getElementById('features-status-filter')?.addEventListener('change', e 
   renderFeatures();
 });
 
-function customHabitModal() {
+function customHabitModal(initial) {
+  const editing = !!initial;
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
       <div class="modal-card">
-        <div class="modal-title">🧩 ${isEN() ? 'Add your own habit' : 'أضيفي عادة خاصة بك'}</div>
+        <div class="modal-title">🧩 ${editing ? (isEN() ? 'Edit your habit' : 'عدّلي عادتك') : (isEN() ? 'Add your own habit' : 'أضيفي عادة خاصة بك')}</div>
         <label class="modal-field-label">${isEN() ? 'Name' : 'الاسم'}</label>
         <input type="text" id="custom-name-input" maxlength="40" placeholder="${isEN() ? 'e.g. Journaling' : 'مثال: كتابة يومياتي'}" />
         <label class="modal-field-label">${isEN() ? 'Element' : 'العنصر'}</label>
@@ -1721,19 +1733,26 @@ function customHabitModal() {
           ? 'Personal only — won’t appear on the shared leaderboard.'
           : 'شخصية بالكامل — لا تظهر في لوحة المتصدرات المشتركة.'}</div>
         <div class="modal-actions">
-          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Add' : 'إضافة'}</button>
+          <button class="btn btn-deep btn-small" data-act="send">${editing ? (isEN() ? 'Save' : 'حفظ') : (isEN() ? 'Add' : 'إضافة')}</button>
           <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
         </div>
       </div>`;
+    const nameInput = overlay.querySelector('#custom-name-input');
+    const worldInput = overlay.querySelector('#custom-world-input');
+    if (editing) {
+      nameInput.value = initial.ar;
+      worldInput.value = initial.world;
+    }
     const close = val => { overlay.remove(); resolve(val); };
     overlay.querySelector('[data-act="send"]').addEventListener('click', () => {
-      const ar = overlay.querySelector('#custom-name-input').value.trim();
-      const world = overlay.querySelector('#custom-world-input').value;
+      const ar = nameInput.value.trim();
+      const world = worldInput.value;
       close(ar ? { ar, world } : null);
     });
     overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
     document.body.appendChild(overlay);
+    nameInput.focus();
   });
 }
 
@@ -1756,14 +1775,15 @@ function renderCustomHabits() {
         <div class="habit-check-en">${isEN() ? WORLDS[c.world]?.en : WORLDS[c.world]?.ar}</div>
       </div>
       ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" data-act="focuscustom" data-cid="${c.id}" title="${focused ? (isEN() ? 'Shown in your analysis' : 'ضمن تحليلك') : (isEN() ? 'Hidden from your analysis' : 'مخفية من تحليلك')}">${focused ? '★' : '☆'}</button>` : ''}
-      <button class="post-delete" data-act="delcustom" data-cid="${c.id}" style="margin-inline-start:6px;">${isEN() ? 'remove' : 'حذف'}</button>
+      <button class="post-delete" data-act="editcustom" data-cid="${c.id}" style="margin-inline-start:6px;">${isEN() ? 'edit' : 'تعديل'}</button>
+      <button class="post-delete" data-act="delcustom" data-cid="${c.id}">${isEN() ? 'remove' : 'حذف'}</button>
       <div class="habit-emoji">🧩</div>
     </div>`;
   }).join('');
 
   list.querySelectorAll('.habit-check').forEach(el => {
     el.addEventListener('click', e => {
-      if (e.target.closest('[data-act="delcustom"]') || e.target.closest('[data-act="focuscustom"]')) return;
+      if (e.target.closest('[data-act="delcustom"]') || e.target.closest('[data-act="editcustom"]') || e.target.closest('[data-act="focuscustom"]')) return;
       toggleCustomHabit(el.dataset.cid);
     });
   });
@@ -1771,6 +1791,12 @@ function renderCustomHabits() {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       deleteCustomHabit(btn.dataset.cid);
+    });
+  });
+  list.querySelectorAll('[data-act="editcustom"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      editCustomHabit(btn.dataset.cid);
     });
   });
   list.querySelectorAll('[data-act="focuscustom"]').forEach(btn => {
