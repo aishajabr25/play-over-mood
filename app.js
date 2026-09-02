@@ -1775,8 +1775,8 @@ function renderCustomHabits() {
         <div class="habit-check-en">${isEN() ? WORLDS[c.world]?.en : WORLDS[c.world]?.ar}</div>
       </div>
       ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" data-act="focuscustom" data-cid="${c.id}" title="${focused ? (isEN() ? 'Shown in your analysis' : 'ضمن تحليلك') : (isEN() ? 'Hidden from your analysis' : 'مخفية من تحليلك')}">${focused ? '★' : '☆'}</button>` : ''}
-      <button class="post-delete" data-act="editcustom" data-cid="${c.id}" style="margin-inline-start:6px;">${isEN() ? 'edit' : 'تعديل'}</button>
-      <button class="post-delete" data-act="delcustom" data-cid="${c.id}">${isEN() ? 'remove' : 'حذف'}</button>
+      <button class="habit-photo-btn" data-act="editcustom" data-cid="${c.id}" title="${isEN() ? 'Edit' : 'تعديل'}">✏️</button>
+      <button class="habit-photo-btn" data-act="delcustom" data-cid="${c.id}" title="${isEN() ? 'Delete' : 'حذف'}">🗑️</button>
       <div class="habit-emoji">🧩</div>
     </div>`;
   }).join('');
