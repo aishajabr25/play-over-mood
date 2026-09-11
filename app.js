@@ -1707,6 +1707,25 @@ async function updateProcrastinationField(id, field, value) {
   await saveProcrastinationRemote();
 }
 
+/* خيارات وقت بفواصل نصف ساعة — بدل كتابة الوقت يدويًا */
+function procrTimeOptionsHtml(selected) {
+  let html = `<option value="">--:--</option>`;
+  for (let h = 0; h < 24; h++) {
+    for (const m of [0, 30]) {
+      const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      const h12 = h % 12 === 0 ? 12 : h % 12;
+      const suffix = h < 12 ? (isEN() ? 'AM' : 'ص') : (isEN() ? 'PM' : 'م');
+      const label = `${h12}:${String(m).padStart(2, '0')} ${suffix}`;
+      html += `<option value="${value}" ${value === selected ? 'selected' : ''}>${label}</option>`;
+    }
+  }
+  return html;
+}
+function combineProcrDateTime(dateVal, timeVal) {
+  if (!dateVal) return '';
+  return timeVal ? `${dateVal}T${timeVal}` : dateVal;
+}
+
 function renderProcrastination() {
   const list = document.getElementById('procrastination-list');
   const ptsEl = document.getElementById('procrastination-points');
@@ -1774,11 +1793,17 @@ function renderProcrastination() {
         <div class="procr-meta">
           <div class="procr-field">
             <span>${isEN() ? 'Starts' : 'تبدأ'}</span>
-            <input type="datetime-local" data-field="startAt" value="${p.startAt || ''}">
+            <div class="procr-field-row">
+              <input type="date" data-group="start" data-part="date" value="${(p.startAt || '').split('T')[0] || ''}">
+              <select data-group="start" data-part="time">${procrTimeOptionsHtml((p.startAt || '').split('T')[1] || '')}</select>
+            </div>
           </div>
           <div class="procr-field">
             <span>${isEN() ? 'Due' : 'قبل'}</span>
-            <input type="datetime-local" data-field="dueAt" value="${p.dueAt || ''}">
+            <div class="procr-field-row">
+              <input type="date" data-group="due" data-part="date" value="${(p.dueAt || '').split('T')[0] || ''}">
+              <select data-group="due" data-part="time">${procrTimeOptionsHtml((p.dueAt || '').split('T')[1] || '')}</select>
+            </div>
           </div>
           <div class="procr-field">
             <span>${isEN() ? 'Time to spend on it' : 'مدة العمل عليها'}</span>
@@ -1818,6 +1843,13 @@ function renderProcrastination() {
     card.querySelectorAll('[data-field]').forEach(input => {
       if (input === range || input.dataset.field === 'status') return;
       input.addEventListener('change', () => updateProcrastinationField(id, input.dataset.field, input.value));
+    });
+    ['start', 'due'].forEach(kind => {
+      const dateInput = card.querySelector(`[data-group="${kind}"][data-part="date"]`);
+      const timeSelect = card.querySelector(`[data-group="${kind}"][data-part="time"]`);
+      const combine = () => updateProcrastinationField(id, `${kind}At`, combineProcrDateTime(dateInput.value, timeSelect.value));
+      dateInput.addEventListener('change', combine);
+      timeSelect.addEventListener('change', combine);
     });
   });
 }
