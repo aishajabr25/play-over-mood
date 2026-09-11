@@ -2596,8 +2596,10 @@ function onDragPointerDown(e) {
 /* .quest-group-cards نفسها display:contents (لتبقى بطاقاتها ضمن شبكة الأعمدة) فمساحتها صفر عند
    getBoundingClientRect — نحسب حدودها الفعلية من بطاقاتها بدلًا من العنصر نفسه */
 function wrapVisibleRect(wrap, excludeEl) {
+  const own = wrap.getBoundingClientRect();
+  if (own.width || own.height) return { top: own.top, bottom: own.bottom }; // صندوق حقيقي (مثل "عاداتي الخاصة")
   const children = [...wrap.children].filter(c => c !== excludeEl);
-  if (!children.length) return null;
+  if (!children.length) return null; // display:contents وبلا بطاقات أخرى — تعذّر معرفة حدودها
   let top = Infinity, bottom = -Infinity;
   children.forEach(c => {
     const r = c.getBoundingClientRect();
