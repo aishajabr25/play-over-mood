@@ -1671,7 +1671,11 @@ async function saveProcrastinationRemote() {
   catch { showToast(isEN() ? 'Could not save' : 'تعذر الحفظ'); }
 }
 async function addProcrastinationItem(text) {
-  procrastinationItems.push({ id: `p${Date.now()}`, text, status: 'planning', awarded: false });
+  procrastinationItems.push({
+    id: `p${Date.now()}`, text, status: 'planning', awarded: false,
+    startDate: '', startTime: '', dueDate: '', dueTime: '',
+    durationValue: '', durationUnit: 'minutes', progress: 0,
+  });
   renderProcrastination();
   await saveProcrastinationRemote();
 }
@@ -1684,7 +1688,21 @@ async function setProcrastinationStatus(id, status) {
   const item = procrastinationItems.find(p => p.id === id);
   if (!item) return;
   item.status = status;
-  if (status === 'done' && !item.awarded) item.awarded = true;
+  if (status === 'done') {
+    item.progress = 100;
+    if (!item.awarded) item.awarded = true;
+  }
+  renderProcrastination();
+  await saveProcrastinationRemote();
+}
+async function updateProcrastinationField(id, field, value) {
+  const item = procrastinationItems.find(p => p.id === id);
+  if (!item) return;
+  item[field] = (field === 'progress' || field === 'durationValue') ? Number(value) : value;
+  if (field === 'progress' && item.progress >= 100 && item.status !== 'done') {
+    item.status = 'done';
+    if (!item.awarded) item.awarded = true;
+  }
   renderProcrastination();
   await saveProcrastinationRemote();
 }
@@ -1715,27 +1733,98 @@ function renderProcrastination() {
     return;
   }
 
+  if (!(PROCRASTINATION_CARDS_PUBLIC || isAdmin)) {
+    list.innerHTML = shown.map(p => {
+      const st = PROCRASTINATION_STATUS[p.status] || PROCRASTINATION_STATUS.planning;
+      return `
+        <div class="post-item">
+          <div class="post-head">
+            <span class="status-badge ${st.cls}">${isEN() ? st.en : st.ar}</span>
+            <button class="post-delete" data-act="pdel" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>
+          </div>
+          <div class="post-body">${esc(p.text)}</div>
+          <select class="status-select ${st.cls}" data-id="${p.id}" style="margin-top:8px; display:block; font-weight:800;">
+            ${Object.entries(PROCRASTINATION_STATUS).map(([k, v]) =>
+              `<option value="${k}" ${p.status === k ? 'selected' : ''}>${isEN() ? v.en : v.ar}</option>`).join('')}
+          </select>
+        </div>`;
+    }).join('');
+
+    list.querySelectorAll('.status-select').forEach(sel => {
+      sel.addEventListener('change', () => setProcrastinationStatus(sel.dataset.id, sel.value));
+    });
+    list.querySelectorAll('[data-act="pdel"]').forEach(btn => {
+      btn.addEventListener('click', () => deleteProcrastinationItem(btn.dataset.id));
+    });
+    return;
+  }
+
+  /* عرض تجريبي جديد للمشرفة فقط: بطاقة بلون الحالة كاملة + تواريخ/وقت البدء والموعد + مدة العمل + شريط تقدّم */
   list.innerHTML = shown.map(p => {
     const st = PROCRASTINATION_STATUS[p.status] || PROCRASTINATION_STATUS.planning;
+    const pct = Math.max(0, Math.min(100, p.progress || 0));
     return `
-      <div class="post-item">
+      <div class="procr-card ${st.cls}" data-id="${p.id}">
         <div class="post-head">
           <span class="status-badge ${st.cls}">${isEN() ? st.en : st.ar}</span>
-          <button class="post-delete" data-act="pdel" data-id="${p.id}">${isEN() ? 'delete' : 'حذف'}</button>
+          <button class="post-delete" data-act="pdel">${isEN() ? 'delete' : 'حذف'}</button>
         </div>
         <div class="post-body">${esc(p.text)}</div>
-        <select class="status-select ${st.cls}" data-id="${p.id}" style="margin-top:8px; display:block; font-weight:800;">
+
+        <div class="procr-meta">
+          <div class="procr-field">
+            <span>${isEN() ? 'Starts' : 'تبدأ'}</span>
+            <div class="procr-field-row">
+              <input type="date" data-field="startDate" value="${p.startDate || ''}">
+              <input type="time" data-field="startTime" value="${p.startTime || ''}">
+            </div>
+          </div>
+          <div class="procr-field">
+            <span>${isEN() ? 'Due' : 'قبل'}</span>
+            <div class="procr-field-row">
+              <input type="date" data-field="dueDate" value="${p.dueDate || ''}">
+              <input type="time" data-field="dueTime" value="${p.dueTime || ''}">
+            </div>
+          </div>
+          <div class="procr-field">
+            <span>${isEN() ? 'Time to spend on it' : 'مدة العمل عليها'}</span>
+            <div class="procr-field-row">
+              <input type="number" min="0" data-field="durationValue" value="${p.durationValue || ''}" style="width:64px;">
+              <select data-field="durationUnit">
+                <option value="minutes" ${p.durationUnit !== 'days' ? 'selected' : ''}>${isEN() ? 'minutes' : 'دقيقة'}</option>
+                <option value="days" ${p.durationUnit === 'days' ? 'selected' : ''}>${isEN() ? 'days' : 'يوم'}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="procr-progress">
+          <div class="mission-pct" data-role="pct">${pct}%</div>
+          <div class="mission-progress-bar"><div class="mission-progress-fill" data-role="fill" style="width:${pct}%"></div></div>
+          <input type="range" class="procr-range" min="0" max="100" step="5" data-field="progress" value="${pct}">
+        </div>
+
+        <select class="status-select ${st.cls}" data-field="status" style="margin-top:8px; display:block; font-weight:800;">
           ${Object.entries(PROCRASTINATION_STATUS).map(([k, v]) =>
             `<option value="${k}" ${p.status === k ? 'selected' : ''}>${isEN() ? v.en : v.ar}</option>`).join('')}
         </select>
       </div>`;
   }).join('');
 
-  list.querySelectorAll('.status-select').forEach(sel => {
-    sel.addEventListener('change', () => setProcrastinationStatus(sel.dataset.id, sel.value));
-  });
-  list.querySelectorAll('[data-act="pdel"]').forEach(btn => {
-    btn.addEventListener('click', () => deleteProcrastinationItem(btn.dataset.id));
+  list.querySelectorAll('.procr-card').forEach(card => {
+    const id = card.dataset.id;
+    card.querySelector('[data-act="pdel"]').addEventListener('click', () => deleteProcrastinationItem(id));
+    card.querySelector('[data-field="status"]').addEventListener('change', e => setProcrastinationStatus(id, e.target.value));
+    const range = card.querySelector('[data-field="progress"]');
+    range.addEventListener('input', () => {
+      card.querySelector('[data-role="pct"]').textContent = `${range.value}%`;
+      card.querySelector('[data-role="fill"]').style.width = `${range.value}%`;
+    });
+    range.addEventListener('change', () => updateProcrastinationField(id, 'progress', range.value));
+    card.querySelectorAll('[data-field]').forEach(input => {
+      if (input === range || input.dataset.field === 'status') return;
+      input.addEventListener('change', () => updateProcrastinationField(id, input.dataset.field, input.value));
+    });
   });
 }
 
@@ -3679,6 +3768,8 @@ const YESTERDAY_GRACE_PUBLIC = true;
 const PHOTOS_PUBLIC = true;
 /* سحب وإفلات لترتيب المهمات — قيد التجربة، للمشرفة فقط حتى تُعتمد للجميع */
 const REORDER_PUBLIC = false;
+/* بطاقات المماطلة الجديدة (تواريخ/مدة/شريط تقدّم) — قيد التجربة، للمشرفة فقط حتى تُعتمد للجميع */
+const PROCRASTINATION_CARDS_PUBLIC = false;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
