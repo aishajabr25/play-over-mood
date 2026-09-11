@@ -234,6 +234,10 @@
 
     /* ── Today's habits ──────────────────────────────────── */
     .habits-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .quest-group-cards { display: contents; }
+    .habit-check.dragging { opacity: .4; }
+    .habit-drag-handle { cursor: grab; padding: 4px; flex-shrink: 0; color: rgba(var(--ink),.35); touch-action: none; }
+    .habit-drag-handle:active { cursor: grabbing; }
     .habit-check {
       display: flex; align-items: center; gap: 14px;
       background: var(--blue-light); border: 2px solid var(--line);
@@ -993,7 +997,7 @@
         <span class="card-label">🧩 عاداتي الخاصة · My Own Habits</span>
         <button class="change-nick" id="add-custom-btn">+ أضيفي عادة</button>
       </div>
-      <div class="card-desc">اختياري وشخصي بالكامل — لا يدخل لوحة المتصدرات المشتركة</div>
+      <div class="card-desc">اختيارية بالكامل، وتُحتسب نقاطها (نقطة واحدة لكل عادة) ضمن نقاطك ولوحة المتصدرات المشتركة</div>
       <div class="habits-grid" id="custom-habits-list"></div>
     </section>
 

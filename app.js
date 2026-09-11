@@ -531,6 +531,32 @@ function toggleFocus(id) {
   renderHabits();
   renderMyProgress();
 }
+
+/* ترتيب المهمات داخل كل مجموعة — تفضيل جهاز شخصي (مثل focus)، لا يغيّر ترتيب اللوحة نفسها */
+let myOrder = null;
+let orderLsKeyCached = null;
+function orderLsKey() { return `pom_order_${me?.uid || 'anon'}`; }
+function loadOrderIfNeeded() {
+  const k = orderLsKey();
+  if (myOrder && orderLsKeyCached === k) return;
+  orderLsKeyCached = k;
+  try { myOrder = JSON.parse(localStorage.getItem(k)) || {}; }
+  catch { myOrder = {}; }
+}
+function applyMyOrder(groupId, items) {
+  loadOrderIfNeeded();
+  const saved = myOrder[groupId];
+  if (!saved || !saved.length) return items;
+  const byId = new Map(items.map(it => [it.id, it]));
+  const ordered = saved.filter(id => byId.has(id)).map(id => byId.get(id));
+  items.forEach(it => { if (!saved.includes(it.id)) ordered.push(it); });
+  return ordered;
+}
+function reorderWithinGroup(groupId, orderedIds) {
+  loadOrderIfNeeded();
+  myOrder[groupId] = orderedIds;
+  localStorage.setItem(orderLsKey(), JSON.stringify(myOrder));
+}
 let lbRows    = [];     // أفضل ٣٠ لاعبة هذا الأسبوع
 let statsWeeks = {};    // week -> {dayCounts, habitCounts}
 let statsFetchedAt = 0;
@@ -573,8 +599,12 @@ function activeViewDate() {
 }
 function activeDayKey() { return dateKey(activeViewDate()); }
 function activeWeekKey() { return dateKey(weekStart(activeViewDate())); }
-function dayPoints(habits) {
-  return HABITS.reduce((s, h) => s + (habits[h.id] ? habitPoints(h) : 0), 0);
+function dayPoints(day) {
+  const habits = day.habits || {};
+  const custom = day.custom || {};
+  const builtIn = HABITS.reduce((s, h) => s + (habits[h.id] ? habitPoints(h) : 0), 0);
+  const customPts = myCustomHabits.reduce((s, c) => s + (custom[c.id] ? 1 : 0), 0);
+  return builtIn + customPts;
 }
 function myWeekPoints(wk) {
   wk = wk || thisWeekKey();
@@ -775,7 +805,7 @@ function startListeners() {
   }, () => {});
 
   onSnapshot(
-    collection(db, 'reflections'),
+    query(collection(db, 'reflections'), orderBy('time', 'desc'), limit(300)),
     snap => {
       reflectAnswersCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.text);
       renderReflectAnswers();
@@ -793,7 +823,7 @@ function startListeners() {
   );
 
   onSnapshot(
-    collection(db, 'featureLikes'),
+    query(collection(db, 'featureLikes'), orderBy('time', 'desc'), limit(300)),
     snap => {
       featureLikeDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderFeatures();
@@ -1592,15 +1622,26 @@ async function editCustomHabit(id) {
 async function toggleCustomHabit(id) {
   if (!me || !nickname) return;
   const date = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey();
+  const week = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeWeekKey() : thisWeekKey();
   const day = (myDays[date] = myDays[date] || { habits: {}, points: 0, custom: {} });
   day.custom = day.custom || {};
   day.custom[id] = !day.custom[id];
+  day.points = dayPoints(day);
   saveMyDaysLocal();
   renderCustomHabits();
   renderMyProgress();
+  updateMyPointsChip();
+  renderLeaderboard();
   try {
     await setDoc(doc(db, 'days', `${me.uid}_${date}`),
-      { uid: me.uid, date, custom: day.custom }, { merge: true });
+      { uid: me.uid, nick: nickname, date, week, custom: day.custom, points: day.points },
+      { merge: true });
+
+    if (!isAdmin) {
+      setDoc(doc(db, `weeks/${week}/players`, me.uid),
+        { nick: nickname, points: myWeekPoints(week), updated: Date.now() },
+        { merge: true }).catch(() => {});
+    }
   } catch {
     showToast(isEN() ? 'Could not save' : 'تعذر الحفظ');
   }
@@ -1730,8 +1771,8 @@ function customHabitModal(initial) {
           ${Object.entries(WORLDS).map(([k, w]) => `<option value="${k}">${isEN() ? w.en : w.ar}</option>`).join('')}
         </select>
         <div style="font-size:.68rem; color:rgba(var(--ink),.5); margin-top:8px;">${isEN()
-          ? 'Personal only — won’t appear on the shared leaderboard.'
-          : 'شخصية بالكامل — لا تظهر في لوحة المتصدرات المشتركة.'}</div>
+          ? 'Worth 1 point — counts toward your points and the shared leaderboard, same as a regular quest.'
+          : 'تساوي نقطة واحدة — تُحتسب ضمن نقاطك ولوحة المتصدرات المشتركة، مثل أي مهمة عادية.'}</div>
         <div class="modal-actions">
           <button class="btn btn-deep btn-small" data-act="send">${editing ? (isEN() ? 'Save' : 'حفظ') : (isEN() ? 'Add' : 'إضافة')}</button>
           <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
@@ -1819,7 +1860,7 @@ async function toggleHabit(h) {
   const day = (myDays[date] = myDays[date] || { habits: {}, points: 0 });
   day.habits[h.id] = !day.habits[h.id];
   const delta = day.habits[h.id] ? 1 : -1;
-  day.points = dayPoints(day.habits);
+  day.points = dayPoints(day);
   saveMyDaysLocal();
 
   renderHabits();
@@ -2355,14 +2396,20 @@ function renderHabits() {
   GROUPS.forEach(g => {
     const groupHabits = (GROUP_ITEMS[g.id] || []).map(id => HABITS.find(h => h.id === id))
       .filter(Boolean).filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin);
-    const shownHabits = groupHabits.filter(h => isFocused(h.id));
+    let shownHabits = groupHabits.filter(h => isFocused(h.id));
     groupHabits.filter(h => !isFocused(h.id)).forEach(h => collapsedHabits.push(h));
     if (shownHabits.length === 0) return;
+    shownHabits = applyMyOrder(g.id, shownHabits);
     const header = document.createElement('div');
     header.className = 'quest-group';
     header.innerHTML = `<span class="quest-group-title">${g.emoji} ${isEN() ? g.en : g.ar}</span><span class="quest-group-line"></span>`;
     grid.appendChild(header);
-    shownHabits.forEach(h => grid.appendChild(buildHabitCard(h, t)));
+    const cardsWrap = document.createElement('div');
+    cardsWrap.className = 'quest-group-cards';
+    cardsWrap.dataset.groupId = g.id;
+    shownHabits.forEach(h => cardsWrap.appendChild(buildHabitCard(h, t)));
+    grid.appendChild(cardsWrap);
+    if (REORDER_PUBLIC || isAdmin) enableDragReorder(cardsWrap, g.id);
   });
 
   collapsedGroupHabits = collapsedHabits;
@@ -2418,7 +2465,7 @@ async function shareQuestSticker(h, done) {
         ${isEN() ? 'On iPhone: press and hold the image to save it if the button below doesn’t work.' : 'على الآيفون: اضغطي مطوّلًا على الصورة لحفظها إذا لم يعمل الزر بالأسفل.'}
       </div>
       <div class="modal-actions" style="justify-content:center;">
-        <button class="btn btn-deep btn-small" data-act="download">⬇️ ${isEN() ? 'Save image' : 'حفظ الصورة'}</button>
+        <button class="btn btn-deep btn-small" data-act="download" disabled>⏳ ${isEN() ? 'Preparing…' : 'جارٍ التجهيز…'}</button>
         <button class="btn btn-small" id="native-share-btn" style="background:var(--bg); border:1.5px solid var(--line); display:none;">📤 ${isEN() ? 'Share' : 'مشاركة'}</button>
         <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="close">${isEN() ? 'Close' : 'إغلاق'}</button>
       </div>
@@ -2429,13 +2476,30 @@ async function shareQuestSticker(h, done) {
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   overlay.querySelector('[data-act="close"]').addEventListener('click', close);
 
-  const canvas = await buildStickerCanvas(h, done);
+  let canvas;
+  try {
+    canvas = await buildStickerCanvas(h, done);
+  } catch (err) {
+    console.error('buildStickerCanvas failed:', err);
+    showToast(isEN() ? 'Could not create the image — try again' : 'تعذّر إنشاء الصورة — حاولي مجددًا');
+    close();
+    return;
+  }
+
   canvas.toBlob(blob => {
-    if (!blob) { showToast('تعذر إنشاء الصورة'); close(); return; }
+    if (!overlay.isConnected) return; // أُغلقت النافذة قبل جهوزية الصورة
+    if (!blob) {
+      showToast(isEN() ? 'Could not create the image — try again' : 'تعذّر إنشاء الصورة — حاولي مجددًا');
+      close();
+      return;
+    }
     const url = URL.createObjectURL(blob);
     overlay.querySelector('#sticker-preview').src = url;
 
-    overlay.querySelector('[data-act="download"]').addEventListener('click', () => {
+    const downloadBtn = overlay.querySelector('[data-act="download"]');
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = `⬇️ ${isEN() ? 'Save image' : 'حفظ الصورة'}`;
+    downloadBtn.addEventListener('click', () => {
       const a = document.createElement('a');
       a.href = url;
       a.download = fileName;
@@ -2462,12 +2526,14 @@ function buildHabitCard(h, t) {
     const done = !!t[h.id];
     el.className = 'habit-check' + (done ? ' done' : '') + (h.legendary ? ' legendary' : '');
     el.style.borderInlineStartColor = habitColor(h);
+    el.dataset.habitId = h.id;
     const badge = h.legendary
       ? (isEN() ? `⭐ Legendary ×${habitPoints(h)}` : `⭐ أسطورية ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}`)
       : '';
     const focused = isFocused(h.id);
     el.innerHTML = `
       ${badge ? `<span class="legendary-badge">${badge}</span>` : ''}
+      ${(REORDER_PUBLIC || isAdmin) ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder' : 'اسحبي لإعادة الترتيب'}">⠿</span>` : ''}
       <div class="habit-box">✓</div>
       <div class="habit-check-info">
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
@@ -2490,7 +2556,55 @@ function buildHabitCard(h, t) {
       e.stopPropagation();
       toggleFocus(h.id);
     });
+    el.querySelector('.habit-drag-handle')?.addEventListener('click', e => e.stopPropagation());
     return el;
+}
+
+/* سحب وإفلات لإعادة ترتيب المهمات داخل مجموعتها — Pointer Events تدعم اللمس والفأرة معًا */
+function enableDragReorder(wrap, groupId) {
+  let dragEl = null, ghost = null, offsetY = 0;
+
+  function onPointerMove(e) {
+    if (!dragEl) return;
+    ghost.style.top = `${e.clientY - offsetY}px`;
+    const siblings = [...wrap.children].filter(c => c !== dragEl);
+    let target = null;
+    for (const sib of siblings) {
+      const r = sib.getBoundingClientRect();
+      if (e.clientY < r.top + r.height / 2) { target = sib; break; }
+    }
+    if (target) wrap.insertBefore(dragEl, target);
+    else wrap.appendChild(dragEl);
+  }
+
+  function onPointerUp() {
+    if (!dragEl) return;
+    dragEl.classList.remove('dragging');
+    ghost.remove();
+    document.removeEventListener('pointermove', onPointerMove);
+    const orderedIds = [...wrap.children].map(c => c.dataset.habitId);
+    reorderWithinGroup(groupId, orderedIds);
+    dragEl = null;
+    ghost = null;
+  }
+
+  wrap.addEventListener('pointerdown', e => {
+    const handle = e.target.closest('.habit-drag-handle');
+    if (!handle) return;
+    const card = handle.closest('.habit-check');
+    if (!card) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragEl = card;
+    const rect = dragEl.getBoundingClientRect();
+    offsetY = e.clientY - rect.top;
+    ghost = dragEl.cloneNode(true);
+    ghost.style.cssText = `position:fixed; left:${rect.left}px; top:${rect.top}px; width:${rect.width}px; pointer-events:none; z-index:999; opacity:.9; box-shadow:0 12px 30px rgba(var(--ink),.25);`;
+    document.body.appendChild(ghost);
+    dragEl.classList.add('dragging');
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp, { once: true });
+  });
 }
 
 /* ── Worlds legend + why cards (ثابتة) ───────────────────── */
@@ -3510,6 +3624,8 @@ const REFLECT_PUBLIC = true;
 const YESTERDAY_GRACE_PUBLIC = true;
 /* حائط الصور — اعتُمدت للجميع ٢٠٢٦-٠٨-١٣ */
 const PHOTOS_PUBLIC = true;
+/* سحب وإفلات لترتيب المهمات — قيد التجربة، للمشرفة فقط حتى تُعتمد للجميع */
+const REORDER_PUBLIC = false;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
