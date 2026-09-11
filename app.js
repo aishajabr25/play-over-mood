@@ -3792,10 +3792,10 @@ const REFLECT_PUBLIC = true;
 const YESTERDAY_GRACE_PUBLIC = true;
 /* حائط الصور — اعتُمدت للجميع ٢٠٢٦-٠٨-١٣ */
 const PHOTOS_PUBLIC = true;
-/* سحب وإفلات لترتيب المهمات — قيد التجربة، للمشرفة فقط حتى تُعتمد للجميع */
-const REORDER_PUBLIC = false;
-/* بطاقات المماطلة الجديدة (تواريخ/مدة/شريط تقدّم) — قيد التجربة، للمشرفة فقط حتى تُعتمد للجميع */
-const PROCRASTINATION_CARDS_PUBLIC = false;
+/* سحب وإفلات لترتيب المهمات — اعتُمدت للجميع ٢٠٢٦-٠٩-١١ */
+const REORDER_PUBLIC = true;
+/* بطاقات المماطلة الجديدة (تواريخ/مدة/شريط تقدّم) — اعتُمدت للجميع ٢٠٢٦-٠٩-١١ */
+const PROCRASTINATION_CARDS_PUBLIC = true;
 function updateWhyTab() {
   const whyBtn = document.querySelector('.tab-btn[data-tab="why"]');
   if (whyBtn) whyBtn.hidden = !(SHOW_WHY_PUBLIC || isAdmin);
