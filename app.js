@@ -1673,7 +1673,7 @@ async function saveProcrastinationRemote() {
 async function addProcrastinationItem(text) {
   procrastinationItems.push({
     id: `p${Date.now()}`, text, status: 'planning', awarded: false,
-    startDate: '', startTime: '', dueDate: '', dueTime: '',
+    startAt: '', dueAt: '',
     durationValue: '', durationUnit: 'minutes', progress: 0,
   });
   renderProcrastination();
@@ -1774,17 +1774,11 @@ function renderProcrastination() {
         <div class="procr-meta">
           <div class="procr-field">
             <span>${isEN() ? 'Starts' : 'تبدأ'}</span>
-            <div class="procr-field-row">
-              <input type="date" data-field="startDate" value="${p.startDate || ''}">
-              <input type="time" data-field="startTime" value="${p.startTime || ''}">
-            </div>
+            <input type="datetime-local" data-field="startAt" value="${p.startAt || ''}">
           </div>
           <div class="procr-field">
             <span>${isEN() ? 'Due' : 'قبل'}</span>
-            <div class="procr-field-row">
-              <input type="date" data-field="dueDate" value="${p.dueDate || ''}">
-              <input type="time" data-field="dueTime" value="${p.dueTime || ''}">
-            </div>
+            <input type="datetime-local" data-field="dueAt" value="${p.dueAt || ''}">
           </div>
           <div class="procr-field">
             <span>${isEN() ? 'Time to spend on it' : 'مدة العمل عليها'}</span>
