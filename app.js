@@ -2593,6 +2593,20 @@ function onDragPointerDown(e) {
   document.addEventListener('pointerup', onDragPointerUp, { once: true });
 }
 
+/* .quest-group-cards نفسها display:contents (لتبقى بطاقاتها ضمن شبكة الأعمدة) فمساحتها صفر عند
+   getBoundingClientRect — نحسب حدودها الفعلية من بطاقاتها بدلًا من العنصر نفسه */
+function wrapVisibleRect(wrap, excludeEl) {
+  const children = [...wrap.children].filter(c => c !== excludeEl);
+  if (!children.length) return null;
+  let top = Infinity, bottom = -Infinity;
+  children.forEach(c => {
+    const r = c.getBoundingClientRect();
+    top = Math.min(top, r.top);
+    bottom = Math.max(bottom, r.bottom);
+  });
+  return { top, bottom };
+}
+
 function onDragPointerMove(e) {
   if (!dragState) return;
   const { card, ghost, offsetY, isCustom } = dragState;
@@ -2601,8 +2615,8 @@ function onDragPointerMove(e) {
   let targetWrap = card.parentElement;
   if (isCustom) {
     for (const wrap of dragWraps.values()) {
-      const r = wrap.getBoundingClientRect();
-      if (!r.width && !r.height) continue; // مجموعة فارغة حاليًا وغير معروضة
+      const r = wrapVisibleRect(wrap, card);
+      if (!r) continue; // مجموعة فارغة حاليًا (بلا بطاقات أخرى) — تعذّر معرفة حدودها
       if (e.clientY >= r.top && e.clientY <= r.bottom) { targetWrap = wrap; break; }
     }
   }
