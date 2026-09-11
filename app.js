@@ -276,6 +276,8 @@ const GROUP_ITEMS = {
   mood:    ['meet', 'recharge', 'explore', 'newthing', 'enjoy', 'goodtrace', 'sharehobby', 'solitude', 'friend', 'caregiving'],
   night:   ['maghrib', 'isha', 'athkareve', 'tidy', 'athkarsleep', 'sleep', 'tahajjud'],
 };
+/* "قسم" العادات الخاصة غير المُوزَّعة على أي روتين — وجهة سحب/إفلات مثل بقية المجموعات */
+const UNASSIGNED_GROUP = '__unassigned__';
 
 /* تصنيفات حائط الأسئلة — قائمة أولية، عدّليها متى ما حبيتِ */
 const WALL_TAGS = ['عادات', 'صلاة', 'دعم نفسي', 'اقتراح', 'سؤال عام', 'تقنية'];
@@ -1797,6 +1799,33 @@ function customHabitModal(initial) {
   });
 }
 
+/* بطاقة عادة خاصة — تُستخدم في "عاداتي الخاصة" وأيضًا داخل قسم الروتين إن وُزّعت إليه */
+function buildCustomHabitCard(c, todayCustom) {
+  const el = document.createElement('div');
+  el.className = 'habit-check' + (todayCustom[c.id] ? ' done' : '');
+  el.style.borderInlineStartColor = WORLDS[c.world]?.color || '#755F4D';
+  el.dataset.customId = c.id;
+  el.dataset.custom = 'true';
+  const focused = isFocused(c.id);
+  el.innerHTML = `
+    ${(REORDER_PUBLIC || isAdmin) ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder or move to a routine' : 'اسحبي لإعادة الترتيب أو نقلها إلى روتين'}">⠿</span>` : ''}
+    <div class="habit-box">✓</div>
+    <div class="habit-check-info">
+      <div class="habit-check-ar">${esc(c.ar)}</div>
+      <div class="habit-check-en">${isEN() ? WORLDS[c.world]?.en : WORLDS[c.world]?.ar}</div>
+    </div>
+    ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" data-act="focuscustom" title="${focused ? (isEN() ? 'Shown in your analysis' : 'ضمن تحليلك') : (isEN() ? 'Hidden from your analysis' : 'مخفية من تحليلك')}">${focused ? '★' : '☆'}</button>` : ''}
+    <button class="habit-photo-btn" data-act="editcustom" title="${isEN() ? 'Edit' : 'تعديل'}">✏️</button>
+    <button class="habit-photo-btn" data-act="delcustom" title="${isEN() ? 'Delete' : 'حذف'}">🗑️</button>
+    <div class="habit-emoji">🧩</div>`;
+  el.addEventListener('click', () => toggleCustomHabit(c.id));
+  el.querySelector('[data-act="delcustom"]').addEventListener('click', e => { e.stopPropagation(); deleteCustomHabit(c.id); });
+  el.querySelector('[data-act="editcustom"]').addEventListener('click', e => { e.stopPropagation(); editCustomHabit(c.id); });
+  el.querySelector('[data-act="focuscustom"]')?.addEventListener('click', e => { e.stopPropagation(); toggleFocus(c.id); });
+  el.querySelector('.habit-drag-handle')?.addEventListener('click', e => e.stopPropagation());
+  return el;
+}
+
 function renderCustomHabits() {
   const section = document.getElementById('custom-habits-section');
   if (!section) return;
@@ -1805,47 +1834,12 @@ function renderCustomHabits() {
   if (!show) return;
 
   const list = document.getElementById('custom-habits-list');
+  list.innerHTML = '';
+  list.dataset.groupId = UNASSIGNED_GROUP;
   const todayCustom = (myDays[(YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey()] || {}).custom || {};
-  list.innerHTML = myCustomHabits.map(c => {
-    const focused = isFocused(c.id);
-    return `
-    <div class="habit-check${todayCustom[c.id] ? ' done' : ''}" data-cid="${c.id}" style="border-inline-start-color:${WORLDS[c.world]?.color || '#755F4D'}">
-      <div class="habit-box">✓</div>
-      <div class="habit-check-info">
-        <div class="habit-check-ar">${esc(c.ar)}</div>
-        <div class="habit-check-en">${isEN() ? WORLDS[c.world]?.en : WORLDS[c.world]?.ar}</div>
-      </div>
-      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" data-act="focuscustom" data-cid="${c.id}" title="${focused ? (isEN() ? 'Shown in your analysis' : 'ضمن تحليلك') : (isEN() ? 'Hidden from your analysis' : 'مخفية من تحليلك')}">${focused ? '★' : '☆'}</button>` : ''}
-      <button class="habit-photo-btn" data-act="editcustom" data-cid="${c.id}" title="${isEN() ? 'Edit' : 'تعديل'}">✏️</button>
-      <button class="habit-photo-btn" data-act="delcustom" data-cid="${c.id}" title="${isEN() ? 'Delete' : 'حذف'}">🗑️</button>
-      <div class="habit-emoji">🧩</div>
-    </div>`;
-  }).join('');
-
-  list.querySelectorAll('.habit-check').forEach(el => {
-    el.addEventListener('click', e => {
-      if (e.target.closest('[data-act="delcustom"]') || e.target.closest('[data-act="editcustom"]') || e.target.closest('[data-act="focuscustom"]')) return;
-      toggleCustomHabit(el.dataset.cid);
-    });
-  });
-  list.querySelectorAll('[data-act="delcustom"]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      deleteCustomHabit(btn.dataset.cid);
-    });
-  });
-  list.querySelectorAll('[data-act="editcustom"]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      editCustomHabit(btn.dataset.cid);
-    });
-  });
-  list.querySelectorAll('[data-act="focuscustom"]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      toggleFocus(btn.dataset.cid);
-    });
-  });
+  const unassigned = applyMyOrder(UNASSIGNED_GROUP, myCustomHabits.filter(c => !c.group));
+  unassigned.forEach(c => list.appendChild(buildCustomHabitCard(c, todayCustom)));
+  if (REORDER_PUBLIC || isAdmin) registerDragWrap(list, UNASSIGNED_GROUP);
 }
 
 async function toggleHabit(h) {
@@ -2392,14 +2386,17 @@ function renderHabits() {
   }
 
   const t = graceOn ? ((myDays[activeDayKey()] || {}).habits || {}) : myToday();
+  const todayCustom = (myDays[(YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey()] || {}).custom || {};
   const collapsedHabits = [];
   GROUPS.forEach(g => {
     const groupHabits = (GROUP_ITEMS[g.id] || []).map(id => HABITS.find(h => h.id === id))
       .filter(Boolean).filter(h => !h.adminOnly || MOM_FEATURES_PUBLIC || isAdmin);
     let shownHabits = groupHabits.filter(h => isFocused(h.id));
     groupHabits.filter(h => !isFocused(h.id)).forEach(h => collapsedHabits.push(h));
-    if (shownHabits.length === 0) return;
-    shownHabits = applyMyOrder(g.id, shownHabits);
+    const customForGroup = myCustomHabits.filter(c => c.group === g.id);
+    if (shownHabits.length === 0 && customForGroup.length === 0) return;
+    let sectionItems = applyMyOrder(g.id, [...shownHabits, ...customForGroup]);
+    const customIds = new Set(customForGroup.map(c => c.id));
     const header = document.createElement('div');
     header.className = 'quest-group';
     header.innerHTML = `<span class="quest-group-title">${g.emoji} ${isEN() ? g.en : g.ar}</span><span class="quest-group-line"></span>`;
@@ -2407,9 +2404,11 @@ function renderHabits() {
     const cardsWrap = document.createElement('div');
     cardsWrap.className = 'quest-group-cards';
     cardsWrap.dataset.groupId = g.id;
-    shownHabits.forEach(h => cardsWrap.appendChild(buildHabitCard(h, t)));
+    sectionItems.forEach(item => cardsWrap.appendChild(
+      customIds.has(item.id) ? buildCustomHabitCard(item, todayCustom) : buildHabitCard(item, t)
+    ));
     grid.appendChild(cardsWrap);
-    if (REORDER_PUBLIC || isAdmin) enableDragReorder(cardsWrap, g.id);
+    if (REORDER_PUBLIC || isAdmin) registerDragWrap(cardsWrap, g.id);
   });
 
   collapsedGroupHabits = collapsedHabits;
@@ -2560,51 +2559,89 @@ function buildHabitCard(h, t) {
     return el;
 }
 
-/* سحب وإفلات لإعادة ترتيب المهمات داخل مجموعتها — Pointer Events تدعم اللمس والفأرة معًا */
-function enableDragReorder(wrap, groupId) {
-  let dragEl = null, ghost = null, offsetY = 0;
+/* سحب وإفلات — لإعادة ترتيب المهمات داخل مجموعتها، وللعادات الخاصة أيضًا لنقلها بين الروتينات.
+   المهمات الأساسية تُعاد ترتيبها ضمن مجموعتها فقط؛ العادات الخاصة يمكن إفلاتها في أي مجموعة مسجَّلة. */
+const dragWraps = new Map(); // groupId -> wrap element (تُحدَّث مع كل إعادة رسم)
+let dragState = null;
 
-  function onPointerMove(e) {
-    if (!dragEl) return;
-    ghost.style.top = `${e.clientY - offsetY}px`;
-    const siblings = [...wrap.children].filter(c => c !== dragEl);
-    let target = null;
-    for (const sib of siblings) {
-      const r = sib.getBoundingClientRect();
-      if (e.clientY < r.top + r.height / 2) { target = sib; break; }
+function registerDragWrap(wrap, groupId) {
+  dragWraps.set(groupId, wrap);
+  wrap.dataset.groupId = groupId;
+  if (wrap.dataset.dragBound) return;
+  wrap.dataset.dragBound = '1';
+  wrap.addEventListener('pointerdown', onDragPointerDown);
+}
+
+function onDragPointerDown(e) {
+  const handle = e.target.closest('.habit-drag-handle');
+  if (!handle) return;
+  const card = handle.closest('.habit-check');
+  if (!card) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const rect = card.getBoundingClientRect();
+  const ghost = card.cloneNode(true);
+  ghost.style.cssText = `position:fixed; left:${rect.left}px; top:${rect.top}px; width:${rect.width}px; pointer-events:none; z-index:999; opacity:.9; box-shadow:0 12px 30px rgba(var(--ink),.25);`;
+  document.body.appendChild(ghost);
+  card.classList.add('dragging');
+  dragState = {
+    card, ghost, offsetY: e.clientY - rect.top,
+    originGroupId: card.parentElement.dataset.groupId,
+    isCustom: card.dataset.custom === 'true',
+  };
+  document.addEventListener('pointermove', onDragPointerMove);
+  document.addEventListener('pointerup', onDragPointerUp, { once: true });
+}
+
+function onDragPointerMove(e) {
+  if (!dragState) return;
+  const { card, ghost, offsetY, isCustom } = dragState;
+  ghost.style.top = `${e.clientY - offsetY}px`;
+
+  let targetWrap = card.parentElement;
+  if (isCustom) {
+    for (const wrap of dragWraps.values()) {
+      const r = wrap.getBoundingClientRect();
+      if (!r.width && !r.height) continue; // مجموعة فارغة حاليًا وغير معروضة
+      if (e.clientY >= r.top && e.clientY <= r.bottom) { targetWrap = wrap; break; }
     }
-    if (target) wrap.insertBefore(dragEl, target);
-    else wrap.appendChild(dragEl);
   }
 
-  function onPointerUp() {
-    if (!dragEl) return;
-    dragEl.classList.remove('dragging');
-    ghost.remove();
-    document.removeEventListener('pointermove', onPointerMove);
-    const orderedIds = [...wrap.children].map(c => c.dataset.habitId);
-    reorderWithinGroup(groupId, orderedIds);
-    dragEl = null;
-    ghost = null;
+  const siblings = [...targetWrap.children].filter(c => c !== card);
+  let insertBefore = null;
+  for (const sib of siblings) {
+    const r = sib.getBoundingClientRect();
+    if (e.clientY < r.top + r.height / 2) { insertBefore = sib; break; }
   }
+  if (insertBefore) targetWrap.insertBefore(card, insertBefore);
+  else targetWrap.appendChild(card);
+}
 
-  wrap.addEventListener('pointerdown', e => {
-    const handle = e.target.closest('.habit-drag-handle');
-    if (!handle) return;
-    const card = handle.closest('.habit-check');
-    if (!card) return;
-    e.preventDefault();
-    e.stopPropagation();
-    dragEl = card;
-    const rect = dragEl.getBoundingClientRect();
-    offsetY = e.clientY - rect.top;
-    ghost = dragEl.cloneNode(true);
-    ghost.style.cssText = `position:fixed; left:${rect.left}px; top:${rect.top}px; width:${rect.width}px; pointer-events:none; z-index:999; opacity:.9; box-shadow:0 12px 30px rgba(var(--ink),.25);`;
-    document.body.appendChild(ghost);
-    dragEl.classList.add('dragging');
-    document.addEventListener('pointermove', onPointerMove);
-    document.addEventListener('pointerup', onPointerUp, { once: true });
-  });
+function onDragPointerUp() {
+  if (!dragState) return;
+  const { card, ghost, originGroupId, isCustom } = dragState;
+  card.classList.remove('dragging');
+  ghost.remove();
+  document.removeEventListener('pointermove', onDragPointerMove);
+
+  const finalWrap = card.parentElement;
+  const finalGroupId = finalWrap.dataset.groupId;
+
+  if (isCustom && finalGroupId !== originGroupId) {
+    const c = myCustomHabits.find(x => x.id === card.dataset.customId);
+    if (c) {
+      c.group = finalGroupId === UNASSIGNED_GROUP ? null : finalGroupId;
+      saveMyCustomHabitsRemote();
+      showToast(c.group
+        ? (isEN() ? `Moved to "${GROUPS.find(g => g.id === c.group)?.en}" 🤙` : `انتقلت إلى «${GROUPS.find(g => g.id === c.group)?.ar}» 🤙`)
+        : (isEN() ? 'Moved back to My Own Habits' : 'رجعت إلى عاداتي الخاصة'));
+    }
+    renderHabits();
+  } else {
+    const orderedIds = [...finalWrap.children].map(el => el.dataset.habitId || el.dataset.customId);
+    reorderWithinGroup(finalGroupId, orderedIds);
+  }
+  dragState = null;
 }
 
 /* ── Worlds legend + why cards (ثابتة) ───────────────────── */
