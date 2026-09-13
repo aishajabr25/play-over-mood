@@ -637,6 +637,20 @@ function saveMyDaysLocal() {
   Object.keys(myDays).forEach(k => { if (k < cutoff) delete myDays[k]; });
   localStorage.setItem(daysLsKey(), JSON.stringify(myDays));
 }
+/* قبل أول تعديل على يوم معيّن في هذه الجلسة: نتأكد أنه محمّل فعلًا من الخادم أولًا،
+   بدل افتراض أنه فارغ — كي لا نكتب نقاطًا/مهمات ناقصة فوق ما هو محفوظ فعلًا هناك */
+async function ensureDayLoaded(date) {
+  if (myDays[date]) return;
+  try {
+    const snap = await getDoc(doc(db, 'days', `${me.uid}_${date}`));
+    myDays[date] = snap.exists()
+      ? { habits: snap.data().habits || {}, points: snap.data().points || 0, custom: snap.data().custom || {} }
+      : { habits: {}, points: 0, custom: {} };
+  } catch {
+    myDays[date] = { habits: {}, points: 0, custom: {} };
+  }
+  saveMyDaysLocal();
+}
 async function fetchMyDaysFromServer() {
   /* عند جهاز جديد/تخزين ممسوح: قراءة مباشرة لآخر شهر لمرة واحدة (يكفي لتقدم الأسبوع والشهر) */
   const gets = [];
@@ -1625,7 +1639,8 @@ async function toggleCustomHabit(id) {
   if (!me || !nickname) return;
   const date = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey();
   const week = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeWeekKey() : thisWeekKey();
-  const day = (myDays[date] = myDays[date] || { habits: {}, points: 0, custom: {} });
+  await ensureDayLoaded(date);
+  const day = myDays[date];
   day.custom = day.custom || {};
   day.custom[id] = !day.custom[id];
   day.points = dayPoints(day);
@@ -1966,7 +1981,8 @@ async function toggleHabit(h) {
 
   const date = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeDayKey() : myDayKey();
   const week = (YESTERDAY_GRACE_PUBLIC || isAdmin) ? activeWeekKey() : thisWeekKey();
-  const day = (myDays[date] = myDays[date] || { habits: {}, points: 0 });
+  await ensureDayLoaded(date);
+  const day = myDays[date];
   day.habits[h.id] = !day.habits[h.id];
   const delta = day.habits[h.id] ? 1 : -1;
   day.points = dayPoints(day);
