@@ -676,6 +676,11 @@ onAuthStateChanged(auth, async user => {
   me = user;
   isAdmin = !!user.email && user.email.toLowerCase() === ADMIN_EMAIL;
 
+  /* تسجيل أنها ربطت حسابها بجوجل — لعدّهنّ في لوحة المشرفة، يُحدَّث في كل زيارة */
+  if (!user.isAnonymous && user.email) {
+    setDoc(doc(db, 'users', user.uid), { email: user.email, provider: 'google', updated: Date.now() }, { merge: true }).catch(() => {});
+  }
+
   if (isAdmin && !nickname) {
     nickname = ADMIN_NAME;
     localStorage.setItem('pom_nick', nickname);
@@ -3952,9 +3957,12 @@ async function renderAdminDash() {
   const countOf = path => getDocs(collection(db, path))
     .then(s => s.size).catch(() => '؟');
 
-  const [usersC, mailsC, postsC] = await Promise.all([
-    countOf('users'), countOf('mails'), countOf('posts'),
-  ]);
+  const usersSnap = await getDocs(collection(db, 'users')).catch(() => null);
+  const usersC = usersSnap ? usersSnap.size : '؟';
+  /* عدد من ربطن حسابهن بجوجل — يُحسب فقط ممّن زارت التطبيق بعد إضافة هذا العدّاد
+     (لا وسيلة لقراءة قائمة مستخدمي Firebase Auth كاملة من كود العميل) */
+  const googleC = usersSnap ? usersSnap.docs.filter(d => d.data().provider === 'google').length : '؟';
+  const [mailsC, postsC] = await Promise.all([countOf('mails'), countOf('posts')]);
 
   const weeks = allWeeksList();
   let html = `
@@ -3963,7 +3971,9 @@ async function renderAdminDash() {
       <div class="stat-box"><div class="stat-num">${usersC}</div><div class="stat-lbl">إجمالي المسجلات</div></div>
       <div class="stat-box"><div class="stat-num">${postsC}</div><div class="stat-lbl">منشورات الحائط</div></div>
       <div class="stat-box"><div class="stat-num">${mailsC}</div><div class="stat-lbl">تركن بريدهن</div></div>
+      <div class="stat-box"><div class="stat-num">${googleC}</div><div class="stat-lbl">ربطن حسابهن بجوجل</div></div>
     </div>
+    <div class="card-desc" style="margin-top:-8px; margin-bottom:14px;">عدّاد جوجل يُحسب تراكميًا من أول زيارة بعد ١٥ سبتمبر ٢٠٢٦ — لا يشمل من ربطت حسابها قبل ذلك ولم تعد للزيارة.</div>
     <div class="hello-row" style="margin-bottom:6px;">
       <div class="card-title" style="font-size:1rem; margin:0;">أرقام اللعبة بحسب الأسبوع</div>
       <select id="admin-week-select" class="status-select">
