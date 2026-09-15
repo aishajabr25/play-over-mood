@@ -447,6 +447,12 @@ function applyEnglish() {
   set('#tab-procrastination .card-label', '🐢 Procrastination · المماطلة');
   set('#tab-procrastination .card-title', 'What are you putting off?');
   set('#tab-procrastination .card-desc', 'Your private list — nobody else can see it. Track its stages, and earn a personal point when you finally finish it 🤍');
+  set('.procrastination-framework', `<div style="font-weight:800; margin-bottom:6px;">For any task or goal you have, follow this structure:</div>
+    <ol>
+      <li>Identify the deeper purpose behind doing this task</li>
+      <li>Identify the destination — the end result you're aiming for</li>
+      <li>What are the general steps you need to get there — the actual steps that do the work, not a polished plan</li>
+    </ol>`);
   set('.procrastination-callout', 'Imagine this task were a game — what could you do to make it more fun? Do it at a different time? A different place? Add color? Sound? Do it with different people?<br><br>Remember: the only thing you truly have is this moment — not the past, not the future, this moment 🎮');
   const procrastinationInput = document.getElementById('procrastination-input');
   if (procrastinationInput) procrastinationInput.placeholder = 'e.g. Organize my closet…';
@@ -1676,6 +1682,33 @@ const PROCRASTINATION_STATUS = {
   executing: { ar: 'بنفّذها',    en: 'Executing', cls: 'status-planned' },
   done:      { ar: 'خلصتها',     en: 'Done',      cls: 'status-done' },
 };
+/* ما الذي يمنعني من فعل هذه المهمة؟ — أربعة أنماط شائعة، كل نمط له إجراء مساعد */
+const PROCRASTINATION_BLOCKERS = {
+  A: {
+    ar: 'بأبالغ بتقدير النتائج السلبية لهذي الخطوة',
+    en: 'Overestimating how bad the outcome will be',
+    tipAr: 'نفّذي جزءًا بسيطًا منها وشوفي إذا كان تقديرك صحيح',
+    tipEn: 'Do a small part of it and check if your estimate was right',
+  },
+  B: {
+    ar: 'منتبهة كثير لعلامات ممكن تدل على نجاحي أو فشلي',
+    en: 'Overly focused on signs that might predict success or failure',
+    tipAr: 'نفّذيها وشوفي إذا كانت هالعلامات فعلًا صحيحة',
+    tipEn: 'Do it and see if those signs actually hold true',
+  },
+  C: {
+    ar: 'ما حددت العوامل اللي بتوصلني لنتيجة ناجحة',
+    en: 'Not identifying what factors would lead to a successful outcome',
+    tipAr: 'سوّي شي وحد يزيد معرفتك بالمهمة',
+    tipEn: 'Do one thing that makes you more knowledgeable about the task',
+  },
+  D: {
+    ar: 'بتجنّب القرار أو المهمة كليًا',
+    en: 'Avoiding the decision or task altogether',
+    tipAr: 'اكتبي إيجابيات وسلبيات تنفيذ المهمة مقابل تركها، وبعدها إما تنسيها أو تسويها ٥ دقايق',
+    tipEn: 'Write the pros and cons of doing it vs. leaving it, then either let it go or do just 5 minutes of it',
+  },
+};
 let procrastinationItems = [];
 let procrastinationStatusFilter = '';
 
@@ -1695,6 +1728,7 @@ async function addProcrastinationItem(text) {
     id: `p${Date.now()}`, text, status: 'planning', awarded: false,
     startAt: '', dueAt: '',
     durationValue: '', durationUnit: 'minutes', progress: 0,
+    blocker: '',
   });
   renderProcrastination();
   await saveProcrastinationRemote();
@@ -1835,6 +1869,20 @@ function renderProcrastination() {
               </select>
             </div>
           </div>
+        </div>
+
+        <div class="procr-blocker">
+          <div class="procr-field">
+            <span>${isEN() ? 'What’s stopping me from doing this task?' : 'ما هو الشيء الذي يمنعني من فعل هذه المهمة؟'}</span>
+            <select data-field="blocker">
+              <option value="">${isEN() ? '-- choose --' : '-- اختاري --'}</option>
+              ${Object.entries(PROCRASTINATION_BLOCKERS).map(([k, v]) =>
+                `<option value="${k}" ${p.blocker === k ? 'selected' : ''}>${k} — ${isEN() ? v.en : v.ar}</option>`).join('')}
+            </select>
+          </div>
+          ${p.blocker && PROCRASTINATION_BLOCKERS[p.blocker]
+            ? `<div class="procr-blocker-tip">💡 ${isEN() ? PROCRASTINATION_BLOCKERS[p.blocker].tipEn : PROCRASTINATION_BLOCKERS[p.blocker].tipAr}</div>`
+            : ''}
         </div>
 
         <div class="procr-progress">

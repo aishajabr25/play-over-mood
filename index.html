@@ -140,6 +140,19 @@
       background: var(--blue-light); border: 1.5px solid var(--line);
       border-radius: 16px; padding: 16px 18px; margin: -4px 0 18px;
     }
+    .procrastination-framework {
+      font-size: .88rem; color: var(--deep); line-height: 1.8;
+      background: var(--yellow-light); border: 1.5px solid #CFA94A;
+      border-radius: 16px; padding: 16px 18px; margin: -4px 0 18px;
+    }
+    .procrastination-framework ol { margin: 0; padding-inline-start: 20px; }
+    .procrastination-framework li { margin-bottom: 4px; }
+    /* سؤال "ما الذي يمنعني" داخل كل بطاقة مماطلة */
+    .procr-blocker { margin: 10px 0; }
+    .procr-blocker-tip {
+      margin-top: 8px; font-size: .78rem; color: var(--deep); font-weight: 700;
+      background: var(--white); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px;
+    }
 
     /* ── Nickname gate ───────────────────────────────────── */
     .nick-card { text-align: center; padding: 36px 24px; }
@@ -1189,6 +1202,14 @@
         <span class="card-label label-green">🐢 المماطلة · Procrastination</span>
         <div class="card-title">شو اللي بتماطلي فيه؟</div>
         <div class="card-desc">قائمتك الخاصة — لا يراها أحد غيرك. اكتبي الشي وتابعي مراحله، ولما تخلّصيه بتكسبي نقطة شخصية 🤍</div>
+        <div class="procrastination-framework">
+          <div style="font-weight:800; margin-bottom:6px;">لأي مهمة أو هدف عندك، اتبعي هالخطوات:</div>
+          <ol>
+            <li>حددي الغاية العظمى من القيام بهذه المهمة</li>
+            <li>حددي الوجهة اللي بتوصلي لها</li>
+            <li>شو هي الخطوات اللي تحتاجينها عشان توصلي — خطوات عامة مش خطة منمقة</li>
+          </ol>
+        </div>
         <div class="procrastination-callout">تخيلي لو أن هاي المهمة لعبة، شو الشي اللي ممكن تسويه عشان تكون المهمة أكثر متعة؟ تسويها بوقت ثاني؟ بمكان مختلف؟ تضيفي ألوان؟ صوت؟ تسويها مع أشخاص مختلفين؟<br><br>أذكرك إنه الشي الوحيد اللي تملكيه هو هاي اللحظة مش الماضي ولا المستقبل، هاي اللحظة 🎮</div>
         <form class="post-form" id="procrastination-form">
           <textarea id="procrastination-input" placeholder="مثال: أرتّب خزانتي…" maxlength="200"></textarea>
