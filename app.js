@@ -2228,19 +2228,22 @@ async function renderTimelyBox() {
   const relevantDay = dow === 4 || dow === 5;
   if (!relevantDay && !isAdmin) { box.hidden = true; return; }
 
-  let windowStart = null, windowEnd = null, approx = false;
+  let windowStart = null, windowEnd = null, fridayMaghrib = null, approx = false;
   const coords = relevantDay ? await getGeo() : null;
 
   if (coords && relevantDay) {
     if (dow === 4) {
+      const friday   = new Date(now); friday.setDate(friday.getDate() + 1);
       const saturday = new Date(now); saturday.setDate(saturday.getDate() + 2);
-      windowStart = await fetchMaghrib(now, coords);
-      windowEnd   = await fetchFajr(saturday, coords);
+      windowStart   = await fetchMaghrib(now, coords);
+      windowEnd     = await fetchFajr(saturday, coords);
+      fridayMaghrib = await fetchMaghrib(friday, coords);
     } else {
       const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
       const saturday  = new Date(now); saturday.setDate(saturday.getDate() + 1);
-      windowStart = await fetchMaghrib(yesterday, coords);
-      windowEnd   = await fetchFajr(saturday, coords);
+      windowStart   = await fetchMaghrib(yesterday, coords);
+      windowEnd     = await fetchFajr(saturday, coords);
+      fridayMaghrib = await fetchMaghrib(now, coords);
     }
   }
   if (!windowStart || !windowEnd) {
@@ -2274,14 +2277,18 @@ async function renderTimelyBox() {
   let countdownTxt;
   if (!inWindow) {
     countdownTxt = isEN() ? 'Preview (admin) — outside the window' : 'معاينة (مشرفة) — خارج النافذة';
-  } else if (approx) {
+  } else if (approx || !fridayMaghrib) {
     countdownTxt = isEN()
       ? `⏳ ~${hLeft}h ${mLeft}m left (approx., location unavailable)`
       : `⏳ تقريبًا ${hLeft} س ${mLeft} د (بدون تحديد موقعك)`;
+  } else if (now < fridayMaghrib) {
+    const { h, m } = fmtHM(fridayMaghrib - now);
+    countdownTxt = isEN() ? `⏳ ${h}h ${m}m until Maghrib` : `⏳ باقي ${h} س ${m} د على المغرب`;
   } else {
+    /* انتهى وقت المغرب لكن نافذة التسجيل تبقى مفتوحة حتى الفجر، مثل بقية مهمات اليوم */
     countdownTxt = isEN()
-      ? `⏳ ${hLeft}h ${mLeft}m until Saturday Fajr`
-      : `⏳ باقي ${hLeft} س ${mLeft} د على فجر السبت`;
+      ? 'Maghrib has passed — you can still mark it until Fajr'
+      : 'انتهى وقت المغرب — بعدك تقدرين تسجّليها حتى الفجر';
   }
 
   const doneKahf = !!myToday()[kahf.id];
