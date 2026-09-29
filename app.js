@@ -257,6 +257,12 @@ const HABITS = [
     source: '(يُنصح بمراجعة اللفظ والتخريج)',
     science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
   },
+  {
+    id: 'fridayfajr', ar: 'قراءة الم تنزيل السجدة وهل أتى في فجر الجمعة', en: 'Reciting Surat As-Sajdah & Al-Insan in Friday Fajr', emoji: '📖', worlds: ['spiritual'],
+    quote: '«كان رسول الله ﷺ يقرأ يوم الجمعة في الفجر {الم * تنزيل} السجدة و{هل أتى على الإنسان حين من الدهر}»',
+    source: 'رواه مسلم (٨٧٩)، وإسناده صحيح عند أحمد شاكر — الراوي: عبدالله بن عباس',
+    science: 'مراجعات منهجية واسعة (منها أعمال فريق Koenig في جامعة Duke) تجد أن الطقوس الدينية المنتظمة والمتكررة أسبوعيًا ترتبط بانخفاض القلق وارتفاع الشعور بالمعنى والاستقرار النفسي.'
+  },
 ];
 
 function habitColor(h)  { return h.legendary ? LEGENDARY_COLOR : WORLDS[h.worlds[0]].color; }
@@ -338,6 +344,7 @@ const EN_WHY = {
   suhoor:     { quote: '“Eat suhoor, for in suhoor there is blessing.”', source: 'Agreed upon (wording/chain worth double-checking)', science: 'A pre-dawn meal keeps blood sugar more stable through the long fasting hours compared to fasting without it — consistent with broader research on meal timing and energy regulation during intermittent fasting (de Cabo & Mattson 2019).' },
   kahf:       { quote: '“Whoever reads Surat Al-Kahf on Friday will be illuminated with light between the two Fridays.”', source: 'Al-Hakim & al-Bayhaqi, authenticated by al-Albani in Sahih al-Jami (wording/chain worth double-checking)', science: 'Broad systematic reviews (including Koenig’s work at Duke) find that regular, recurring weekly religious rituals are associated with lower anxiety and greater sense of meaning and psychological stability.' },
   salawat:    { quote: '“Send abundant blessings upon me on Friday and the night of Friday, for your blessings are presented to me.”', source: '(wording/chain worth double-checking)', science: 'Broad systematic reviews (including Koenig’s work at Duke) find that regular, recurring weekly religious rituals are associated with lower anxiety and greater sense of meaning and psychological stability.' },
+  fridayfajr: { quote: '“The Messenger of Allah ﷺ used to recite, in the Fajr prayer on Friday, Surat As-Sajdah and Surat Al-Insan (‘Has there come upon man a period of time…’).”', source: 'Muslim (879) — sound chain per Ahmad Shakir, narrated by Ibn Abbas', science: 'Broad systematic reviews (including Koenig’s work at Duke) find that regular, recurring weekly religious rituals are associated with lower anxiety and greater sense of meaning and psychological stability.' },
 };
 
 function whyOf(h) {
@@ -1991,7 +1998,6 @@ function buildCustomHabitCard(c, todayCustom) {
   el.dataset.custom = 'true';
   const focused = isFocused(c.id);
   el.innerHTML = `
-    ${(REORDER_PUBLIC || isAdmin) ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder or move to a routine' : 'اسحبي لإعادة الترتيب أو نقلها إلى روتين'}">⠿</span>` : ''}
     <div class="habit-box">✓</div>
     <div class="habit-check-info">
       <div class="habit-check-ar">${esc(c.ar)}</div>
@@ -2000,7 +2006,8 @@ function buildCustomHabitCard(c, todayCustom) {
     ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" data-act="focuscustom" title="${focused ? (isEN() ? 'Shown in your analysis' : 'ضمن تحليلك') : (isEN() ? 'Hidden from your analysis' : 'مخفية من تحليلك')}">${focused ? '★' : '☆'}</button>` : ''}
     <button class="habit-photo-btn" data-act="editcustom" title="${isEN() ? 'Edit' : 'تعديل'}">✏️</button>
     <button class="habit-photo-btn" data-act="delcustom" title="${isEN() ? 'Delete' : 'حذف'}">🗑️</button>
-    <div class="habit-emoji">🧩</div>`;
+    <div class="habit-emoji">🧩</div>
+    ${(REORDER_PUBLIC || isAdmin) ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder or move to a routine' : 'اسحبي لإعادة الترتيب أو نقلها إلى روتين'}">⠿</span>` : ''}`;
   el.addEventListener('click', () => toggleCustomHabit(c.id));
   el.querySelector('[data-act="delcustom"]').addEventListener('click', e => { e.stopPropagation(); deleteCustomHabit(c.id); });
   el.querySelector('[data-act="editcustom"]').addEventListener('click', e => { e.stopPropagation(); editCustomHabit(c.id); });
@@ -2221,7 +2228,8 @@ async function renderTimelyBox() {
   if (!box) return;
   const kahf = HABITS.find(h => h.id === 'kahf');
   const salawat = HABITS.find(h => h.id === 'salawat');
-  if (!kahf || !salawat || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
+  const fridayfajr = HABITS.find(h => h.id === 'fridayfajr');
+  if (!kahf || !salawat || !fridayfajr || (preLaunch() && !isAdmin)) { box.hidden = true; return; }
 
   const now = new Date();
   const dow = now.getDay(); /* ٠=أحد … ٤=خميس، ٥=جمعة */
@@ -2257,18 +2265,20 @@ async function renderTimelyBox() {
   const show = isAdmin || inWindow;
   if (!show) {
     box.hidden = true;
-    collapsedExtraIds.delete(kahf.id); collapsedExtraIds.delete(salawat.id);
+    collapsedExtraIds.delete(kahf.id); collapsedExtraIds.delete(salawat.id); collapsedExtraIds.delete(fridayfajr.id);
     syncCollapsedSection();
     return;
   }
 
   const kahfFocused = isFocused(kahf.id);
   const salawatFocused = isFocused(salawat.id);
+  const fridayfajrFocused = isFocused(fridayfajr.id);
   if (kahfFocused) collapsedExtraIds.delete(kahf.id); else collapsedExtraIds.add(kahf.id);
   if (salawatFocused) collapsedExtraIds.delete(salawat.id); else collapsedExtraIds.add(salawat.id);
+  if (fridayfajrFocused) collapsedExtraIds.delete(fridayfajr.id); else collapsedExtraIds.add(fridayfajr.id);
   syncCollapsedSection();
 
-  if (!kahfFocused && !salawatFocused) { box.hidden = true; return; }
+  if (!kahfFocused && !salawatFocused && !fridayfajrFocused) { box.hidden = true; return; }
   box.hidden = false;
 
   const msLeft = Math.max(0, windowEnd - now);
@@ -2293,18 +2303,34 @@ async function renderTimelyBox() {
 
   const doneKahf = !!myToday()[kahf.id];
   const doneSalawat = !!myToday()[salawat.id];
+  const doneFridayfajr = !!myToday()[fridayfajr.id];
   box.innerHTML = `
     <div class="timely-head">
       <span class="timely-tag">${isEN() ? '🕋 Timely Mission' : '🕋 مهمة مؤقتة'}</span>
       <span class="timely-countdown">${countdownTxt}</span>
     </div>
+    ${fridayfajrFocused ? `
+      <div class="timely-quote">${isEN() ? whyOf(fridayfajr).quote : fridayfajr.quote}</div>
+      ${whiteDaysCheckRow(fridayfajr, doneFridayfajr)}` : ''}
     ${kahfFocused ? `
-      <div class="timely-quote">${isEN() ? whyOf(kahf).quote : kahf.quote}</div>
+      <div class="timely-quote"${fridayfajrFocused ? ' style="margin-top:14px;"' : ''}>${isEN() ? whyOf(kahf).quote : kahf.quote}</div>
       ${whiteDaysCheckRow(kahf, doneKahf)}` : ''}
     ${salawatFocused ? `
-      <div class="timely-quote"${kahfFocused ? ' style="margin-top:14px;"' : ''}>${isEN() ? whyOf(salawat).quote : salawat.quote}</div>
+      <div class="timely-quote"${(kahfFocused || fridayfajrFocused) ? ' style="margin-top:14px;"' : ''}>${isEN() ? whyOf(salawat).quote : salawat.quote}</div>
       ${whiteDaysCheckRow(salawat, doneSalawat)}` : ''}`;
 
+  if (fridayfajrFocused) {
+    document.getElementById(`check-${fridayfajr.id}`).addEventListener('click', () => toggleHabit(fridayfajr));
+    document.querySelector(`#check-${fridayfajr.id} .habit-share-btn`).addEventListener('click', e => {
+      e.stopPropagation();
+      shareQuestSticker(fridayfajr, doneFridayfajr);
+    });
+    document.querySelector(`#check-${fridayfajr.id} .habit-focus-btn`)?.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFocus(fridayfajr.id);
+      renderTimelyBox();
+    });
+  }
   if (kahfFocused) {
     document.getElementById(`check-${kahf.id}`).addEventListener('click', () => toggleHabit(kahf));
     document.querySelector(`#check-${kahf.id} .habit-share-btn`).addEventListener('click', e => {
@@ -2723,7 +2749,6 @@ function buildHabitCard(h, t) {
     const focused = isFocused(h.id);
     el.innerHTML = `
       ${badge ? `<span class="legendary-badge">${badge}</span>` : ''}
-      ${(REORDER_PUBLIC || isAdmin) ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder' : 'اسحبي لإعادة الترتيب'}">⠿</span>` : ''}
       <div class="habit-box">✓</div>
       <div class="habit-check-info">
         <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
@@ -2732,7 +2757,8 @@ function buildHabitCard(h, t) {
       ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" title="${focused ? (isEN() ? 'On your board — click to move to Other quests' : 'ضمن لوحتك — اضغطي لنقلها إلى مهمات أخرى') : (isEN() ? 'In Other quests — click to bring back' : 'ضمن مهمات أخرى — اضغطي لإرجاعها')}">${focused ? '★' : '☆'}</button>` : ''}
       ${(PHOTOS_PUBLIC || isAdmin) ? `<button class="habit-photo-btn" title="${isEN() ? 'Upload a photo for this quest' : 'رفع صورة لهذه المهمة'}">📷</button>` : ''}
       <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
-      <div class="habit-emoji">${h.emoji}</div>`;
+      <div class="habit-emoji">${h.emoji}</div>
+      ${(REORDER_PUBLIC || isAdmin) ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder' : 'اسحبي لإعادة الترتيب'}">⠿</span>` : ''}`;
     el.addEventListener('click', () => toggleHabit(h));
     el.querySelector('.habit-share-btn').addEventListener('click', e => {
       e.stopPropagation();
