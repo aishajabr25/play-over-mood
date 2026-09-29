@@ -773,6 +773,21 @@ function updateSyncUi() {
       btn.textContent = isEN() ? '✓ Progress saved — follows you on any device 🤍' : '✓ تقدمك محفوظ ويتبعك على أجهزتك 🤍';
     }
   }
+  /* بانر ربط حساب Google — المرحلة الأولى من جعل تسجيل الدخول إلزاميًا لاحقًا، يظهر للجميع بلا إغلاق */
+  const banner = document.getElementById('google-link-banner');
+  if (banner) {
+    const shouldShow = !!(me && !isAdmin && me.isAnonymous);
+    banner.hidden = !shouldShow;
+    if (shouldShow) {
+      document.getElementById('google-link-banner-text').textContent = isEN()
+        ? 'Signing in with Google is becoming required soon to keep playing — link your account now and you won’t lose anything, your progress just becomes saved and follows you on any device.'
+        : 'قريبًا رح يصير تسجيل الدخول بحساب Google لازم عشان تكملي اللعب — اربطي حسابك الآن، ما راح تفقدي أي شي، بس تقدمك يصير محفوظ ويتبعك على أي جهاز 🤍';
+      const btn = document.getElementById('google-link-banner-btn');
+      btn.textContent = isEN() ? 'Link Google now ☁️' : 'اربطي حساب Google الآن ☁️';
+      btn.onclick = linkGoogle;
+    }
+  }
+
   const gate = document.getElementById('nick-gate');
   if (gate && !document.getElementById('gate-google')) {
     const g = document.createElement('button');
