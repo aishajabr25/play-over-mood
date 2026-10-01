@@ -9,7 +9,7 @@
    its old cache (rare — normal file updates don't need this).
    ════════════════════════════════════════════════════════════ */
 
-const SW_CACHE = 'pom-shell-v1';
+const SW_CACHE = 'pom-shell-v8';
 
 const PRECACHE_URLS = [
   './manifest.webmanifest',
@@ -50,9 +50,13 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
   if (isAppShellRequest(url)) {
-    /* network-first: always try live, cache the fresh copy, fall back to cache offline */
+    /* network-first: always try live, cache the fresh copy, fall back to cache offline.
+       cache: 'no-store' forces an actual network round-trip — without it, this fetch()
+       can still be quietly satisfied by the browser's own HTTP cache, which is exactly
+       what made a hard refresh look like it "didn't work" even though this code is
+       network-first. */
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => {
           const copy = res.clone();
           caches.open(SW_CACHE).then((cache) => cache.put(req, copy));

@@ -539,6 +539,55 @@ function loadFocusIfNeeded() {
   catch { focusExcluded = new Set(); }
 }
 function isFocused(id) { loadFocusIfNeeded(); return !focusExcluded.has(id); }
+
+/* ── إعدادات: أي أزرار تظهر على بطاقة المهمة، وبأي طريقة ──────────
+   تفضيل جهاز فقط (localStorage) — افتراضيًا كل شيء ظاهر كما كان دائمًا. */
+const ACTION_PREFS = [
+  { key: 'focus', ar: '⭐ نجمة التركيز (تظهر في تقدمك الشخصي)', en: '⭐ Focus star (controls what shows in your progress)' },
+  { key: 'photo', ar: '📷 زر رفع صورة للمهمة', en: '📷 Upload-a-photo button' },
+  { key: 'share', ar: '📤 زر المشاركة كصورة', en: '📤 Share-as-image button' },
+  { key: 'drag', ar: '⠿ مقبض إعادة الترتيب', en: '⠿ Drag-to-reorder handle' },
+];
+function getActionPref(key) { return localStorage.getItem(`pom_action_show_${key}`) !== 'off'; }
+function setActionPref(key, show) { localStorage.setItem(`pom_action_show_${key}`, show ? 'on' : 'off'); }
+function getActionMode() { return localStorage.getItem('pom_action_mode') || 'static'; }
+function setActionMode(mode) { localStorage.setItem('pom_action_mode', mode); }
+
+function renderSettingsTab() {
+  const togglesEl = document.getElementById('settings-action-toggles');
+  const modeEl = document.getElementById('settings-action-mode');
+  if (!togglesEl || !modeEl) return;
+
+  togglesEl.innerHTML = '';
+  ACTION_PREFS.forEach(p => {
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex; align-items:center; gap:10px; font-size:.88rem; cursor:pointer;';
+    const checked = getActionPref(p.key);
+    row.innerHTML = `<input type="checkbox" ${checked ? 'checked' : ''} style="width:18px; height:18px;" /> <span>${isEN() ? p.en : p.ar}</span>`;
+    row.querySelector('input').addEventListener('change', e => {
+      setActionPref(p.key, e.target.checked);
+      renderHabits();
+    });
+    togglesEl.appendChild(row);
+  });
+
+  modeEl.innerHTML = '';
+  const modes = [
+    { id: 'static', ar: '🔘 ثابتة دائمًا على البطاقة', en: '🔘 Always visible on the card' },
+    { id: 'swipe', ar: '👈 اسحبي البطاقة لليسار لإظهارها', en: '👈 Swipe the card left to reveal them' },
+  ];
+  const currentMode = getActionMode();
+  modes.forEach(m => {
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex; align-items:center; gap:10px; font-size:.88rem; cursor:pointer;';
+    row.innerHTML = `<input type="radio" name="action-mode" value="${m.id}" ${currentMode === m.id ? 'checked' : ''} style="width:18px; height:18px;" /> <span>${isEN() ? m.en : m.ar}</span>`;
+    row.querySelector('input').addEventListener('change', () => {
+      setActionMode(m.id);
+      renderHabits();
+    });
+    modeEl.appendChild(row);
+  });
+}
 function toggleFocus(id) {
   loadFocusIfNeeded();
   if (focusExcluded.has(id)) focusExcluded.delete(id); else focusExcluded.add(id);
@@ -2018,11 +2067,11 @@ function buildCustomHabitCard(c, todayCustom) {
       <div class="habit-check-ar">${esc(c.ar)}</div>
       <div class="habit-check-en">${isEN() ? WORLDS[c.world]?.en : WORLDS[c.world]?.ar}</div>
     </div>
-    ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" data-act="focuscustom" title="${focused ? (isEN() ? 'Shown in your analysis' : 'ضمن تحليلك') : (isEN() ? 'Hidden from your analysis' : 'مخفية من تحليلك')}">${focused ? '★' : '☆'}</button>` : ''}
+    ${(PROGRESS_VIEW_PUBLIC || isAdmin) && getActionPref('focus') ? `<button class="habit-focus-btn${focused ? ' on' : ''}" data-act="focuscustom" title="${focused ? (isEN() ? 'Shown in your analysis' : 'ضمن تحليلك') : (isEN() ? 'Hidden from your analysis' : 'مخفية من تحليلك')}">${focused ? '★' : '☆'}</button>` : ''}
     <button class="habit-photo-btn" data-act="editcustom" title="${isEN() ? 'Edit' : 'تعديل'}">✏️</button>
     <button class="habit-photo-btn" data-act="delcustom" title="${isEN() ? 'Delete' : 'حذف'}">🗑️</button>
     <div class="habit-emoji">🧩</div>
-    ${(REORDER_PUBLIC || isAdmin) ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder or move to a routine' : 'اسحبي لإعادة الترتيب أو نقلها إلى روتين'}">⠿</span>` : ''}`;
+    ${(REORDER_PUBLIC || isAdmin) && getActionPref('drag') ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder or move to a routine' : 'اسحبي لإعادة الترتيب أو نقلها إلى روتين'}">⠿</span>` : ''}`;
   el.addEventListener('click', () => toggleCustomHabit(c.id));
   el.querySelector('[data-act="delcustom"]').addEventListener('click', e => { e.stopPropagation(); deleteCustomHabit(c.id); });
   el.querySelector('[data-act="editcustom"]').addEventListener('click', e => { e.stopPropagation(); editCustomHabit(c.id); });
@@ -2172,6 +2221,70 @@ async function getHijriDay(dateObj, coords) {
   if (hijriDayCache[key] !== undefined) return hijriDayCache[key];
   await fetchFajr(dateObj, coords); /* يملأ الكاش كأثر جانبي */
   return hijriDayCache[key];
+}
+
+/* ── خطوة ١: توقيت الصلوات الحقيقي لكل مهمة صلاة — نفس Aladhan API، معلّمة على بطاقتها ──
+   خطوة ٢ (لاحقًا): عرضها كخط زمني منفصل بدل نص صغير تحت العنوان. */
+const PRAYER_QUEST_FIELD = { fajrprayer: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
+const prayerTimesCache = {};
+let prayerTimesEnabled = localStorage.getItem('pom_prayer_times_on') !== 'off'; /* مفعّلة افتراضيًا */
+
+async function fetchPrayerTimes(dateObj, coords) {
+  const key = `${coords.lat.toFixed(2)},${coords.lon.toFixed(2)}_${apiDate(dateObj)}`;
+  if (prayerTimesCache[key]) return prayerTimesCache[key];
+  try {
+    const res = await fetch(`https://api.aladhan.com/v1/timings/${apiDate(dateObj)}?latitude=${coords.lat}&longitude=${coords.lon}`);
+    const json = await res.json();
+    const t = json.data.timings;
+    const mk = hhmm => { const [hh, mm] = hhmm.split(':').map(Number); const d = new Date(dateObj); d.setHours(hh, mm, 0, 0); return d; };
+    const times = {};
+    Object.entries(PRAYER_QUEST_FIELD).forEach(([habitId, field]) => { times[habitId] = mk(t[field]); });
+    prayerTimesCache[key] = times;
+    return times;
+  } catch { return null; }
+}
+
+function renderPrayerTimesToggle() {
+  const btn = document.getElementById('prayer-times-toggle');
+  if (!btn) return;
+  const label = prayerTimesEnabled
+    ? (isEN() ? '⏰ Prayer times: on — tap to turn off' : '⏰ أوقات الصلاة: مفعّلة — اضغطي للإيقاف')
+    : (isEN() ? '⏰ Prayer times: off — tap to turn on' : '⏰ أوقات الصلاة: متوقفة — اضغطي للتفعيل');
+  btn.innerHTML = `<span>${label}</span><span id="prayer-times-status" style="font-weight:400; opacity:.7; font-size:.85em;"></span>`;
+  if (!btn.dataset.bound) {
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', () => {
+      prayerTimesEnabled = !prayerTimesEnabled;
+      localStorage.setItem('pom_prayer_times_on', prayerTimesEnabled ? 'on' : 'off');
+      renderPrayerTimesToggle();
+      renderHabits();
+    });
+  }
+}
+
+/* تعلّم بطاقات الصلوات الخمس بوقتها الحقيقي — لا تطلب الموقع إطلاقًا إن كانت الخاصية موقوفة */
+function setPrayerTimesStatus(msg) {
+  const span = document.getElementById('prayer-times-status');
+  if (span) span.textContent = msg || '';
+  if (msg) console.log('[prayer-times]', msg);
+}
+
+async function attachPrayerTimes(grid) {
+  if (!prayerTimesEnabled) { setPrayerTimesStatus(''); return; }
+  setPrayerTimesStatus(isEN() ? 'locating…' : 'جارٍ تحديد الموقع…');
+  const coords = await getGeo();
+  if (!coords) { setPrayerTimesStatus(isEN() ? 'no location — check browser permission for this site' : 'تعذّر تحديد الموقع — تحققي من إذن الموقع لهذا الموقع في المتصفح'); return; }
+  const times = await fetchPrayerTimes(effectiveNow(), coords);
+  if (!times) { setPrayerTimesStatus(isEN() ? 'Aladhan API request failed' : 'فشل طلب واجهة Aladhan'); return; }
+  let attached = 0;
+  Object.keys(PRAYER_QUEST_FIELD).forEach(habitId => {
+    const timeEl = grid.querySelector(`[data-habit-id="${habitId}"] .habit-node-time`);
+    const time = times[habitId];
+    if (!timeEl || !time) return;
+    timeEl.textContent = time.toLocaleTimeString(isEN() ? 'en' : 'ar', { hour: '2-digit', minute: '2-digit' });
+    attached++;
+  });
+  setPrayerTimesStatus(isEN() ? `attached to ${attached} rows` : `اتصلت بـ ${attached} صفوف`);
 }
 
 /* موعد الفجر القادم — لعرض العدّ التنازلي فقط */
@@ -2565,6 +2678,7 @@ function renderHabits() {
   renderWhiteDaysBox();
   renderDayCountdown();
   renderCustomHabits();
+  renderPrayerTimesToggle();
 
   document.getElementById('today-date').textContent =
     effectiveNow().toLocaleDateString(isEN() ? 'en' : 'ar', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -2652,6 +2766,45 @@ function renderHabits() {
     done === HABITS.length
       ? `${done}/${HABITS.length} — ${isEN() ? 'Full day! 💖' : 'يوم كامل! 💖'}`
       : `${done}/${HABITS.length}`;
+
+  renderCurrentQuestCard(grid);
+  attachPrayerTimes(grid);
+}
+
+/* "دورك الآن" — أول مهمة غير منجزة (وغير مؤجَّلة بـ"بعدين" هذه الجلسة) تصير بطاقة موسّعة بزرَّين.
+   كل المهمات تبقى قابلة للتأشير مباشرة بأي ترتيب — هذا تركيز بصري فقط، لا قفل فعلي. */
+let currentSkippedIds = new Set();
+
+function renderCurrentQuestCard(grid) {
+  grid.querySelectorAll('.habit-check.is-current').forEach(el => {
+    el.classList.remove('is-current');
+    el.querySelector('.habit-current-actions')?.remove();
+  });
+
+  const notDone = [...grid.querySelectorAll('.habit-check:not(.done)')];
+  if (!notDone.length) return;
+  let current = notDone.find(el => !currentSkippedIds.has(el.dataset.habitId));
+  if (!current) { currentSkippedIds.clear(); current = notDone[0]; }
+  current.classList.add('is-current');
+
+  const h = HABITS.find(x => x.id === current.dataset.habitId);
+  if (!h) return;
+  const canSkip = (GROUP_ITEMS.mood || []).includes(h.id); /* "مش اليوم" فقط لمهمات "على مزاجك" — مرنة بطبيعتها */
+  const actions = document.createElement('div');
+  actions.className = 'habit-current-actions';
+  actions.innerHTML = `
+    ${canSkip ? `<button type="button" class="habit-current-later">${isEN() ? 'Not today' : 'مش اليوم'}</button>` : ''}
+    <button type="button" class="habit-current-done">${isEN() ? 'Done ✓' : 'أنجزتها ✓'}</button>`;
+  actions.querySelector('.habit-current-done').addEventListener('click', e => {
+    e.stopPropagation();
+    toggleHabit(h);
+  });
+  actions.querySelector('.habit-current-later')?.addEventListener('click', e => {
+    e.stopPropagation();
+    currentSkippedIds.add(h.id);
+    renderCurrentQuestCard(grid);
+  });
+  (current.querySelector('.habit-card-inner') || current).appendChild(actions);
 }
 
 /* ── بطاقة مشاركة على إنستغرام — تُرسم لحظيًا بدون صور جاهزة ─── */
@@ -2753,29 +2906,37 @@ async function shareQuestSticker(h, done) {
 }
 
 function buildHabitCard(h, t) {
+  return getActionMode() === 'swipe' ? buildHabitCardSwipe(h, t) : buildHabitCardStatic(h, t);
+}
+
+function buildHabitCardStatic(h, t) {
     const el = document.createElement('div');
     const done = !!t[h.id];
     el.className = 'habit-check' + (done ? ' done' : '') + (h.legendary ? ' legendary' : '');
-    el.style.borderInlineStartColor = habitColor(h);
     el.dataset.habitId = h.id;
     const badge = h.legendary
       ? (isEN() ? `⭐ Legendary ×${habitPoints(h)}` : `⭐ أسطورية ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}`)
       : '';
     const focused = isFocused(h.id);
     el.innerHTML = `
-      ${badge ? `<span class="legendary-badge">${badge}</span>` : ''}
-      <div class="habit-box">✓</div>
-      <div class="habit-check-info">
-        <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
-        <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
+      <div class="habit-node">
+        <div class="habit-box">${h.emoji}<span class="habit-box-check">✓</span></div>
+        <div class="habit-node-time"></div>
       </div>
-      ${(PROGRESS_VIEW_PUBLIC || isAdmin) ? `<button class="habit-focus-btn${focused ? ' on' : ''}" title="${focused ? (isEN() ? 'On your board — click to move to Other quests' : 'ضمن لوحتك — اضغطي لنقلها إلى مهمات أخرى') : (isEN() ? 'In Other quests — click to bring back' : 'ضمن مهمات أخرى — اضغطي لإرجاعها')}">${focused ? '★' : '☆'}</button>` : ''}
-      ${(PHOTOS_PUBLIC || isAdmin) ? `<button class="habit-photo-btn" title="${isEN() ? 'Upload a photo for this quest' : 'رفع صورة لهذه المهمة'}">📷</button>` : ''}
-      <button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>
-      <div class="habit-emoji">${h.emoji}</div>
-      ${(REORDER_PUBLIC || isAdmin) ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder' : 'اسحبي لإعادة الترتيب'}">⠿</span>` : ''}`;
-    el.addEventListener('click', () => toggleHabit(h));
-    el.querySelector('.habit-share-btn').addEventListener('click', e => {
+      <div class="habit-card-inner">
+        ${badge ? `<span class="legendary-badge">${badge}</span>` : ''}
+        <div class="habit-check-info">
+          <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
+          <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
+        </div>
+        ${(PROGRESS_VIEW_PUBLIC || isAdmin) && getActionPref('focus') ? `<button class="habit-focus-btn${focused ? ' on' : ''}" title="${focused ? (isEN() ? 'On your board — click to move to Other quests' : 'ضمن لوحتك — اضغطي لنقلها إلى مهمات أخرى') : (isEN() ? 'In Other quests — click to bring back' : 'ضمن مهمات أخرى — اضغطي لإرجاعها')}">${focused ? '★' : '☆'}</button>` : ''}
+        ${(PHOTOS_PUBLIC || isAdmin) && getActionPref('photo') ? `<button class="habit-photo-btn" title="${isEN() ? 'Upload a photo for this quest' : 'رفع صورة لهذه المهمة'}">📷</button>` : ''}
+        ${getActionPref('share') ? `<button class="habit-share-btn" title="${isEN() ? 'Share as image' : 'مشاركة كصورة'}">📤</button>` : ''}
+        ${(REORDER_PUBLIC || isAdmin) && getActionPref('drag') ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder' : 'اسحبي لإعادة الترتيب'}">⠿</span>` : ''}
+      </div>`;
+    el.querySelector('.habit-card-inner').style.borderInlineStartColor = habitColor(h);
+    el.addEventListener('click', () => { if (!el.classList.contains('is-current')) toggleHabit(h); });
+    el.querySelector('.habit-share-btn')?.addEventListener('click', e => {
       e.stopPropagation();
       shareQuestSticker(h, done);
     });
@@ -2789,6 +2950,93 @@ function buildHabitCard(h, t) {
     });
     el.querySelector('.habit-drag-handle')?.addEventListener('click', e => e.stopPropagation());
     return el;
+}
+
+/* ── وضع تجريبي: اسحبي البطاقة لليسار لإظهار الأزرار — بدل عرضها ثابتة دائمًا ──
+   مقبض إعادة الترتيب غير متاح في هذا الوضع (يتعارض مع إيماءة السحب نفسها). */
+const SWIPE_REVEAL_PX = 150;
+
+function buildHabitCardSwipe(h, t) {
+  const el = document.createElement('div');
+  const done = !!t[h.id];
+  el.className = 'habit-check' + (done ? ' done' : '') + (h.legendary ? ' legendary' : '');
+  el.dataset.habitId = h.id;
+  const badge = h.legendary
+    ? (isEN() ? `⭐ Legendary ×${habitPoints(h)}` : `⭐ أسطورية ×${AR_NUMS[habitPoints(h)] || habitPoints(h)}`)
+    : '';
+  const focused = isFocused(h.id);
+  el.innerHTML = `
+    <div class="habit-node">
+      <div class="habit-box">${h.emoji}<span class="habit-box-check">✓</span></div>
+      <div class="habit-node-time"></div>
+    </div>
+    <div class="habit-swipe-wrap">
+      <div class="habit-actions-strip">
+        ${(PROGRESS_VIEW_PUBLIC || isAdmin) && getActionPref('focus') ? `<button class="habit-focus-btn${focused ? ' on' : ''}" title="${isEN() ? 'Focus' : 'تركيز'}">${focused ? '★' : '☆'}</button>` : ''}
+        ${(PHOTOS_PUBLIC || isAdmin) && getActionPref('photo') ? `<button class="habit-photo-btn" title="${isEN() ? 'Upload a photo' : 'رفع صورة'}">📷</button>` : ''}
+        ${getActionPref('share') ? `<button class="habit-share-btn" title="${isEN() ? 'Share' : 'مشاركة'}">📤</button>` : ''}
+      </div>
+      <div class="habit-card-inner">
+        ${badge ? `<span class="legendary-badge">${badge}</span>` : ''}
+        <div class="habit-check-info">
+          <div class="habit-check-ar">${isEN() ? h.en : h.ar}</div>
+          <div class="habit-check-en">${isEN() ? h.ar : h.en}</div>
+        </div>
+        ${(REORDER_PUBLIC || isAdmin) && getActionPref('drag') ? `<span class="habit-drag-handle" title="${isEN() ? 'Drag to reorder' : 'اسحبي لإعادة الترتيب'}">⠿</span>` : ''}
+      </div>
+    </div>`;
+  el.querySelector('.habit-card-inner').style.borderInlineStartColor = habitColor(h);
+  el.querySelector('.habit-share-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    shareQuestSticker(h, done);
+  });
+  el.querySelector('.habit-photo-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    openPhotoUploadForQuest(h);
+  });
+  el.querySelector('.habit-focus-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleFocus(h.id);
+  });
+  el.querySelector('.habit-drag-handle')?.addEventListener('click', e => e.stopPropagation());
+
+  const card = el.querySelector('.habit-card-inner');
+  let startX = 0, startY = 0, dragging = false, moved = false, openOffset = 0;
+
+  card.addEventListener('pointerdown', e => {
+    if (e.target.closest('.habit-drag-handle')) return; /* اتركي الحدث يصعد لنظام إعادة الترتيب كالمعتاد */
+    startX = e.clientX; startY = e.clientY; moved = false; dragging = true;
+    card.style.transition = 'none';
+    card.setPointerCapture(e.pointerId);
+  });
+  card.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (!moved && Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+    if (Math.abs(dy) > Math.abs(dx)) return; /* سحب رأسي أقرب لتمرير الصفحة — نتجاهله */
+    moved = true;
+    const next = Math.max(-SWIPE_REVEAL_PX, Math.min(0, openOffset + dx));
+    card.style.transform = `translateX(${next}px)`;
+  });
+  const endDrag = e => {
+    if (!dragging) return;
+    dragging = false;
+    card.style.transition = '';
+    if (!moved) {
+      /* نقرة فعلية، مش سحب */
+      if (openOffset < 0) { openOffset = 0; card.style.transform = 'translateX(0)'; }
+      else if (!el.classList.contains('is-current')) toggleHabit(h);
+      return;
+    }
+    const dx = e.clientX - startX;
+    const proposed = openOffset + dx;
+    openOffset = proposed < -SWIPE_REVEAL_PX / 2 ? -SWIPE_REVEAL_PX : 0;
+    card.style.transform = `translateX(${openOffset}px)`;
+  };
+  card.addEventListener('pointerup', endDrag);
+  card.addEventListener('pointercancel', endDrag);
+
+  return el;
 }
 
 /* سحب وإفلات — لإعادة ترتيب المهمات داخل مجموعتها، وللعادات الخاصة أيضًا لنقلها بين الروتينات.
@@ -3035,6 +3283,7 @@ function progressWeekStartDate() {
 }
 
 async function ensureDaysLoaded(weekStartDate) {
+  if (!me) return; /* initGate() الأولي عند تحميل الصفحة يسبق onAuthStateChanged أحيانًا — سيُعاد الرسم صحيحًا عند اكتمال المصادقة */
   const gets = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(weekStartDate); d.setDate(d.getDate() + i);
@@ -4197,7 +4446,7 @@ async function exportBackup() {
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
-const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'photos', 'rules', 'features', 'procrastination', 'reflect', 'admin'];
+const TAB_IDS = ['quests', 'growth', 'why', 'wall', 'photos', 'rules', 'settings', 'features', 'procrastination', 'reflect', 'admin'];
 
 /* طبّقي اللغة أولًا حتى ينسخ تبويب القواعد النسخة الصحيحة */
 applyEnglish();
@@ -4225,4 +4474,5 @@ document.querySelectorAll('.tab-btn').forEach(b =>
 /* ── Init ────────────────────────────────────────────────── */
 renderWorldsLegend();
 renderWhy();
+renderSettingsTab();
 initGate();
