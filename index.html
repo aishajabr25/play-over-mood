@@ -261,65 +261,28 @@
     #lang-toggle { font-size: 1rem; font-weight: 700; }
     #theme-toggle { font-size: 1.3rem; text-decoration: none; }
 
-    /* ── Today's quests — node + time rail (1c/1d combined) ── */
-    .habits-grid { display: flex; flex-direction: column; gap: 14px; position: relative; }
-    .habits-grid::before {
-      content: ''; position: absolute; top: 4px; bottom: 4px;
-      right: 26.5px; width: 3px; border-radius: 999px;
-      background: rgba(var(--ink),.12); z-index: 0;
-    }
+    /* ── Today's habits ──────────────────────────────────── */
+    .habits-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .quest-group-cards { display: contents; }
     .habit-check.dragging { opacity: .4; }
     .habit-drag-handle { cursor: grab; padding: 4px; flex-shrink: 0; color: rgba(var(--ink),.35); touch-action: none; }
     .habit-drag-handle:active { cursor: grabbing; }
-    #custom-habits-list { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
-    /* الصف الخارجي شفّاف بعرض كامل — يحمل العقدة (خارج البطاقة) + البطاقة الملوّنة نفسها */
+    #custom-habits-list { min-height: 60px; }
     .habit-check {
-      display: flex; align-items: center; gap: 12px;
-      background: transparent; border: 0; padding: 0;
-      cursor: pointer; user-select: none; position: relative; z-index: 1;
+      display: flex; align-items: center; gap: 14px;
+      background: var(--blue-light); border: 2px solid var(--line);
+      border-radius: 20px; padding: 16px 18px;
+      cursor: pointer; user-select: none; position: relative;
+      border-inline-start-width: 6px;
+      transition: border-color .18s, background .18s, transform .1s;
     }
-    .habit-check:hover .habit-card-inner { transform: translateY(-1px); }
-    .habit-card-inner {
-      flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
-      background: var(--white); border: 1.5px solid var(--line);
-      border-radius: 20px; padding: 12px 18px; position: relative;
-      transition: border-color .18s, background .18s, transform .1s, box-shadow .18s, padding .18s;
-    }
-    .habit-card-inner > .habit-focus-btn,
-    .habit-card-inner > .habit-photo-btn,
-    .habit-card-inner > .habit-share-btn,
-    .habit-card-inner > .habit-drag-handle { margin-top: 2px; }
-
-    /* وضع "اسحبي لليسار" التجريبي — غلاف نسبي بحواف مدوّرة، طبقتان فوق بعض */
-    .habit-swipe-wrap { flex: 1; min-width: 0; min-height: 72px; position: relative; border-radius: 20px; overflow: hidden; }
-    .habit-actions-strip {
-      position: absolute; inset: 0; z-index: 0;
-      background: rgba(var(--ink),.08);
-    }
-    .habit-actions-strip button {
-      position: absolute; top: 50%; transform: translateY(-50%);
-      background: none; border: none; font-size: 1.15rem; opacity: .75; cursor: pointer; padding: 6px;
-    }
-    .habit-actions-strip button:nth-child(1) { right: 18px; }
-    .habit-actions-strip button:nth-child(2) { right: 62px; }
-    .habit-actions-strip button:nth-child(3) { right: 106px; }
-    .habit-swipe-wrap .habit-card-inner {
-      position: absolute; inset: 0; z-index: 1; flex-wrap: nowrap;
-      transition: transform .25s cubic-bezier(.22,.68,0,1.05), border-color .18s, background .18s, box-shadow .18s;
-      touch-action: pan-y;
-    }
-    .habit-swipe-wrap .habit-check-info { flex-basis: auto; }
-    /* الشارة تطفو فوق حافة البطاقة عادةً (top:-10px) — هون الغلاف overflow:hidden فيقصّها، فنخليها داخل الحدود */
-    .habit-swipe-wrap .legendary-badge { top: 6px; }
-    .habit-check.legendary .habit-swipe-wrap .habit-check-ar { margin-top: 14px; }
-    .habit-check.legendary .habit-card-inner {
+    .habit-check.legendary {
       background: var(--yellow-light);
-      border-color: rgba(207,169,74,.5);
+      border-color: #CFA94A;
     }
-    .habit-check.legendary.done .habit-card-inner { background: var(--green-light); }
+    .habit-check.legendary.done { background: var(--green-light); }
     .legendary-badge {
-      position: absolute; top: -10px; inset-inline-start: 14px;
+      position: absolute; top: -10px; inset-inline-end: 14px;
       background: #CFA94A; color: #fff; border-radius: 999px;
       padding: 1px 10px; font-size: .6rem; font-weight: 800;
       box-shadow: 0 3px 8px rgba(var(--ink),.18);
@@ -328,73 +291,33 @@
     .quest-group {
       grid-column: 1 / -1;
       display: flex; align-items: center; gap: 10px; margin-top: 8px;
-      position: relative; z-index: 1;
     }
-    .quest-group-title { font-size: .8rem; font-weight: 800; color: var(--deep); white-space: nowrap; background: var(--bg); padding-inline-end: 6px; }
+    .quest-group-title { font-size: .8rem; font-weight: 800; color: var(--deep); white-space: nowrap; }
     .quest-group-line { flex: 1; height: 1px; background: var(--line); }
     .world-item {
       display: inline-flex; align-items: center; gap: 5px;
       font-size: .7rem; font-weight: 700; color: var(--deep);
     }
     .world-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .habit-check.done .habit-card-inner {
+    .habit-check:hover { transform: translateY(-1px); }
+    .habit-check.done {
       background: var(--green-light);
-      border-color: rgba(160,190,154,.6);
+      border-color: rgba(160,190,154,.9);
     }
-    /* عمود العقدة — مربّع مدوّر خارج البطاقة تمامًا، يجلس على خط المسار */
-    .habit-node { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; width: 56px; }
     .habit-box {
-      width: 48px; height: 48px; border-radius: 16px; flex-shrink: 0;
-      border: none; background: rgba(var(--ink),.07);
-      display: grid; place-items: center; position: relative;
-      font-size: 1.3rem;
-      transition: background .18s, box-shadow .18s;
+      width: 34px; height: 34px; border-radius: 12px; flex-shrink: 0;
+      border: 2px solid rgba(var(--ink),.25); background: var(--white);
+      display: grid; place-items: center;
+      font-size: 1.15rem; color: transparent;
+      transition: background .18s, border-color .18s, color .18s;
     }
-    .habit-check.legendary .habit-box { background: var(--accent); }
-    .habit-check.done .habit-box { background: var(--secondary); }
-    .habit-check.is-current .habit-box { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px #D9C48A; }
-    .habit-box-check {
-      display: none; position: absolute; bottom: -2px; inset-inline-end: -2px;
-      width: 18px; height: 18px; border-radius: 50%;
-      background: var(--deep-fixed); color: var(--on-deep);
-      font-size: .62rem; font-weight: 800;
-      align-items: center; justify-content: center;
-      box-shadow: 0 0 0 2.5px var(--bg);
+    .habit-check.done .habit-box {
+      background: var(--secondary); border-color: rgba(160,190,154,.9); color: var(--deep);
     }
-    .habit-check.done .habit-box-check { display: flex; }
-    .habit-node-time { font-size: .62rem; font-weight: 700; color: rgba(var(--ink),.45); white-space: nowrap; min-height: 1em; }
-    .habit-check.is-current .habit-node-time { color: #B8923C; font-weight: 800; }
-    /* سطر العنوان ياخذ العرض كامل دائمًا — الأيقونات تنزل سطرًا ثانيًا بدل ما تضغط النص */
-    .habit-check-info { min-width: 0; flex: 1 1 100%; }
-    .habit-check-ar { font-weight: 800; color: var(--deep); font-size: .85rem; line-height: 1.35; }
-    .habit-check-en { font-size: .62rem; color: rgba(var(--ink),.45); }
-    /* مهماتي الخاصة ما زالت بالتصميم البسيط — ليست جزءًا من مسار "دورك الآن" */
+    .habit-check-info { min-width: 0; }
+    .habit-check-ar { font-weight: 800; color: var(--deep); font-size: .95rem; line-height: 1.4; }
+    .habit-check-en { font-size: .68rem; color: rgba(var(--ink),.45); }
     .habit-emoji { font-size: 1.3rem; margin-inline-start: auto; flex-shrink: 0; }
-
-    /* "دورك الآن" — بطاقة موسّعة لأول مهمة غير منجزة، بزرَّين. مجرد تركيز بصري — أي مهمة تبقى قابلة للتأشير مباشرة */
-    .habit-check.is-current .habit-card-inner {
-      background: var(--white); border: 2px solid #D9C48A;
-      padding: 14px 18px; cursor: default;
-      box-shadow: 0 12px 30px rgba(var(--ink),.1);
-      flex-wrap: wrap;
-    }
-    .habit-check.is-current:hover .habit-card-inner { transform: none; }
-    .habit-check.is-current .habit-focus-btn,
-    .habit-check.is-current .habit-photo-btn,
-    .habit-check.is-current .habit-share-btn,
-    .habit-check.is-current .habit-drag-handle { display: none; }
-    .habit-check.is-current .habit-check-ar::before {
-      content: 'دورك الآن'; display: block;
-      font-size: .64rem; font-weight: 800; color: #B8923C; margin-bottom: 3px;
-    }
-    .habit-current-actions { display: flex; gap: 8px; margin-top: 10px; width: 100%; flex-basis: 100%; }
-    .habit-current-later, .habit-current-done {
-      border: 0; border-radius: 999px; padding: 13px; font-weight: 800; font-size: .85rem; cursor: pointer;
-      transition: transform .15s, filter .15s;
-    }
-    .habit-current-later:hover, .habit-current-done:hover { transform: translateY(-1px); filter: brightness(1.04); }
-    .habit-current-later { background: var(--white); border: 1.5px solid rgba(var(--ink),.2); color: rgba(var(--ink),.6); flex: 0 0 auto; padding-inline: 18px; }
-    .habit-current-done { background: var(--accent); color: var(--text); flex: 1; }
     .habit-share-btn, .habit-photo-btn {
       background: none; border: none; font-size: 1rem; opacity: .5;
       cursor: pointer; padding: 4px; flex-shrink: 0; line-height: 1;
@@ -462,7 +385,6 @@
       border-radius: 999px; padding: 4px 12px;
       font-size: .72rem; font-weight: 700; color: var(--deep);
     }
-    #my-points-chip { background: var(--accent); border-color: transparent; font-weight: 800; padding: 7px 16px; font-size: .82rem; }
     .lb-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
     .lb-row {
       display: flex; align-items: center; gap: 12px;
@@ -680,20 +602,10 @@
       .tabs-bar::-webkit-scrollbar-track { background: transparent; }
       .tab-btn { flex-shrink: 0; }
     }
-    /* هاتف: شريط تبويبات عائم أسفل الشاشة — بديل تلقائي لتصميم design_handoff_mobile_1c */
+    /* هاتف: كما كانت — تلتف التبويبات لأكثر من صف بدل التمرير */
     @media (max-width: 480px) {
       .tab-btn { padding: 8px 12px; font-size: .78rem; }
-      .page { padding-bottom: 94px; }
-      .tabs-bar {
-        position: fixed; top: auto; bottom: 0; inset-inline: 0;
-        flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
-        justify-content: flex-start;
-        margin: 0; width: auto; max-width: none;
-        border-radius: 0; border: 0; border-top: 1px solid var(--line);
-        padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
-        box-shadow: 0 -8px 24px rgba(var(--ink),.10);
-      }
-      .tab-btn { flex-shrink: 0; }
+      .tabs-bar { flex-wrap: wrap; border-radius: 24px; }
     }
     .stat-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -1090,7 +1002,6 @@
       <button class="tab-btn" data-tab="admin" id="tab-btn-admin" type="button" hidden>📈 لوحتي</button>
       <button class="tab-btn" data-tab="why" type="button">📖 لماذا؟</button>
       <button class="tab-btn" data-tab="rules" type="button">📜 القواعد</button>
-      <button class="tab-btn" data-tab="settings" type="button">⚙️ الإعدادات</button>
     </nav>
 
     <!-- Welcome box -->
@@ -1132,7 +1043,6 @@
         <div class="week-month-label" id="quests-day-label">اليوم</div>
         <button type="button" class="week-nav-btn" id="quests-day-next" aria-label="اليوم">›</button>
       </div>
-      <button type="button" class="round-chip" id="prayer-times-toggle" style="margin-bottom:12px; cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; gap:2px;"></button>
       <div class="worlds-legend" id="worlds-legend"></div>
       <div class="habits-grid" id="habits-grid"></div>
       <div class="today-progress">
@@ -1298,17 +1208,6 @@
       </section>
     </div><!-- /tab-rules -->
 
-    <div id="tab-settings" class="tab-pane" hidden>
-      <section class="card">
-        <span class="card-label">⚙️ الإعدادات · Settings</span>
-        <div class="card-title">خصّصي شكل بطاقات المهمات</div>
-        <div class="card-desc">اختاري أي الأزرار تحبين إنها تظهر على كل بطاقة — التفضيل يُحفظ على جهازك فقط</div>
-        <div id="settings-action-toggles" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;"></div>
-        <div class="card-desc" style="margin-top:4px;">طريقة إظهار أزرار المهمة (تجريبي)</div>
-        <div id="settings-action-mode" style="display:flex; flex-direction:column; gap:8px;"></div>
-      </section>
-    </div><!-- /tab-settings -->
-
     <div id="tab-features" class="tab-pane" hidden>
       <section class="card">
         <span class="card-label label-green">💡 اقتراحك · Feature Requests</span>
@@ -1425,7 +1324,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=121"></script>
+<script type="module" src="app.js?v=111"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
