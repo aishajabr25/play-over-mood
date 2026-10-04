@@ -771,7 +771,7 @@
     }
 
     /* ── Google account link banner (Stage 1, mandatory sign-in rollout) ── */
-    .google-link-banner {
+    .google-link-banner:not([hidden]) {
       background: linear-gradient(135deg, var(--yellow-light), var(--white));
       border: 1.5px solid rgba(220,200,130,.7);
       border-radius: var(--radius-lg); padding: 16px 20px;
