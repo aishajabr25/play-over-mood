@@ -810,7 +810,7 @@
     .reaction-btn.active { background: var(--blue-main); border-color: transparent; }
 
     /* ── Mission of the week ─────────────────────────────── */
-    #mission-box:not([hidden]) {
+    #mission-box:not([hidden]), #podcast-box:not([hidden]) {
       background: var(--white); border: 1px solid var(--line);
       border-radius: var(--radius-lg); padding: 16px 20px;
       box-shadow: 0 10px 24px rgba(var(--ink),.06);
@@ -1027,6 +1027,7 @@
     <div id="announcement-box" hidden></div>
 
     <div id="mission-box" hidden></div>
+    <div id="podcast-box" hidden></div>
 
     <div id="mission-archive-section" hidden style="margin-bottom:16px;">
       <button type="button" class="collapsed-toggle" id="mission-archive-toggle">▾ الحلقات السابقة</button>

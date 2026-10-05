@@ -591,6 +591,7 @@ let wallSearchTag = '';
 let photosCache = []; /* صور المهمات — أحدث ٣٠، تحديث حي */
 let listenersStarted = false;
 let mission = null; /* { text, link, image, updated } */
+let podcast = null; /* { title, text, link, updated } — بودكاست الأسبوع */
 let announcement = null; /* { text, updated } — إعلان أعلى مهمة الأسبوع */
 let announcementReactionDocs = []; /* ردود فعل الإعلان الحالي (تحديث حي) */
 let announcementReactionsUnsub = null;
@@ -839,6 +840,11 @@ function startListeners() {
   onSnapshot(doc(db, 'meta', 'mission'), snap => {
     mission = snap.exists() ? snap.data() : null;
     renderMission();
+  }, () => {});
+
+  onSnapshot(doc(db, 'meta', 'podcast'), snap => {
+    podcast = snap.exists() ? snap.data() : null;
+    renderPodcastBox();
   }, () => {});
 
   onSnapshot(doc(db, 'meta', 'announcement'), snap => {
@@ -1389,6 +1395,92 @@ function renderMission() {
   if (btn) btn.addEventListener('click', openMissionEditor);
 }
 
+function renderPodcastBox() {
+  const box = document.getElementById('podcast-box');
+  if (!box) return;
+
+  const hasContent = podcast && podcast.link;
+  box.hidden = !hasContent && !isAdmin;
+  if (box.hidden) return;
+  const editBtn = isAdmin
+    ? `<button class="mission-edit-btn" id="podcast-edit-btn">${hasContent ? '✏️' : (isEN() ? '+ Add' : '+ إضافة')}</button>`
+    : '';
+
+  const yid = hasContent ? youtubeId(podcast.link) : null;
+  const bodyHtml = hasContent
+    ? `${yid
+        ? `<div class="mission-media"><iframe src="https://www.youtube.com/embed/${yid}" allowfullscreen title="podcast"></iframe></div>`
+        : `<a class="mission-link" href="${esc(podcast.link)}" target="_blank" rel="noopener">🎧 ${isEN() ? 'Listen to the episode' : 'استمعي للحلقة'}</a>`}
+       ${podcast.title ? `<div class="mission-text" style="font-weight:800; margin-top:6px;">${esc(podcast.title)}</div>` : ''}
+       ${podcast.text ? `<div class="mission-text" style="margin-top:6px;">${esc(podcast.text)}</div>` : ''}`
+    : (isAdmin ? `<div class="mission-empty">${isEN() ? 'Nothing yet — tap + Add to publish this week’s episode.' : 'ما في شي بعد — اضغطي + إضافة لنشر حلقة هالأسبوع.'}</div>` : '');
+
+  box.innerHTML = `
+    <div class="mission-box">
+      <div class="mission-head">
+        <span class="mission-tag">${isEN() ? '🎙️ Podcast' : '🎙️ بودكاست الأسبوع'}</span>
+        ${editBtn}
+      </div>
+      ${bodyHtml}
+    </div>`;
+
+  const pbtn = document.getElementById('podcast-edit-btn');
+  if (pbtn) pbtn.addEventListener('click', openPodcastEditor);
+}
+
+function podcastModal(initial) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">🎙️ ${isEN() ? 'Podcast of the Week' : 'بودكاست الأسبوع'}</div>
+        <label class="modal-field-label">${isEN() ? 'Link (YouTube auto-embeds)' : 'رابط (يوتيوب يظهر كفيديو تلقائيًا)'}</label>
+        <input type="url" id="podcast-link-input" placeholder="https://youtube.com/…" />
+        <label class="modal-field-label">${isEN() ? 'Title (optional)' : 'عنوان (اختياري)'}</label>
+        <input type="text" id="podcast-title-input" maxlength="120" placeholder="${isEN() ? 'Episode title…' : 'عنوان الحلقة…'}" />
+        <label class="modal-field-label">${isEN() ? 'Description (optional)' : 'وصف الحلقة (اختياري)'}</label>
+        <textarea maxlength="500" placeholder="${isEN() ? 'What this episode is about…' : 'عن إيش الحلقة…'}"></textarea>
+        <div style="font-size:.68rem; color:rgba(var(--ink),.5); margin-top:8px;">${isEN() ? 'Tip: clear the link and save to remove the podcast box.' : 'ملاحظة: امسحي الرابط واحفظي لإزالة الصندوق نهائيًا.'}</div>
+        <div class="modal-actions">
+          <button class="btn btn-deep btn-small" data-act="send">${isEN() ? 'Publish' : 'نشر'}</button>
+          <button class="btn btn-small" style="background:var(--bg); border:1.5px solid var(--line);" data-act="cancel">${isEN() ? 'Cancel' : 'إلغاء'}</button>
+        </div>
+      </div>`;
+    const linkI  = overlay.querySelector('#podcast-link-input');
+    const titleI = overlay.querySelector('#podcast-title-input');
+    const ta     = overlay.querySelector('textarea');
+    linkI.value = initial?.link || '';
+    titleI.value = initial?.title || '';
+    ta.value = initial?.text || '';
+    const close = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="send"]').addEventListener('click', () => close({
+      link: linkI.value.trim(), title: titleI.value.trim(), text: ta.value.trim(),
+    }));
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    document.body.appendChild(overlay);
+    linkI.focus();
+  });
+}
+
+async function openPodcastEditor() {
+  if (!isAdmin) return;
+  const result = await podcastModal(podcast);
+  if (!result) return;
+  try {
+    if (!result.link) {
+      await setDoc(doc(db, 'meta', 'podcast'), { link: '', title: '', text: '', updated: Date.now() });
+      showToast('أُزيل بودكاست الأسبوع');
+    } else {
+      await setDoc(doc(db, 'meta', 'podcast'), { ...result, updated: Date.now(), by: ADMIN_NAME });
+      showToast('نُشر بودكاست الأسبوع 🤍');
+    }
+  } catch {
+    showToast('تعذر الحفظ — تحققي من قواعد الحماية');
+  }
+}
+
 function missionModal(initial) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
@@ -1594,6 +1686,7 @@ function initGate() {
     renderCharts();
     renderPosts();
     renderMission();
+    renderPodcastBox();
     renderAnnouncement();
   } else {
     gate.hidden = false; app.hidden = true;
