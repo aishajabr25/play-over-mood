@@ -922,6 +922,11 @@
       .habits-grid, .why-grid, .charts-grid { grid-template-columns: 1fr; }
       .lb-bar-wrap { display: none; }
     }
+    /* Shared SVG icons inherit the surrounding text size and work in RTL. */
+    .pom-icon { display:inline-block; width:1.25em; height:1.25em; vertical-align:-.24em; object-fit:contain; flex-shrink:0; pointer-events:none; }
+    .habit-emoji .pom-icon { width:1.6em; height:1.6em; }
+    [data-theme="dark"] .pom-icon { background:#F4FBFE; border-radius:.3em; }
+    @media (prefers-color-scheme:dark) { html:not([data-theme="light"]) .pom-icon { background:#F4FBFE; border-radius:.3em; } }
   </style>
 </head>
 <body>
@@ -1325,7 +1330,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=111"></script>
+<script src="icons.js?v=1"></script>
+<script type="module" src="app.js?v=112"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
