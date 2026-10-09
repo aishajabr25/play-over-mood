@@ -3218,7 +3218,7 @@ async function renderSingleQuestCalendar() {
   }
   if (!singleQuestId || !options.find(o => o.id === singleQuestId)) singleQuestId = options[0].id;
   select.innerHTML = options.map(o =>
-    `<option value="${o.id}" ${o.id === singleQuestId ? 'selected' : ''}>${o.emoji} ${esc(isEN() ? o.en : o.ar)}</option>`).join('');
+    `<option value="${o.id}" ${o.id === singleQuestId ? 'selected' : ''}>${esc(isEN() ? o.en : o.ar)}</option>`).join('');
   const chosen = options.find(o => o.id === singleQuestId);
 
   const latestWeekStart = weekStart(effectiveNow());
