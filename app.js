@@ -45,6 +45,18 @@ const START_DATE     = new Date('2026-07-21T00:00:00');
 const START_LABEL_AR = 'الثلاثاء ٢١ يوليو';
 function preLaunch() { return new Date() < START_DATE; }
 
+/* هذا الرابط (GitHub Pages) سيُغلق — ننقل اللاعبات للرابط الجديد قبل الإغلاق */
+const SHUTDOWN_DATE = new Date('2026-11-02T00:00:00');
+function renderShutdownBanner() {
+  const el = document.getElementById('shutdown-banner-text');
+  if (!el) return;
+  const days = Math.max(0, Math.ceil((SHUTDOWN_DATE - new Date()) / 86400000));
+  const daysLabelAr = days === 1 ? 'يوم واحد' : days === 2 ? 'يومان' : `${days} يومًا`;
+  el.innerHTML = isEN()
+    ? `This link will stop working in <strong>${days} day${days === 1 ? '' : 's'}</strong>. To keep your progress, link your Google account from inside the game (☁️ banner above), then continue on the new link below.`
+    : `هذا الرابط رح يتوقف خلال <strong>${daysLabelAr}</strong>. حتى ما تفقدي تقدمك، اربطي حساب Google من داخل اللعبة (البانر ☁️ أعلاه)، وبعدها كملي من الرابط الجديد تحت.`;
+}
+
 const STATS_SHARDS = 10;   /* توزيع كتابة العدّادات لتجنب التزاحم */
 
 const fb   = initializeApp(firebaseConfig);
@@ -4318,4 +4330,5 @@ document.querySelectorAll('.tab-btn').forEach(b =>
 /* ── Init ────────────────────────────────────────────────── */
 renderWorldsLegend();
 renderWhy();
+renderShutdownBanner();
 initGate();

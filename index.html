@@ -783,6 +783,21 @@
     .google-link-banner-text { flex: 1; min-width: 220px; font-size: .86rem; line-height: 1.85; color: var(--text); }
     .google-link-banner-text strong { color: var(--deep); }
 
+    /* ── Shutdown notice for this legacy GitHub Pages link ── */
+    .shutdown-banner {
+      background: #FDEAEA; border: 2px solid #E6A5A5;
+      border-radius: var(--radius-lg); padding: 18px 20px;
+      margin-bottom: 20px; text-align: center;
+      box-shadow: 0 10px 24px rgba(var(--ink),.08);
+    }
+    .shutdown-banner-title { font-size: 1.05rem; font-weight: 800; color: #A83E3E; margin-bottom: 8px; }
+    .shutdown-banner-text { font-size: .9rem; line-height: 1.85; color: var(--text); margin-bottom: 14px; }
+    .shutdown-banner-btn {
+      display: inline-block; background: var(--deep-fixed); color: var(--on-deep);
+      font-weight: 800; font-size: .9rem; text-decoration: none;
+      padding: 10px 24px; border-radius: 999px;
+    }
+
     /* ── Announcement (above the weekly mission) ─────────── */
     #announcement-box:not([hidden]) {
       background: linear-gradient(135deg, var(--blue-light), var(--white));
@@ -927,6 +942,12 @@
 <body>
 
 <main class="page">
+
+  <div class="shutdown-banner" id="shutdown-banner">
+    <div class="shutdown-banner-title">⚠️ هذا الرابط القديم رح يتوقف قريبًا</div>
+    <div class="shutdown-banner-text" id="shutdown-banner-text"></div>
+    <a class="shutdown-banner-btn" href="https://game.playovermood.com" target="_blank" rel="noopener">روحي للرابط الجديد ☀️</a>
+  </div>
 
   <header class="page-header">
     <div class="eyebrow-tag">تحدٍّ نلعبه معًا · Play Over Mood</div>
