@@ -50,6 +50,10 @@ const SHUTDOWN_DATE = new Date('2026-11-02T00:00:00');
 function renderShutdownBanner() {
   const el = document.getElementById('shutdown-banner-text');
   if (!el) return;
+  const titleEl = document.getElementById('shutdown-banner-title');
+  const btnEl = document.getElementById('shutdown-banner-btn');
+  if (titleEl) titleEl.textContent = isEN() ? '⚠️ This old link will stop working soon' : '⚠️ هذا الرابط القديم رح يتوقف قريبًا';
+  if (btnEl) btnEl.textContent = isEN() ? '☀️ Go to the new link' : '☀️ روحي للرابط الجديد';
   const days = Math.max(0, Math.ceil((SHUTDOWN_DATE - new Date()) / 86400000));
   const daysLabelAr = days === 1 ? 'يوم واحد' : days === 2 ? 'يومان' : `${days} يومًا`;
   el.innerHTML = isEN()
